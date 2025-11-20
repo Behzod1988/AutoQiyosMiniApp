@@ -63,7 +63,7 @@ const TEXTS = {
       "Chevrolet Cobalt 2022, 1.5, автомат, 45 000 км. Оценка цены: адекватно. Размещение объявлений будет доступно через бота."
   },
   uz: {
-    subtitle: "Mashinang holati va halol reytingi",
+    subtitle: "Mashinangiz holati va halol reytingi",
 
     tab_home: "Mening mashinam",
     tab_garage: "Mening garajim",
@@ -551,5 +551,6 @@ document.addEventListener("DOMContentLoaded", () => {
   renderGarage();
   renderRating();
 });
+
 
 
