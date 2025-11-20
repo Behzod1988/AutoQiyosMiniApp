@@ -1,9 +1,12 @@
 const tg = window.Telegram ? window.Telegram.WebApp : null;
 
+// Тексты RU / UZ
 const TEXTS = {
   ru: {
     subtitle: "Реальный рейтинг и здоровье авто",
+
     tab_home: "Моя машина",
+    tab_garage: "Мой гараж",
     tab_rating: "Рейтинг",
     tab_market: "Объявления",
 
@@ -27,26 +30,41 @@ const TEXTS = {
     label_yes: "Да",
     label_no: "Нет",
 
+    // Гараж
+    garage_title: "Мой гараж",
+    garage_desc: "Здесь собраны все твои машины. Бесплатно ведём одну, остальные — премиум-ячейки.",
+    garage_primary: "Основная машина",
+    garage_health: "Здоровье",
+    garage_free_note: "Сейчас можно бесплатно добавить и вести одну машину. Вторая и далее — платно.",
+    garage_premium_title: "Премиум-ячейка",
+    garage_premium_body: "Вторая машина будет доступна по подписке AutoQiyos (скоро).",
+
+    // Рейтинг
     rating_title: "Рейтинг владельцев",
     rating_desc: "Обновлённые позиции каждую неделю (пока демо-данные).",
     rating_badge: "Топ–5 по модели",
     rating_pos: "место",
     rating_health: "здоровье",
 
+    // Объявления
     market_title: "Объявления AutoQiyos",
-    market_desc: "Здесь будут честные объявления с оценкой цены. В текущем MVP показываем только пример.",
+    market_desc:
+      "Здесь будут честные объявления с оценкой цены. В текущем MVP показываем только пример.",
     market_demo_title: "Пример объявления",
     market_demo_body:
       "Chevrolet Cobalt 2022, 1.5, автомат, 45 000 км. Оценка цены: адекватно. Размещение объявлений будет доступно через бота."
   },
   uz: {
     subtitle: "Avto holati va reyting",
+
     tab_home: "Mening mashinam",
+    tab_garage: "Mening garajim",
     tab_rating: "Reyting",
     tab_market: "E'lonlar",
 
     home_title: "Avto sog‘ligi trekeri",
-    home_desc: "Mashinangiz haqidagi maʼlumotlarni kiriting, holatini kuzating va reytingga chiqing.",
+    home_desc:
+      "Mashinangiz haqidagi maʼlumotlarni kiriting, holatini kuzating va reytingga chiqing.",
 
     your_car: "Sizning mashinangiz",
     health: "Sog‘lik",
@@ -65,14 +83,28 @@ const TEXTS = {
     label_yes: "Ha",
     label_no: "Yo‘q",
 
+    // Garaj
+    garage_title: "Mening garajim",
+    garage_desc:
+      "Bu yerda barcha mashinalaringiz. Hozircha 1 ta mashinani bepul yuritish mumkin, qolganlari — premium uyachalar.",
+    garage_primary: "Asosiy mashina",
+    garage_health: "Sog‘lik",
+    garage_free_note: "Hozircha 1 ta mashina bepul. Ikkinchi va boshqalar pullik bo‘ladi.",
+    garage_premium_title: "Premium uyacha",
+    garage_premium_body:
+      "Ikkinchi mashina tez orada AutoQiyos obunasi orqali ochiladi (yaqinda).",
+
+    // Reyting
     rating_title: "Egalari reytingi",
     rating_desc: "Har hafta yangilanadigan reyting (hozircha demo maʼlumotlar).",
     rating_badge: "Model bo‘yicha Top–5",
     rating_pos: "o‘rin",
     rating_health: "sog‘lik",
 
+    // E'lonlar
     market_title: "AutoQiyos e'lonlari",
-    market_desc: "Bu yerda adolatli baholangan eʼlonlar bo‘ladi. Hozircha faqat namuna ko‘rsatilgan.",
+    market_desc:
+      "Bu yerda adolatli baholangan eʼlonlar bo‘ladi. Hozircha faqat namuna ko‘rsatilgan.",
     market_demo_title: "Namuna e'lon",
     market_demo_body:
       "Chevrolet Cobalt 2022, 1.5, avtomat, 45 000 km. Narx bahosi: adekvat. Eʼlon joylash tez orada bot orqali ishlaydi."
@@ -90,7 +122,8 @@ const defaultCar = {
   tuning: "Литые диски, камера заднего вида"
 };
 
-function loadCar() {
+// Старый формат (одна машина)
+function loadSingleCarFromStorage() {
   try {
     const raw = localStorage.getItem("aq_car");
     if (!raw) return { ...defaultCar };
@@ -101,8 +134,38 @@ function loadCar() {
   }
 }
 
-let currentCar = loadCar();
+// Новый формат — гараж (массив машин)
+function loadGarage() {
+  try {
+    const raw = localStorage.getItem("aq_garage");
+    if (raw) {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr) && arr.length) {
+        return arr.map((car, index) => ({
+          ...defaultCar,
+          ...car,
+          isPrimary: car.isPrimary ?? index === 0
+        }));
+      }
+    }
+  } catch (e) {
+    // ignore
+  }
 
+  // fallback: одна машина из старого формата
+  const one = loadSingleCarFromStorage();
+  return [{ ...one, isPrimary: true }];
+}
+
+let garage = loadGarage();
+let currentCarIndex = garage.findIndex((c) => c.isPrimary);
+if (currentCarIndex === -1) {
+  currentCarIndex = 0;
+  garage[0].isPrimary = true;
+}
+let currentCar = { ...garage[currentCarIndex] };
+
+// Демо-рейтинги
 const demoRating = [
   { pos: 1, owner: "@avto_jon", car: "Chevrolet Cobalt 2021", health: 94 },
   { pos: 2, owner: "@uz_driver", car: "Chevrolet Nexia 3 2020", health: 90 },
@@ -117,6 +180,7 @@ function initTelegram() {
   tg.expand();
 }
 
+// Примерная формула здоровья
 function calcHealthScore(car) {
   let score = 100;
 
@@ -128,12 +192,13 @@ function calcHealthScore(car) {
   if (age > 8) score -= Math.min(20, (age - 8) * 3);
 
   if (car.serviceOnTime) score += 10;
-  if (!car.serviceOnTime) score -= 10;
+  else score -= 10;
 
   score = Math.max(20, Math.min(100, score));
   return score;
 }
 
+// Применить все тексты по языку
 function applyTexts(lang) {
   const dict = TEXTS[lang];
 
@@ -152,6 +217,7 @@ function applyTexts(lang) {
   });
 }
 
+// Рендер главной машины
 function renderCar() {
   const health = calcHealthScore(currentCar);
   const dict = TEXTS[currentLang];
@@ -173,8 +239,7 @@ function renderCar() {
     const yes = dict.label_yes;
     const no = dict.label_no;
 
-    const mileageStr =
-      (Number(currentCar.mileage) || 0).toLocaleString("ru-RU") + " km";
+    const mileageStr = (Number(currentCar.mileage) || 0).toLocaleString("ru-RU") + " km";
 
     statsEl.innerHTML = `
       <div class="stat-row">
@@ -203,6 +268,62 @@ function renderCar() {
   }
 }
 
+// Сохранение гаража
+function saveGarageAndCurrent() {
+  garage[currentCarIndex] = { ...garage[currentCarIndex], ...currentCar };
+  try {
+    localStorage.setItem("aq_garage", JSON.stringify(garage));
+    localStorage.setItem("aq_car", JSON.stringify(currentCar)); // для совместимости
+  } catch (e) {
+    // ignore
+  }
+}
+
+// Рендер "Мой гараж"
+function renderGarage() {
+  const container = document.getElementById("garage-list");
+  if (!container) return;
+  const dict = TEXTS[currentLang];
+
+  const cards = [];
+
+  garage.forEach((car, index) => {
+    const health = calcHealthScore(car);
+    const mileageStr = (Number(car.mileage) || 0).toLocaleString("ru-RU") + " km";
+    const primaryPill = car.isPrimary ? `<span class="garage-pill">${dict.garage_primary}</span>` : "";
+
+    cards.push(`
+      <div class="garage-card ${car.isPrimary ? "primary" : ""}">
+        <div class="garage-main">
+          <div class="garage-title">${car.brand} ${car.model} ${car.year}</div>
+          <div class="garage-meta">${mileageStr}</div>
+          ${primaryPill}
+        </div>
+        <div class="garage-right">
+          <div class="garage-health-label">${dict.garage_health}</div>
+          <div class="garage-health-value">${health}</div>
+        </div>
+      </div>
+    `);
+  });
+
+  // Премиум-ячейка (вторая машина — платная)
+  cards.push(`
+    <div class="garage-card locked">
+      <div class="garage-main">
+        <div class="garage-title">🔒 ${dict.garage_premium_title}</div>
+        <div class="garage-meta">${dict.garage_premium_body}</div>
+      </div>
+    </div>
+  `);
+
+  container.innerHTML = `
+    <div class="garage-note muted small">${dict.garage_free_note}</div>
+    ${cards.join("")}
+  `;
+}
+
+// Рендер рейтинга (демо)
 function renderRating() {
   const container = document.getElementById("rating-list");
   if (!container) return;
@@ -211,14 +332,12 @@ function renderRating() {
   container.innerHTML = demoRating
     .map((item, index) => {
       const posClass = index === 0 ? "rating-pos top-1" : "rating-pos";
-      const posLabel = `${item.pos}`;
-      const healthLabel = `${item.health}`;
       const badge = dict.rating_badge;
 
       return `
         <div class="rating-item">
           <div class="rating-left">
-            <div class="${posClass}">${posLabel}</div>
+            <div class="${posClass}">${item.pos}</div>
             <div class="rating-main">
               <div class="rating-owner">${item.owner}</div>
               <div class="rating-car">${item.car}</div>
@@ -227,7 +346,7 @@ function renderRating() {
           </div>
           <div class="rating-right">
             <span>${dict.rating_health}</span>
-            <span class="rating-health">${healthLabel}</span>
+            <span class="rating-health">${item.health}</span>
           </div>
         </div>
       `;
@@ -235,6 +354,7 @@ function renderRating() {
     .join("");
 }
 
+// Переключатель языка
 function initLangSwitch() {
   const buttons = document.querySelectorAll(".lang-btn");
   buttons.forEach((btn) => {
@@ -244,16 +364,16 @@ function initLangSwitch() {
       if (lang === currentLang) return;
       currentLang = lang;
       localStorage.setItem("aq_lang", currentLang);
-      buttons.forEach((b) =>
-        b.classList.toggle("active", b.dataset.lang === currentLang)
-      );
+      buttons.forEach((b) => b.classList.toggle("active", b.dataset.lang === currentLang));
       applyTexts(currentLang);
       renderCar();
+      renderGarage();
       renderRating();
     });
   });
 }
 
+// Переключатель вкладок
 function initTabs() {
   const buttons = document.querySelectorAll(".tab-btn");
   const screens = document.querySelectorAll(".screen");
@@ -271,6 +391,7 @@ function initTabs() {
   });
 }
 
+// Popup / alert о сохранении
 function notifySaved() {
   const msg = currentLang === "ru" ? "Сохранено ✅" : "Saqlandi ✅";
   if (tg && tg.showPopup) {
@@ -284,6 +405,7 @@ function notifySaved() {
   }
 }
 
+// Форма обновления машины
 function initForm() {
   const form = document.getElementById("car-form");
   if (!form) return;
@@ -291,21 +413,24 @@ function initForm() {
   form.addEventListener("submit", (e) => {
     e.preventDefault();
     const fd = new FormData(form);
-    const brand = (fd.get("brand") || "").toString().trim();
-    const model = (fd.get("model") || "").toString().trim();
+    const brand = (fd.get("brand") || "").toString().trim() || defaultCar.brand;
+    const model = (fd.get("model") || "").toString().trim() || defaultCar.model;
     const year = Number(fd.get("year")) || defaultCar.year;
     const mileage = Number(fd.get("mileage")) || defaultCar.mileage;
     const serviceOnTime = fd.get("serviceOnTime") === "yes";
     const tuning = (fd.get("tuning") || "").toString().trim();
 
-    currentCar = { brand, model, year, mileage, serviceOnTime, tuning };
-    localStorage.setItem("aq_car", JSON.stringify(currentCar));
+    currentCar = { brand, model, year, mileage, serviceOnTime, tuning, isPrimary: true };
+    garage[currentCarIndex] = { ...garage[currentCarIndex], ...currentCar };
 
+    saveGarageAndCurrent();
     renderCar();
+    renderGarage();
     notifySaved();
   });
 }
 
+// Инициализация
 document.addEventListener("DOMContentLoaded", () => {
   initTelegram();
   applyTexts(currentLang);
@@ -313,5 +438,6 @@ document.addEventListener("DOMContentLoaded", () => {
   initTabs();
   initForm();
   renderCar();
+  renderGarage();
   renderRating();
 });
