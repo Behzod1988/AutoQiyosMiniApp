@@ -1,5 +1,5 @@
 // AutoQiyos Mini App — фронтенд
-// Языки: RU / UZ, никаких "здоровье" — только состояние / holati
+// Языки: RU / UZ, везде "состояние" / "holati", без "здоровье"
 
 const translations = {
   ru: {
@@ -150,7 +150,6 @@ let currentCar = null;
 function applyTranslations() {
   const dict = translations[currentLang];
 
-  // атрибуты data-i18n -> текст
   document.querySelectorAll("[data-i18n]").forEach((el) => {
     const key = el.getAttribute("data-i18n");
     const txt = dict[key];
@@ -159,7 +158,6 @@ function applyTranslations() {
     }
   });
 
-  // placeholder'ы
   document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
     const key = el.getAttribute("data-i18n-placeholder");
     const txt = dict[key];
@@ -168,20 +166,18 @@ function applyTranslations() {
     }
   });
 
-  // активная кнопка языка
   document.querySelectorAll(".lang-btn").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.lang === currentLang);
   });
 
   document.documentElement.lang = currentLang === "ru" ? "ru" : "uz";
 
-  // обновляем динамические блоки с учётом языка
   updateCarCard();
   updateGarageView();
   updateRatingView();
 }
 
-// ---------- ЗАГРУЗКА / СОХРАНЕНИЕ МАШИНЫ ----------
+// ---------- STORAGE ----------
 
 const STORAGE_KEY_CAR = "aq_my_car";
 
@@ -196,15 +192,14 @@ function loadCarFromStorage() {
     console.warn("Load car error:", e);
   }
 
-  // дефолтная демо-машина
   currentCar = {
     title: "Chevrolet Cobalt 1.5 AT",
     year: "2021",
     mileage: "45000",
     condition: 94,
-    service: "yes", // yes/no
+    service: "yes",
     mods: "Литые диски, камера заднего вида",
-    photo: null // base64
+    photo: null
   };
 }
 
@@ -216,7 +211,7 @@ function saveCarToStorage() {
   }
 }
 
-// ---------- ОТОБРАЖЕНИЕ КАРТЫ МАШИНЫ ----------
+// ---------- МОЯ МАШИНА ----------
 
 function buildCarName(car) {
   const parts = [];
@@ -266,7 +261,6 @@ function updateCarCard() {
     }
   }
 
-  // форму тоже заполняем
   const brandInput = document.getElementById("brand");
   const yearInput = document.getElementById("year");
   const mileageInput = document.getElementById("mileage");
@@ -305,7 +299,6 @@ function updateGarageView() {
     return;
   }
 
-  // 1) основная машина
   const item = document.createElement("div");
   item.className = "rating-item";
 
@@ -351,7 +344,6 @@ function updateGarageView() {
   item.appendChild(right);
   list.appendChild(item);
 
-  // 2) заблокированный второй слот
   const locked = document.createElement("div");
   locked.className = "rating-item";
 
@@ -391,7 +383,6 @@ function updateRatingView() {
 
   const dict = translations[currentLang];
 
-  // Рейтинг появляется только если есть машина и есть фото
   if (!currentCar || !currentCar.photo) {
     list.style.display = "none";
     empty.style.display = "block";
@@ -417,7 +408,7 @@ function updateRatingView() {
 
   const owner = document.createElement("div");
   owner.className = "rating-owner";
-  owner.textContent = dict.ratingYou; // "Ты" / "Siz"
+  owner.textContent = dict.ratingYou;
 
   const carLine = document.createElement("div");
   carLine.className = "rating-car";
@@ -480,16 +471,13 @@ function initTabs() {
       tab.classList.add("active");
 
       screens.forEach((scr) => {
-        scr.classList.toggle(
-          "active",
-          scr.id === `screen-${target}`
-        );
+        scr.classList.toggle("active", scr.id === `screen-${target}`);
       });
     });
   });
 }
 
-// ---------- ФОРМА МАШИНЫ ----------
+// ---------- ФОРМА ----------
 
 function initCarForm() {
   const form = document.getElementById("car-form");
@@ -525,7 +513,6 @@ function initCarForm() {
     updateRatingView();
   });
 
-  // обработка выбора фото
   const photoInput = document.getElementById("photo");
   if (photoInput) {
     photoInput.addEventListener("change", (e) => {
