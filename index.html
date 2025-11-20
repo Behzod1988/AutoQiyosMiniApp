@@ -16,7 +16,7 @@
     rel="stylesheet"
   />
 
-  <!-- ВСТРОЕННЫЙ CSS -->
+  <!-- Встроенный CSS -->
   <style>
     :root {
       --primary: #1b6cf0;
@@ -156,15 +156,53 @@
 
     .screen {
       display: none;
+      position: relative;
+      padding-top: 4px;
     }
 
     .screen.active {
       display: block;
     }
 
+    /* Фон "Моя машина" — салон */
+    #screen-home::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      opacity: 0.45;
+      background:
+        radial-gradient(circle at 10% 110%, rgba(15, 23, 42, 0.0), rgba(15, 23, 42, 0.85)),
+        radial-gradient(circle at 90% 0, rgba(56, 189, 248, 0.25), transparent 55%);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    /* Фон "Мой гараж" — гараж */
+    #screen-garage::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      opacity: 0.4;
+      background:
+        linear-gradient(to bottom, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.9) 35%, rgba(15, 23, 42, 0.85)),
+        repeating-linear-gradient(
+          -45deg,
+          rgba(30, 41, 59, 0.7),
+          rgba(30, 41, 59, 0.7) 6px,
+          rgba(15, 23, 42, 0.9) 6px,
+          rgba(15, 23, 42, 0.9) 12px
+        );
+      pointer-events: none;
+      z-index: -1;
+    }
+
     h2 {
       margin: 4px 2px 4px;
       font-size: 18px;
+    }
+
+    h2:empty {
+      margin: 0;
     }
 
     .muted {
@@ -185,18 +223,75 @@
       padding: 10px 12px 12px;
       margin-bottom: 10px;
       box-shadow: var(--shadow-soft);
+      position: relative;
+      overflow: hidden;
     }
 
     .card-header {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 6px;
       margin-bottom: 8px;
     }
 
     .card-body {
       font-size: 13px;
+    }
+
+    /* Car hero (салон + кузов) */
+    .car-hero::before {
+      content: "";
+      position: absolute;
+      inset: -30%;
+      background:
+        radial-gradient(circle at 0% 120%, rgba(15, 23, 42, 0.0), rgba(15, 23, 42, 0.9)),
+        radial-gradient(circle at 90% -10%, rgba(56, 189, 248, 0.35), rgba(15, 23, 42, 0.98) 55%);
+      opacity: 0.9;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .car-hero-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .car-hero-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+    }
+
+    .car-photo-frame {
+      position: relative;
+      width: 110px;
+      height: 64px;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      background:
+        radial-gradient(circle at 0% 0%, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.8)),
+        linear-gradient(135deg, rgba(30, 64, 175, 0.7), rgba(15, 23, 42, 0.9));
+    }
+
+    .car-photo-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+    }
+
+    .car-photo-placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      background: radial-gradient(circle at 50% 0%, rgba(148, 163, 184, 0.2), rgba(15, 23, 42, 0.95));
     }
 
     /* Car info */
@@ -238,6 +333,7 @@
       background: rgba(15, 23, 42, 0.85);
       border: 1px dashed rgba(148, 163, 184, 0.4);
       padding: 6px 8px;
+      margin-top: 8px;
     }
 
     .stat-row {
@@ -302,6 +398,115 @@
       cursor: pointer;
       background: radial-gradient(circle at 10% 0, #38bdf8, #1d4ed8);
       color: #e5f2ff;
+    }
+
+    /* Гараж */
+    .garage-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .garage-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 9px;
+      border-radius: var(--radius-md);
+      background: rgba(15, 23, 42, 0.92);
+      border: 1px solid rgba(148, 163, 184, 0.6);
+    }
+
+    .garage-card.primary {
+      border-color: rgba(96, 165, 250, 0.9);
+      box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.5);
+    }
+
+    .garage-card.locked {
+      border-style: dashed;
+      opacity: 0.9;
+      background: rgba(15, 23, 42, 0.7);
+    }
+
+    .garage-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .garage-thumb {
+      width: 56px;
+      height: 36px;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      background:
+        radial-gradient(circle at 0% 0%, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.8)),
+        linear-gradient(135deg, rgba(30, 64, 175, 0.7), rgba(15, 23, 42, 0.9));
+      flex-shrink: 0;
+    }
+
+    .garage-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .garage-thumb-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .garage-main {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      font-size: 12px;
+    }
+
+    .garage-title {
+      font-weight: 600;
+    }
+
+    .garage-meta {
+      color: var(--text-muted);
+      font-size: 11px;
+    }
+
+    .garage-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .garage-health-value {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--accent-good);
+    }
+
+    .garage-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 7px;
+      border-radius: 999px;
+      border: 1px solid rgba(96, 165, 250, 0.8);
+      color: #bfdbfe;
+      font-size: 10px;
+      margin-top: 2px;
+    }
+
+    .garage-note {
+      margin-bottom: 4px;
     }
 
     /* Rating list */
@@ -375,77 +580,29 @@
       color: var(--accent-good);
     }
 
-    /* Гараж */
-    .garage-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .garage-card {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 9px;
-      border-radius: var(--radius-md);
-      background: rgba(15, 23, 42, 0.92);
-      border: 1px solid rgba(148, 163, 184, 0.6);
-    }
-
-    .garage-card.primary {
-      border-color: rgba(96, 165, 250, 0.9);
-      box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.5);
-    }
-
-    .garage-card.locked {
-      border-style: dashed;
-      opacity: 0.9;
-      background: rgba(15, 23, 42, 0.7);
-    }
-
-    .garage-main {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      font-size: 12px;
-    }
-
-    .garage-title {
-      font-weight: 600;
-    }
-
-    .garage-meta {
-      color: var(--text-muted);
-      font-size: 11px;
-    }
-
-    .garage-right {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      font-size: 11px;
-      color: var(--text-muted);
-    }
-
-    .garage-health-value {
-      font-size: 16px;
-      font-weight: 700;
-      color: var(--accent-good);
-    }
-
-    .garage-pill {
+    /* Переключатель режимов рейтинга */
+    .rating-mode-switch {
       display: inline-flex;
-      align-items: center;
-      padding: 2px 7px;
+      padding: 3px;
       border-radius: 999px;
-      border: 1px solid rgba(96, 165, 250, 0.8);
-      color: #bfdbfe;
-      font-size: 10px;
-      margin-top: 2px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      margin: 0 2px 8px;
     }
 
-    .garage-note {
-      margin-bottom: 4px;
+    .rating-mode-btn {
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 11px;
+      padding: 4px 9px;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+
+    .rating-mode-btn.active {
+      background: radial-gradient(circle at 20% 0, #38bdf8, #1d4ed8);
+      color: #e5f2ff;
     }
 
     /* Адаптив */
@@ -460,6 +617,15 @@
 
       .app-name {
         font-size: 16px;
+      }
+
+      .car-hero-top {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .car-hero-right {
+        align-items: flex-start;
       }
     }
   </style>
@@ -491,20 +657,28 @@
 
     <!-- Контент -->
     <main class="screens">
-      <!-- Моя машина / Health-tracker -->
+      <!-- Моя машина -->
       <section id="screen-home" class="screen active">
         <h2 data-i18n="home_title"></h2>
         <p class="muted" data-i18n="home_desc"></p>
 
-        <div class="card">
-          <div class="card-header">
+        <div class="card car-hero">
+          <div class="car-hero-top">
             <div>
               <div class="badge" data-i18n="your_car"></div>
               <div class="car-main" id="car-title">Chevrolet Cobalt 2021</div>
             </div>
-            <div class="health">
-              <span data-i18n="health"></span>
-              <span id="health-score">82</span>
+            <div class="car-hero-right">
+              <div class="car-photo-frame">
+                <img id="car-photo-main" alt="Фото машины" />
+                <div class="car-photo-placeholder" id="car-photo-placeholder">
+                  <span>Фото авто</span>
+                </div>
+              </div>
+              <div class="health">
+                <span data-i18n="health"></span>
+                <span id="health-score">82</span>
+              </div>
             </div>
           </div>
           <div class="card-body" id="car-stats"></div>
@@ -530,7 +704,7 @@
               </div>
               <div class="field">
                 <label data-i18n="field_mileage"></label>
-                <input type="number" name="mileage" min="0" step="1000" required />
+                <input type="number" name="mileage" min="0" step="1" required />
               </div>
               <div class="field">
                 <label data-i18n="field_service"></label>
@@ -543,6 +717,11 @@
               <div class="field">
                 <label data-i18n="field_tuning"></label>
                 <textarea name="tuning" rows="2"></textarea>
+              </div>
+              <div class="field">
+                <label data-i18n="field_photo"></label>
+                <input type="file" id="car-photo-input" accept="image/*" />
+                <div class="hint" data-i18n="photo_hint"></div>
               </div>
 
               <button type="submit" class="primary-btn" data-i18n="btn_save"></button>
@@ -560,10 +739,23 @@
         <div id="garage-list" class="garage-list"></div>
       </section>
 
-      <!-- Рейтинг владельцев -->
+      <!-- Рейтинг -->
       <section id="screen-rating" class="screen">
         <h2 data-i18n="rating_title"></h2>
         <p class="muted" data-i18n="rating_desc"></p>
+
+        <div class="rating-mode-switch">
+          <button
+            class="rating-mode-btn active"
+            data-mode="owners"
+            data-i18n="rating_mode_owners"
+          ></button>
+          <button
+            class="rating-mode-btn"
+            data-mode="cars"
+            data-i18n="rating_mode_cars"
+          ></button>
+        </div>
 
         <div id="rating-list" class="list"></div>
       </section>
