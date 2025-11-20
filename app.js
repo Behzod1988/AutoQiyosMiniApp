@@ -1,544 +1,553 @@
-// AutoQiyos Mini App — фронтенд
-// Языки: RU / UZ, везде "состояние" / "holati", без "здоровье"
+const tg = window.Telegram ? window.Telegram.WebApp : null;
 
-const translations = {
+// Тексты RU / UZ
+const TEXTS = {
   ru: {
-    appName: "AutoQiyos",
-    subtitle: "Честный рейтинг и состояние твоего авто",
+    subtitle: "Реальный рейтинг и здоровье авто",
 
-    tabMyCar: "Моя машина",
-    tabGarage: "Мой гараж",
-    tabRating: "Рейтинг",
-    tabAds: "Объявления",
+    tab_home: "Моя машина",
+    tab_garage: "Мой гараж",
+    tab_rating: "Рейтинг",
+    tab_market: "Объявления",
 
-    myCarTitle: "Твоя машина",
-    myCarHint:
-      "Заполни данные по машине, следи за состоянием и попади в рейтинг владельцев.",
-    myCarBadge: "Текущая машина",
-    conditionLabel: "Состояние",
+    home_title: "",
+    home_desc: "Заполни данные по машине, следи за состоянием и попади в рейтинг владельцев.",
 
-    statMileage: "Пробег, км",
-    statService: "Обслуживание вовремя",
-    statMods: "Особенности / тюнинг",
+    your_car: "Твоя машина",
+    health: "Здоровье",
 
-    editTitle: "Обновить данные",
-    fieldBrand: "Марка и модель",
-    fieldYear: "Год",
-    fieldMileage: "Пробег, км",
-    fieldCondition: "Состояние (0–100)",
-    fieldService: "Обслуживание вовремя",
-    serviceYes: "Да",
-    serviceNo: "Нет",
-    serviceHint: "Отмечай, если ТО проходишь по регламенту.",
-    fieldMods: "Особенности / тюнинг",
-    fieldPhoto: "Фото машины",
-    photoHint:
-      "Загрузите реальное фото для модерации и участия в рейтинге.",
-    saveBtn: "Сохранить",
-    localNote:
-      "Данные хранятся только у тебя на устройстве (localStorage).",
-    photoPreview: "Фото твоей машины для рейтинга:",
+    update_title: "Обновить данные",
+    field_brand: "Марка",
+    field_model: "Модель",
+    field_year: "Год",
+    field_mileage: "Пробег, км",
+    field_service: "Обслуживание вовремя",
+    field_tuning: "Особенности / тюнинг",
+    field_photo: "Фото автомобиля",
+    btn_save: "Сохранить",
+    save_hint: "Данные хранятся только у тебя на устройстве.",
 
-    placeholderBrand: "Chevrolet Cobalt 1.5 AT",
-    placeholderYear: "2021",
-    placeholderMileage: "45000",
-    placeholderCondition: "94",
-    placeholderMods: "Литые диски, камера заднего вида",
+    service_hint: "Отмечай, если ТО проходишь по регламенту.",
+    photo_hint: "Загрузи реальное фото своей машины — без него рейтинг будет недоступен.",
+    label_yes: "Да",
+    label_no: "Нет",
 
-    garageTitle: "Мой гараж",
-    garageHint:
-      "Храни все свои машины в одном месте. Вторая и следующие ячейки могут быть платными.",
-    addCarBtn: "Добавить машину в гараж",
-    garageEmpty:
-      "Пока в гараже пусто. Сначала заполни данные во вкладке «Моя машина».",
-    lockedSlotTitle: "Вторая ячейка",
-    lockedSlotHint: "Будет доступна в платной версии.",
+    // Гараж
+    garage_title: "Мой гараж",
+    garage_desc: "Здесь собраны все твои машины. Бесплатно ведём одну, остальные — премиум-ячейки.",
+    garage_primary: "Основная машина",
+    garage_health: "Здоровье",
+    garage_free_note: "Сейчас можно бесплатно добавить и вести одну машину. Вторая и далее — платно.",
+    garage_premium_title: "Премиум-ячейка",
+    garage_premium_body: "Вторая машина будет доступна по подписке AutoQiyos (скоро).",
 
-    ratingTitle: "Рейтинг владельцев и машин",
-    ratingEmpty:
-      "Пока ещё никто не добавил свою машину. Добавь свой авто во вкладке «Моя машина», и здесь появится рейтинг.",
-    ratingYou: "Ты",
-    ratingCondition: "состояние",
+    // Рейтинг
+    rating_title: "Рейтинг",
+    rating_desc: "Здесь появится рейтинг владельцев и моделей после добавления машин.",
+    rating_mode_owners: "Владельцы",
+    rating_mode_cars: "Модели",
+    rating_badge: "Топ–5 по модели",
+    rating_pos: "место",
+    rating_health: "здоровье",
+    rating_empty:
+      "Пока ещё никто не добавил свою машину. Добавь своё авто с фото — после модерации оно появится в рейтинге.",
+    rating_local_notice:
+      "Сейчас ты видишь только своё авто. Общий рейтинг по всей стране появится после подключения серверной части.",
 
-    adsTitle: "Объявления AutoQiyos",
-    adsHint:
-      "Здесь будут честные объявления с оценкой состояния и цены. В текущем MVP показываем только пример.",
-    adsExampleLabel: "Пример объявления",
-    adsExampleText:
-      "Chevrolet Cobalt 2022, 1.5, автомат, 45 000 км. Состояние 92/100. Оценка цены: адекватно. Размещение объявлений будет доступно через бота AutoQiyos.",
-
-    addCarAlert:
-      "Со второго слота гараж будет платным. Пока можете редактировать только основную машину."
+    // Объявления
+    market_title: "Объявления AutoQiyos",
+    market_desc:
+      "Здесь будут честные объявления с оценкой цены. В текущем MVP показываем только пример.",
+    market_demo_title: "Пример объявления",
+    market_demo_body:
+      "Chevrolet Cobalt 2022, 1.5, автомат, 45 000 км. Оценка цены: адекватно. Размещение объявлений будет доступно через бота."
   },
-
   uz: {
-    appName: "AutoQiyos",
-    subtitle: "Mashingning holati va halol reytingi",
+    subtitle: "Avto holati va reyting",
 
-    tabMyCar: "Mening mashinam",
-    tabGarage: "Garajim",
-    tabRating: "Reyting",
-    tabAds: "Eʼlonlar",
+    tab_home: "Mening mashinam",
+    tab_garage: "Mening garajim",
+    tab_rating: "Reyting",
+    tab_market: "E'lonlar",
 
-    myCarTitle: "Sizning mashingiz",
-    myCarHint:
-      "Mashingiz haqidagi maʼlumotlarni kiriting, holatini kuzating va egalar reytingiga chiqing.",
-    myCarBadge: "Asosiy mashina",
-    conditionLabel: "Holati",
+    home_title: "",
+    home_desc:
+      "Mashinangiz haqidagi maʼlumotlarni kiriting, holatini kuzating va reytingga chiqing.",
 
-    statMileage: "Yurgan masofa, km",
-    statService: "Texnik xizmat o‘z vaqtida",
-    statMods: "Qo‘shimcha / tyuning",
+    your_car: "Sizning mashinangiz",
+    health: "Sog‘lik",
 
-    editTitle: "Maʼlumotlarni yangilash",
-    fieldBrand: "Brend va model",
-    fieldYear: "Yili",
-    fieldMileage: "Yurgan masofa, km",
-    fieldCondition: "Holati (0–100)",
-    fieldService: "Texnik xizmat o‘z vaqtida",
-    serviceYes: "Ha",
-    serviceNo: "Yo‘q",
-    serviceHint:
-      "Agar TO reglament bo‘yicha o‘tayotgan bo‘lsangiz, belgilab qo‘ying.",
-    fieldMods: "Qo‘shimcha / tyuning",
-    fieldPhoto: "Mashina rasmi",
-    photoHint:
-      "Moderatsiya va reyting uchun haqiqiy mashina rasmini yuklang.",
-    saveBtn: "Saqlash",
-    localNote:
-      "Maʼlumotlar faqat sizning qurilmangizda saqlanadi (localStorage).",
-    photoPreview: "Reyting uchun mashingiz rasmi:",
+    update_title: "Maʼlumotni yangilash",
+    field_brand: "Brend",
+    field_model: "Model",
+    field_year: "Yil",
+    field_mileage: "Yurish, km",
+    field_service: "Texnik xizmat o‘z vaqtida",
+    field_tuning: "Qo‘shimcha opsiyalar / tyuning",
+    field_photo: "Avtomobil surati",
+    btn_save: "Saqlash",
+    save_hint: "Maʼlumot faqat sizning qurilmangizda saqlanadi.",
 
-    placeholderBrand: "Chevrolet Cobalt 1.5 AT",
-    placeholderYear: "2021",
-    placeholderMileage: "45000",
-    placeholderCondition: "94",
-    placeholderMods: "Disklar, orqa kamera",
+    service_hint: "Agar TO reglament bo‘yicha o‘tgan bo‘lsa, belgilang.",
+    photo_hint: "Rejalik avtomobil rasmini yuklang — rasimsiz reytingda qatnashib bo‘lmaydi.",
+    label_yes: "Ha",
+    label_no: "Yo‘q",
 
-    garageTitle: "Garajim",
-    garageHint:
-      "Barcha mashinalaringizni bir joyda saqlang. Ikkinchi va keyingi slotlar pullik bo‘lishi mumkin.",
-    addCarBtn: "Garajga mashina qo‘shish",
-    garageEmpty:
-      "Hozircha garaj bo‘sh. Avval «Mening mashinam» bo‘limida maʼlumot kiriting.",
-    lockedSlotTitle: "Ikkinchi slot",
-    lockedSlotHint: "Pullik versiyada ochiladi.",
+    // Garaj
+    garage_title: "Mening garajim",
+    garage_desc:
+      "Bu yerda barcha mashinalaringiz. Hozircha 1 ta mashinani bepul yuritish mumkin, qolganlari — premium uyachalar.",
+    garage_primary: "Asosiy mashina",
+    garage_health: "Sog‘lik",
+    garage_free_note: "Hozircha 1 ta mashina bepul. Ikkinchi va boshqalar pullik bo‘ladi.",
+    garage_premium_title: "Premium uyacha",
+    garage_premium_body:
+      "Ikkinchi mashina tez orada AutoQiyos obunasi orqali ochiladi (yaqinda).",
 
-    ratingTitle: "Avtomobillar va egalari reytingi",
-    ratingEmpty:
-      "Hozircha hech kim mashinasini qo‘shmagan. «Mening mashinam» bo‘limida avtomobilni kiritsangiz, reyting shu yerda paydo bo‘ladi.",
-    ratingYou: "Siz",
-    ratingCondition: "holati",
+    // Reyting
+    rating_title: "Reyting",
+    rating_desc: "Mashinalar qo‘shilgach, egalari va modellar reytingi bu yerda ko‘rinadi.",
+    rating_mode_owners: "Egalari",
+    rating_mode_cars: "Modellar",
+    rating_badge: "Model bo‘yicha Top–5",
+    rating_pos: "o‘rin",
+    rating_health: "sog‘lik",
+    rating_empty:
+      "Hozircha hech kim mashinasini qo‘shmadi. Mashinangizni rasm bilan qo‘shing — moderatsiyadan so‘ng reytingda ko‘rinadi.",
+    rating_local_notice:
+      "Hozircha faqat o‘z mashinangizni ko‘ryapsiz. Umumiy reyting server ulangandan keyin paydo bo‘ladi.",
 
-    adsTitle: "AutoQiyos eʼlonlari",
-    adsHint:
-      "Bu yerda mashinaning holati va narxi bo‘yicha halol baholangan eʼlonlar bo‘ladi. Hozircha faqat namunaviy eʼlon ko‘rsatilgan.",
-    adsExampleLabel: "Namunaviy eʼlon",
-    adsExampleText:
-      "Chevrolet Cobalt 2022, 1.5, avtomat, 45 000 km. Holati 92/100. Narx bahosi: o‘rinli. Eʼlon joylash bot orqali yoqiladi.",
-
-    addCarAlert:
-      "Ikkinchi garaj sloti pullik bo‘ladi. Hozircha faqat asosiy mashinani tahrirlash mumkin."
+    // E'lonlar
+    market_title: "AutoQiyos e'lonlari",
+    market_desc:
+      "Bu yerda adolatli baholangan eʼlonlar bo‘ladi. Hozircha faqat namuna ko‘rsatilgan.",
+    market_demo_title: "Namuna e'lon",
+    market_demo_body:
+      "Chevrolet Cobalt 2022, 1.5, avtomat, 45 000 km. Narx bahosi: adekvat. Eʼlon joylash tez orada bot orqali ishlaydi."
   }
 };
 
 let currentLang = localStorage.getItem("aq_lang") || "ru";
-let currentCar = null;
 
-// ---------- ЛОКАЛИЗАЦИЯ ----------
+const defaultCar = {
+  brand: "Chevrolet Cobalt",
+  model: "1.5 AT",
+  year: 2021,
+  mileage: 45000,
+  serviceOnTime: true,
+  tuning: "Литые диски, камера заднего вида"
+};
 
-function applyTranslations() {
-  const dict = translations[currentLang];
+// Старый формат (одна машина)
+function loadSingleCarFromStorage() {
+  try {
+    const raw = localStorage.getItem("aq_car");
+    if (!raw) return { ...defaultCar };
+    const parsed = JSON.parse(raw);
+    return { ...defaultCar, ...parsed };
+  } catch (e) {
+    return { ...defaultCar };
+  }
+}
+
+// Новый формат — гараж
+function loadGarage() {
+  try {
+    const raw = localStorage.getItem("aq_garage");
+    if (raw) {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr) && arr.length) {
+        return arr.map((car, index) => ({
+          ...defaultCar,
+          ...car,
+          isPrimary: car.isPrimary ?? index === 0
+        }));
+      }
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  const one = loadSingleCarFromStorage();
+  return [{ ...one, isPrimary: true }];
+}
+
+let garage = loadGarage();
+let currentCarIndex = garage.findIndex((c) => c.isPrimary);
+if (currentCarIndex === -1) {
+  currentCarIndex = 0;
+  garage[0].isPrimary = true;
+}
+let currentCar = { ...garage[currentCarIndex] };
+
+let ratingMode = "owners";
+
+function initTelegram() {
+  if (!tg) return;
+  tg.ready();
+  tg.expand();
+}
+
+// Формула здоровья
+function calcHealthScore(car) {
+  let score = 100;
+
+  const mileage = Number(car.mileage) || 0;
+  score -= Math.min(40, Math.floor(mileage / 20000) * 8);
+
+  const year = Number(car.year) || 2010;
+  const age = new Date().getFullYear() - year;
+  if (age > 8) {
+    score -= Math.min(20, (age - 8) * 3);
+  }
+
+  if (car.serviceOnTime) score += 10;
+  else score -= 10;
+
+  score = Math.max(20, Math.min(100, score));
+  return score;
+}
+
+// Тексты
+function applyTexts(lang) {
+  const dict = TEXTS[lang];
 
   document.querySelectorAll("[data-i18n]").forEach((el) => {
     const key = el.getAttribute("data-i18n");
-    const txt = dict[key];
-    if (typeof txt === "string") {
-      el.textContent = txt;
+    if (dict[key] !== undefined) {
+      el.textContent = dict[key];
     }
   });
 
-  document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
-    const key = el.getAttribute("data-i18n-placeholder");
-    const txt = dict[key];
-    if (typeof txt === "string") {
-      el.placeholder = txt;
-    }
+  document.querySelectorAll("[data-i18n-opt-yes]").forEach((el) => {
+    el.textContent = dict.label_yes;
   });
-
-  document.querySelectorAll(".lang-btn").forEach((btn) => {
-    btn.classList.toggle("active", btn.dataset.lang === currentLang);
+  document.querySelectorAll("[data-i18n-opt-no]").forEach((el) => {
+    el.textContent = dict.label_no;
   });
-
-  document.documentElement.lang = currentLang === "ru" ? "ru" : "uz";
-
-  updateCarCard();
-  updateGarageView();
-  updateRatingView();
 }
 
-// ---------- STORAGE ----------
+// Фото на главной
+function renderCarPhoto() {
+  const img = document.getElementById("car-photo-main");
+  const placeholder = document.getElementById("car-photo-placeholder");
+  if (!img || !placeholder) return;
 
-const STORAGE_KEY_CAR = "aq_my_car";
+  if (currentCar.photoData) {
+    img.src = currentCar.photoData;
+    img.style.display = "block";
+    placeholder.style.display = "none";
+  } else {
+    img.src = "";
+    img.style.display = "none";
+    placeholder.style.display = "flex";
+  }
+}
 
-function loadCarFromStorage() {
+// Рендер главной машины
+function renderCar() {
+  const health = calcHealthScore(currentCar);
+  const dict = TEXTS[currentLang];
+
+  const titleEl = document.getElementById("car-title");
+  const healthEl = document.getElementById("health-score");
+  const statsEl = document.getElementById("car-stats");
+
+  if (titleEl) {
+    titleEl.textContent = `${currentCar.brand} ${currentCar.model} ${currentCar.year}`;
+  }
+  if (healthEl) {
+    healthEl.textContent = health;
+  }
+  if (statsEl) {
+    const mileageLabel = dict.field_mileage;
+    const serviceLabel = dict.field_service;
+    const tuningLabel = dict.field_tuning;
+    const yes = dict.label_yes;
+    const no = dict.label_no;
+
+    const mileageStr = (Number(currentCar.mileage) || 0).toLocaleString("ru-RU") + " км";
+
+    statsEl.innerHTML = `
+      <div class="stat-row">
+        <span>${mileageLabel}</span>
+        <span>${mileageStr}</span>
+      </div>
+      <div class="stat-row">
+        <span>${serviceLabel}</span>
+        <span>${currentCar.serviceOnTime ? yes : no}</span>
+      </div>
+      <div class="stat-row">
+        <span>${tuningLabel}</span>
+        <span>${currentCar.tuning ? currentCar.tuning : "-"}</span>
+      </div>
+    `;
+  }
+
+  const form = document.getElementById("car-form");
+  if (form) {
+    form.brand.value = currentCar.brand || "";
+    form.model.value = currentCar.model || "";
+    form.year.value = currentCar.year || "";
+    form.mileage.value = currentCar.mileage || "";
+    form.tuning.value = currentCar.tuning || "";
+    form.serviceOnTime.value = currentCar.serviceOnTime ? "yes" : "no";
+  }
+
+  renderCarPhoto();
+}
+
+// Сохранение
+function saveGarageAndCurrent() {
+  garage[currentCarIndex] = { ...garage[currentCarIndex], ...currentCar };
   try {
-    const raw = localStorage.getItem(STORAGE_KEY_CAR);
-    if (raw) {
-      currentCar = JSON.parse(raw);
-      return;
-    }
+    localStorage.setItem("aq_garage", JSON.stringify(garage));
+    localStorage.setItem("aq_car", JSON.stringify(currentCar));
   } catch (e) {
-    console.warn("Load car error:", e);
-  }
-
-  currentCar = {
-    title: "Chevrolet Cobalt 1.5 AT",
-    year: "2021",
-    mileage: "45000",
-    condition: 94,
-    service: "yes",
-    mods: "Литые диски, камера заднего вида",
-    photo: null
-  };
-}
-
-function saveCarToStorage() {
-  try {
-    localStorage.setItem(STORAGE_KEY_CAR, JSON.stringify(currentCar));
-  } catch (e) {
-    console.warn("Save car error:", e);
+    // ignore
   }
 }
 
-// ---------- МОЯ МАШИНА ----------
+// Гараж
+function renderGarage() {
+  const container = document.getElementById("garage-list");
+  if (!container) return;
+  const dict = TEXTS[currentLang];
 
-function buildCarName(car) {
-  const parts = [];
-  if (car.title) parts.push(car.title);
-  if (car.year) parts.push(car.year);
-  return parts.join(" ");
+  const cards = [];
+
+  garage.forEach((car) => {
+    const health = calcHealthScore(car);
+    const mileageStr = (Number(car.mileage) || 0).toLocaleString("ru-RU") + " км";
+    const primaryPill = car.isPrimary ? `<span class="garage-pill">${dict.garage_primary}</span>` : "";
+
+    const thumbHtml = car.photoData
+      ? `<img src="${car.photoData}" alt="car" />`
+      : `<div class="garage-thumb-placeholder">AQ</div>`;
+
+    cards.push(`
+      <div class="garage-card ${car.isPrimary ? "primary" : ""}">
+        <div class="garage-left">
+          <div class="garage-thumb">
+            ${thumbHtml}
+          </div>
+          <div class="garage-main">
+            <div class="garage-title">${car.brand} ${car.model} ${car.year}</div>
+            <div class="garage-meta">${mileageStr}</div>
+            ${primaryPill}
+          </div>
+        </div>
+        <div class="garage-right">
+          <div class="garage-health-label">${dict.garage_health}</div>
+          <div class="garage-health-value">${health}</div>
+        </div>
+      </div>
+    `);
+  });
+
+  // Премиум-ячейка
+  cards.push(`
+    <div class="garage-card locked">
+      <div class="garage-main">
+        <div class="garage-title">🔒 ${dict.garage_premium_title}</div>
+        <div class="garage-meta">${dict.garage_premium_body}</div>
+      </div>
+    </div>
+  `);
+
+  container.innerHTML = `
+    <div class="garage-note muted small">${dict.garage_free_note}</div>
+    ${cards.join("")}
+  `;
 }
 
-function updateCarCard() {
-  if (!currentCar) return;
-  const dict = translations[currentLang];
+// Рейтинг
+function renderRating() {
+  const container = document.getElementById("rating-list");
+  if (!container) return;
+  const dict = TEXTS[currentLang];
+  const hasPhoto = !!currentCar.photoData;
 
-  const nameEl = document.getElementById("current-car-name");
-  const condEl = document.getElementById("current-car-condition");
-  const mileageEl = document.getElementById("stat-mileage");
-  const serviceEl = document.getElementById("stat-service");
-  const modsEl = document.getElementById("stat-mods");
-  const previewWrapper = document.getElementById("photo-preview-wrapper");
-  const previewImg = document.getElementById("car-photo-preview");
-
-  if (nameEl) nameEl.textContent = buildCarName(currentCar);
-  if (condEl)
-    condEl.textContent =
-      currentCar.condition !== undefined && currentCar.condition !== null
-        ? currentCar.condition
-        : "—";
-  if (mileageEl) mileageEl.textContent = currentCar.mileage || "—";
-
-  if (serviceEl) {
-    if (currentCar.service === "yes") {
-      serviceEl.textContent = dict.serviceYes;
-    } else if (currentCar.service === "no") {
-      serviceEl.textContent = dict.serviceNo;
-    } else {
-      serviceEl.textContent = "—";
-    }
-  }
-
-  if (modsEl) modsEl.textContent = currentCar.mods || "—";
-
-  if (previewWrapper && previewImg) {
-    if (currentCar.photo) {
-      previewImg.src = currentCar.photo;
-      previewWrapper.style.display = "block";
-    } else {
-      previewWrapper.style.display = "none";
-    }
-  }
-
-  const brandInput = document.getElementById("brand");
-  const yearInput = document.getElementById("year");
-  const mileageInput = document.getElementById("mileage");
-  const conditionInput = document.getElementById("condition");
-  const modsInput = document.getElementById("mods");
-  const serviceSelect = document.getElementById("service");
-
-  if (brandInput) brandInput.value = currentCar.title || "";
-  if (yearInput) yearInput.value = currentCar.year || "";
-  if (mileageInput) mileageInput.value = currentCar.mileage || "";
-  if (conditionInput)
-    conditionInput.value =
-      currentCar.condition !== undefined && currentCar.condition !== null
-        ? currentCar.condition
-        : "";
-  if (modsInput) modsInput.value = currentCar.mods || "";
-  if (serviceSelect && currentCar.service) {
-    serviceSelect.value = currentCar.service;
-  }
-}
-
-// ---------- ГАРАЖ ----------
-
-function updateGarageView() {
-  const list = document.getElementById("garage-list");
-  if (!list) return;
-
-  const dict = translations[currentLang];
-  list.innerHTML = "";
-
-  if (!currentCar) {
-    const p = document.createElement("p");
-    p.className = "muted";
-    p.textContent = dict.garageEmpty;
-    list.appendChild(p);
+  if (!hasPhoto) {
+    container.innerHTML = `<p class="muted small">${dict.rating_empty}</p>`;
     return;
   }
 
-  const item = document.createElement("div");
-  item.className = "rating-item";
+  const health = calcHealthScore(currentCar);
+  const carTitle = `${currentCar.brand} ${currentCar.model} ${currentCar.year}`;
+  const mileageStr = (Number(currentCar.mileage) || 0).toLocaleString("ru-RU") + " км";
 
-  const left = document.createElement("div");
-  left.className = "rating-left";
+  const username =
+    tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.username
+      ? "@" + tg.initDataUnsafe.user.username
+      : currentLang === "ru"
+      ? "Вы"
+      : "Siz";
 
-  const pos = document.createElement("div");
-  pos.className = "rating-pos";
-  pos.textContent = "1";
-
-  const main = document.createElement("div");
-  main.className = "rating-main";
-
-  const owner = document.createElement("div");
-  owner.className = "rating-owner";
-  owner.textContent = currentCar.title || "—";
-
-  const carLine = document.createElement("div");
-  carLine.className = "rating-car";
-  carLine.textContent = currentCar.year || "";
-
-  main.appendChild(owner);
-  main.appendChild(carLine);
-
-  left.appendChild(pos);
-  left.appendChild(main);
-
-  const right = document.createElement("div");
-  right.className = "rating-right";
-
-  if (currentCar.photo) {
-    const img = document.createElement("img");
-    img.src = currentCar.photo;
-    img.alt = "Car";
-    img.style.width = "68px";
-    img.style.height = "42px";
-    img.style.objectFit = "cover";
-    img.style.borderRadius = "10px";
-    right.appendChild(img);
+  if (ratingMode === "owners") {
+    container.innerHTML = `
+      <div class="rating-item">
+        <div class="rating-left">
+          <div class="rating-pos top-1">1</div>
+          <div class="rating-main">
+            <div class="rating-owner">${username}</div>
+            <div class="rating-car">${carTitle}</div>
+          </div>
+        </div>
+        <div class="rating-right">
+          <span>${dict.rating_health}</span>
+          <span class="rating-health">${health}</span>
+        </div>
+      </div>
+      <p class="muted small">${dict.rating_local_notice}</p>
+    `;
+  } else {
+    container.innerHTML = `
+      <div class="rating-item">
+        <div class="rating-left">
+          <div class="rating-pos top-1">1</div>
+          <div class="rating-main">
+            <div class="rating-owner">${carTitle}</div>
+            <div class="rating-car">${mileageStr}</div>
+          </div>
+        </div>
+        <div class="rating-right">
+          <span>${dict.rating_health}</span>
+          <span class="rating-health">${health}</span>
+        </div>
+      </div>
+      <p class="muted small">${dict.rating_local_notice}</p>
+    `;
   }
-
-  item.appendChild(left);
-  item.appendChild(right);
-  list.appendChild(item);
-
-  const locked = document.createElement("div");
-  locked.className = "rating-item";
-
-  const lockedMain = document.createElement("div");
-  lockedMain.className = "rating-main";
-
-  const lockedTitle = document.createElement("div");
-  lockedTitle.className = "rating-owner";
-  lockedTitle.textContent = dict.lockedSlotTitle;
-
-  const lockedHint = document.createElement("div");
-  lockedHint.className = "rating-car";
-  lockedHint.textContent = dict.lockedSlotHint;
-
-  lockedMain.appendChild(lockedTitle);
-  lockedMain.appendChild(lockedHint);
-
-  locked.appendChild(lockedMain);
-  list.appendChild(locked);
 }
 
-function initGarageButton() {
-  const btn = document.getElementById("add-car-btn");
-  if (!btn) return;
-  btn.addEventListener("click", () => {
-    const dict = translations[currentLang];
-    alert(dict.addCarAlert);
-  });
-}
-
-// ---------- РЕЙТИНГ ----------
-
-function updateRatingView() {
-  const list = document.getElementById("rating-list");
-  const empty = document.getElementById("rating-empty");
-  if (!list || !empty) return;
-
-  const dict = translations[currentLang];
-
-  if (!currentCar || !currentCar.photo) {
-    list.style.display = "none";
-    empty.style.display = "block";
-    return;
-  }
-
-  list.innerHTML = "";
-  empty.style.display = "none";
-  list.style.display = "flex";
-
-  const item = document.createElement("div");
-  item.className = "rating-item";
-
-  const left = document.createElement("div");
-  left.className = "rating-left";
-
-  const pos = document.createElement("div");
-  pos.className = "rating-pos top-1";
-  pos.textContent = "1";
-
-  const main = document.createElement("div");
-  main.className = "rating-main";
-
-  const owner = document.createElement("div");
-  owner.className = "rating-owner";
-  owner.textContent = dict.ratingYou;
-
-  const carLine = document.createElement("div");
-  carLine.className = "rating-car";
-  carLine.textContent = buildCarName(currentCar);
-
-  main.appendChild(owner);
-  main.appendChild(carLine);
-
-  left.appendChild(pos);
-  left.appendChild(main);
-
-  const right = document.createElement("div");
-  right.className = "rating-right";
-
-  const condSpan = document.createElement("span");
-  condSpan.className = "rating-health";
-  condSpan.textContent =
-    currentCar.condition !== undefined && currentCar.condition !== null
-      ? currentCar.condition
-      : "0";
-
-  const labelSpan = document.createElement("span");
-  labelSpan.className = "small";
-  labelSpan.textContent = dict.ratingCondition; // "состояние" / "holati"
-
-  right.appendChild(condSpan);
-  right.appendChild(labelSpan);
-
-  item.appendChild(left);
-  item.appendChild(right);
-  list.appendChild(item);
-}
-
-// ---------- ЯЗЫКИ ----------
-
+// Языки
 function initLangSwitch() {
-  document.querySelectorAll(".lang-btn").forEach((btn) => {
+  const buttons = document.querySelectorAll(".lang-btn");
+  buttons.forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.lang === currentLang);
     btn.addEventListener("click", () => {
       const lang = btn.dataset.lang;
-      if (!lang || lang === currentLang) return;
+      if (lang === currentLang) return;
       currentLang = lang;
       localStorage.setItem("aq_lang", currentLang);
-      applyTranslations();
+      buttons.forEach((b) => b.classList.toggle("active", b.dataset.lang === currentLang));
+      applyTexts(currentLang);
+      renderCar();
+      renderGarage();
+      renderRating();
     });
   });
 }
 
-// ---------- ТАБЫ ----------
-
+// Вкладки
 function initTabs() {
-  const tabs = document.querySelectorAll(".tab-btn");
+  const buttons = document.querySelectorAll(".tab-btn");
   const screens = document.querySelectorAll(".screen");
 
-  tabs.forEach((tab) => {
-    tab.addEventListener("click", () => {
-      const target = tab.dataset.tab;
-      if (!target) return;
+  buttons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const screenId = btn.getAttribute("data-screen");
+      buttons.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
 
-      tabs.forEach((t) => t.classList.remove("active"));
-      tab.classList.add("active");
-
-      screens.forEach((scr) => {
-        scr.classList.toggle("active", scr.id === `screen-${target}`);
+      screens.forEach((s) => {
+        s.classList.toggle("active", s.id === `screen-${screenId}`);
       });
     });
   });
 }
 
-// ---------- ФОРМА ----------
+// Переключатель режимов рейтинга
+function initRatingModeSwitch() {
+  const buttons = document.querySelectorAll(".rating-mode-btn");
+  buttons.forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.mode === ratingMode);
+    btn.addEventListener("click", () => {
+      const mode = btn.dataset.mode;
+      if (mode === ratingMode) return;
+      ratingMode = mode;
+      buttons.forEach((b) => b.classList.toggle("active", b.dataset.mode === ratingMode));
+      renderRating();
+    });
+  });
+}
 
-function initCarForm() {
+// Уведомление о сохранении
+function notifySaved() {
+  const msg = currentLang === "ru" ? "Сохранено ✅" : "Saqlandi ✅";
+  if (tg && tg.showPopup) {
+    tg.showPopup({
+      title: "AutoQiyos",
+      message: msg,
+      buttons: [{ type: "close" }]
+    });
+  } else {
+    alert(msg);
+  }
+}
+
+// Форма
+function initForm() {
   const form = document.getElementById("car-form");
   if (!form) return;
 
-  form.addEventListener("submit", (e) => {
-    e.preventDefault();
-    if (!currentCar) currentCar = {};
-
-    const title = document.getElementById("brand")?.value?.trim() || "";
-    const year = document.getElementById("year")?.value?.trim() || "";
-    const mileage = document.getElementById("mileage")?.value?.trim() || "";
-    const conditionRaw =
-      document.getElementById("condition")?.value?.trim() || "";
-    const mods = document.getElementById("mods")?.value?.trim() || "";
-    const service = document.getElementById("service")?.value || "unknown";
-
-    let condition = parseInt(conditionRaw, 10);
-    if (isNaN(condition)) condition = 0;
-    if (condition < 0) condition = 0;
-    if (condition > 100) condition = 100;
-
-    currentCar.title = title || currentCar.title || "";
-    currentCar.year = year;
-    currentCar.mileage = mileage;
-    currentCar.condition = condition;
-    currentCar.mods = mods;
-    currentCar.service = service;
-
-    saveCarToStorage();
-    updateCarCard();
-    updateGarageView();
-    updateRatingView();
-  });
-
-  const photoInput = document.getElementById("photo");
+  const photoInput = document.getElementById("car-photo-input");
   if (photoInput) {
-    photoInput.addEventListener("change", (e) => {
-      const file = e.target.files && e.target.files[0];
+    photoInput.addEventListener("change", () => {
+      const file = photoInput.files && photoInput.files[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = (ev) => {
-        if (!currentCar) currentCar = {};
-        currentCar.photo = ev.target.result;
-        saveCarToStorage();
-        updateCarCard();
-        updateGarageView();
-        updateRatingView();
+      reader.onload = () => {
+        currentCar.photoData = reader.result;
+        saveGarageAndCurrent();
+        renderCarPhoto();
+        renderGarage();
+        renderRating();
       };
       reader.readAsDataURL(file);
     });
   }
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const fd = new FormData(form);
+    const brand = (fd.get("brand") || "").toString().trim() || defaultCar.brand;
+    const model = (fd.get("model") || "").toString().trim() || defaultCar.model;
+    const year = Number(fd.get("year")) || defaultCar.year;
+    const mileage = Number(fd.get("mileage")) || defaultCar.mileage;
+    const serviceOnTime = fd.get("serviceOnTime") === "yes";
+    const tuning = (fd.get("tuning") || "").toString().trim();
+
+    currentCar = {
+      brand,
+      model,
+      year,
+      mileage,
+      serviceOnTime,
+      tuning,
+      isPrimary: true,
+      photoData: currentCar.photoData
+    };
+    garage[currentCarIndex] = { ...garage[currentCarIndex], ...currentCar };
+
+    saveGarageAndCurrent();
+    renderCar();
+    renderGarage();
+    renderRating();
+    notifySaved();
+  });
 }
 
-// ---------- INIT ----------
-
+// Инициализация
 document.addEventListener("DOMContentLoaded", () => {
-  loadCarFromStorage();
+  initTelegram();
+  applyTexts(currentLang);
   initLangSwitch();
   initTabs();
-  initCarForm();
-  initGarageButton();
-  applyTranslations();
+  initRatingModeSwitch();
+  initForm();
+  renderCar();
+  renderGarage();
+  renderRating();
 });
