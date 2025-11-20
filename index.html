@@ -76,18 +76,26 @@
       gap: 10px;
     }
 
+    /* ОБНОВЛЁННЫЙ КРУГ С ЛОГО */
     .logo-circle {
-      width: 36px;
-      height: 36px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
-      background: radial-gradient(circle at 30% 20%, #38bdf8, #1d4ed8);
+      background: #020617;
+      border: 2px solid rgba(148, 163, 184, 0.8);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 700;
-      font-size: 16px;
-      color: #e5f2ff;
-      box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.9);
+      overflow: hidden;
+      box-shadow: 0 16px 40px rgba(15, 23, 42, 0.9);
+      flex-shrink: 0;
+    }
+
+    .logo-circle img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
     }
 
     .app-name {
@@ -635,7 +643,10 @@
     <!-- Шапка -->
     <header class="app-header">
       <div class="logo-title">
-        <div class="logo-circle">AQ</div>
+        <div class="logo-circle">
+          <!-- ЗДЕСЬ ЛОГО ИЗ БОТА/КАНАЛА -->
+          <img src="autoqiyos-logo.png" alt="AutoQiyos" />
+        </div>
         <div>
           <div class="app-name">AutoQiyos</div>
           <div class="app-subtitle" data-i18n="subtitle"></div>
