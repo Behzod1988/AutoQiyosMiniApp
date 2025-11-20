@@ -3,7 +3,7 @@ const tg = window.Telegram ? window.Telegram.WebApp : null;
 // Тексты RU / UZ
 const TEXTS = {
   ru: {
-    subtitle: "Реальный рейтинг и здоровье авто",
+    subtitle: "Честный рейтинг и состояние твоего авто",
 
     tab_home: "Моя машина",
     tab_garage: "Мой гараж",
@@ -14,7 +14,7 @@ const TEXTS = {
     home_desc: "Заполни данные по машине, следи за состоянием и попади в рейтинг владельцев.",
 
     your_car: "Твоя машина",
-    health: "Здоровье",
+    health: "Состояние",
 
     update_title: "Обновить данные",
     field_brand: "Марка",
@@ -36,7 +36,7 @@ const TEXTS = {
     garage_title: "Мой гараж",
     garage_desc: "Здесь собраны все твои машины. Бесплатно ведём одну, остальные — премиум-ячейки.",
     garage_primary: "Основная машина",
-    garage_health: "Здоровье",
+    garage_health: "Состояние",
     garage_free_note: "Сейчас можно бесплатно добавить и вести одну машину. Вторая и далее — платно.",
     garage_premium_title: "Премиум-ячейка",
     garage_premium_body: "Вторая машина будет доступна по подписке AutoQiyos (скоро).",
@@ -48,7 +48,7 @@ const TEXTS = {
     rating_mode_cars: "Модели",
     rating_badge: "Топ–5 по модели",
     rating_pos: "место",
-    rating_health: "здоровье",
+    rating_health: "состояние",
     rating_empty:
       "Пока ещё никто не добавил свою машину. Добавь своё авто с фото — после модерации оно появится в рейтинге.",
     rating_local_notice:
@@ -63,7 +63,7 @@ const TEXTS = {
       "Chevrolet Cobalt 2022, 1.5, автомат, 45 000 км. Оценка цены: адекватно. Размещение объявлений будет доступно через бота."
   },
   uz: {
-    subtitle: "Avto holati va reyting",
+    subtitle: "Mashingning holati va halol reytingi",
 
     tab_home: "Mening mashinam",
     tab_garage: "Mening garajim",
@@ -75,7 +75,7 @@ const TEXTS = {
       "Mashinangiz haqidagi maʼlumotlarni kiriting, holatini kuzating va reytingga chiqing.",
 
     your_car: "Sizning mashinangiz",
-    health: "Sog‘lik",
+    health: "Holati",
 
     update_title: "Maʼlumotni yangilash",
     field_brand: "Brend",
@@ -98,7 +98,7 @@ const TEXTS = {
     garage_desc:
       "Bu yerda barcha mashinalaringiz. Hozircha 1 ta mashinani bepul yuritish mumkin, qolganlari — premium uyachalar.",
     garage_primary: "Asosiy mashina",
-    garage_health: "Sog‘lik",
+    garage_health: "Holati",
     garage_free_note: "Hozircha 1 ta mashina bepul. Ikkinchi va boshqalar pullik bo‘ladi.",
     garage_premium_title: "Premium uyacha",
     garage_premium_body:
@@ -111,7 +111,7 @@ const TEXTS = {
     rating_mode_cars: "Modellar",
     rating_badge: "Model bo‘yicha Top–5",
     rating_pos: "o‘rin",
-    rating_health: "sog‘lik",
+    rating_health: "holati",
     rating_empty:
       "Hozircha hech kim mashinasini qo‘shmadi. Mashinangizni rasm bilan qo‘shing — moderatsiyadan so‘ng reytingda ko‘rinadi.",
     rating_local_notice:
@@ -188,7 +188,7 @@ function initTelegram() {
   tg.expand();
 }
 
-// Формула здоровья
+// Формула здоровья (теперь фактически состояние)
 function calcHealthScore(car) {
   let score = 100;
 
