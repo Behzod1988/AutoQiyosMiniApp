@@ -10,7 +10,7 @@ const TEXTS = {
     tab_rating: "Рейтинг",
     tab_market: "Объявления",
 
-    home_title: "Трекер здоровья твоего авто",
+    home_title: "",
     home_desc: "Заполни данные по машине, следи за состоянием и попади в рейтинг владельцев.",
 
     your_car: "Твоя машина",
@@ -23,10 +23,12 @@ const TEXTS = {
     field_mileage: "Пробег, км",
     field_service: "Обслуживание вовремя",
     field_tuning: "Особенности / тюнинг",
+    field_photo: "Фото автомобиля",
     btn_save: "Сохранить",
     save_hint: "Данные хранятся только у тебя на устройстве.",
 
     service_hint: "Отмечай, если ТО проходишь по регламенту.",
+    photo_hint: "Загрузи реальное фото своей машины — без него рейтинг будет недоступен.",
     label_yes: "Да",
     label_no: "Нет",
 
@@ -40,11 +42,17 @@ const TEXTS = {
     garage_premium_body: "Вторая машина будет доступна по подписке AutoQiyos (скоро).",
 
     // Рейтинг
-    rating_title: "Рейтинг владельцев",
-    rating_desc: "Обновлённые позиции каждую неделю (пока демо-данные).",
+    rating_title: "Рейтинг",
+    rating_desc: "Здесь появится рейтинг владельцев и моделей после добавления машин.",
+    rating_mode_owners: "Владельцы",
+    rating_mode_cars: "Модели",
     rating_badge: "Топ–5 по модели",
     rating_pos: "место",
     rating_health: "здоровье",
+    rating_empty:
+      "Пока ещё никто не добавил свою машину. Добавь своё авто с фото — после модерации оно появится в рейтинге.",
+    rating_local_notice:
+      "Сейчас ты видишь только своё авто. Общий рейтинг по всей стране появится после подключения серверной части.",
 
     // Объявления
     market_title: "Объявления AutoQiyos",
@@ -62,7 +70,7 @@ const TEXTS = {
     tab_rating: "Reyting",
     tab_market: "E'lonlar",
 
-    home_title: "Avto sog‘ligi trekeri",
+    home_title: "",
     home_desc:
       "Mashinangiz haqidagi maʼlumotlarni kiriting, holatini kuzating va reytingga chiqing.",
 
@@ -76,10 +84,12 @@ const TEXTS = {
     field_mileage: "Yurish, km",
     field_service: "Texnik xizmat o‘z vaqtida",
     field_tuning: "Qo‘shimcha opsiyalar / tyuning",
+    field_photo: "Avtomobil surati",
     btn_save: "Saqlash",
     save_hint: "Maʼlumot faqat sizning qurilmangizda saqlanadi.",
 
     service_hint: "Agar TO reglament bo‘yicha o‘tgan bo‘lsa, belgilang.",
+    photo_hint: "Rejalik avtomobil rasmini yuklang — rasimsiz reytingda qatnashib bo‘lmaydi.",
     label_yes: "Ha",
     label_no: "Yo‘q",
 
@@ -95,11 +105,17 @@ const TEXTS = {
       "Ikkinchi mashina tez orada AutoQiyos obunasi orqali ochiladi (yaqinda).",
 
     // Reyting
-    rating_title: "Egalari reytingi",
-    rating_desc: "Har hafta yangilanadigan reyting (hozircha demo maʼlumotlar).",
+    rating_title: "Reyting",
+    rating_desc: "Mashinalar qo‘shilgach, egalari va modellar reytingi bu yerda ko‘rinadi.",
+    rating_mode_owners: "Egalari",
+    rating_mode_cars: "Modellar",
     rating_badge: "Model bo‘yicha Top–5",
     rating_pos: "o‘rin",
     rating_health: "sog‘lik",
+    rating_empty:
+      "Hozircha hech kim mashinasini qo‘shmadi. Mashinangizni rasm bilan qo‘shing — moderatsiyadan so‘ng reytingda ko‘rinadi.",
+    rating_local_notice:
+      "Hozircha faqat o‘z mashinangizni ko‘ryapsiz. Umumiy reyting server ulangandan keyin paydo bo‘ladi.",
 
     // E'lonlar
     market_title: "AutoQiyos e'lonlari",
@@ -134,7 +150,7 @@ function loadSingleCarFromStorage() {
   }
 }
 
-// Новый формат — гараж (массив машин)
+// Новый формат — гараж
 function loadGarage() {
   try {
     const raw = localStorage.getItem("aq_garage");
@@ -152,7 +168,6 @@ function loadGarage() {
     // ignore
   }
 
-  // fallback: одна машина из старого формата
   const one = loadSingleCarFromStorage();
   return [{ ...one, isPrimary: true }];
 }
@@ -165,14 +180,7 @@ if (currentCarIndex === -1) {
 }
 let currentCar = { ...garage[currentCarIndex] };
 
-// Демо-рейтинги
-const demoRating = [
-  { pos: 1, owner: "@avto_jon", car: "Chevrolet Cobalt 2021", health: 94 },
-  { pos: 2, owner: "@uz_driver", car: "Chevrolet Nexia 3 2020", health: 90 },
-  { pos: 3, owner: "@andijan_gentra", car: "Chevrolet Gentra 2022", health: 88 },
-  { pos: 4, owner: "@spark_city", car: "Chevrolet Spark 2019", health: 84 },
-  { pos: 5, owner: "@tracker_fan", car: "Chevrolet Tracker 2021", health: 82 }
-];
+let ratingMode = "owners";
 
 function initTelegram() {
   if (!tg) return;
@@ -180,7 +188,7 @@ function initTelegram() {
   tg.expand();
 }
 
-// Примерная формула здоровья
+// Формула здоровья
 function calcHealthScore(car) {
   let score = 100;
 
@@ -189,7 +197,9 @@ function calcHealthScore(car) {
 
   const year = Number(car.year) || 2010;
   const age = new Date().getFullYear() - year;
-  if (age > 8) score -= Math.min(20, (age - 8) * 3);
+  if (age > 8) {
+    score -= Math.min(20, (age - 8) * 3);
+  }
 
   if (car.serviceOnTime) score += 10;
   else score -= 10;
@@ -198,13 +208,13 @@ function calcHealthScore(car) {
   return score;
 }
 
-// Применить все тексты по языку
+// Тексты
 function applyTexts(lang) {
   const dict = TEXTS[lang];
 
   document.querySelectorAll("[data-i18n]").forEach((el) => {
     const key = el.getAttribute("data-i18n");
-    if (dict[key]) {
+    if (dict[key] !== undefined) {
       el.textContent = dict[key];
     }
   });
@@ -215,6 +225,23 @@ function applyTexts(lang) {
   document.querySelectorAll("[data-i18n-opt-no]").forEach((el) => {
     el.textContent = dict.label_no;
   });
+}
+
+// Фото на главной
+function renderCarPhoto() {
+  const img = document.getElementById("car-photo-main");
+  const placeholder = document.getElementById("car-photo-placeholder");
+  if (!img || !placeholder) return;
+
+  if (currentCar.photoData) {
+    img.src = currentCar.photoData;
+    img.style.display = "block";
+    placeholder.style.display = "none";
+  } else {
+    img.src = "";
+    img.style.display = "none";
+    placeholder.style.display = "flex";
+  }
 }
 
 // Рендер главной машины
@@ -239,7 +266,7 @@ function renderCar() {
     const yes = dict.label_yes;
     const no = dict.label_no;
 
-    const mileageStr = (Number(currentCar.mileage) || 0).toLocaleString("ru-RU") + " km";
+    const mileageStr = (Number(currentCar.mileage) || 0).toLocaleString("ru-RU") + " км";
 
     statsEl.innerHTML = `
       <div class="stat-row">
@@ -266,20 +293,22 @@ function renderCar() {
     form.tuning.value = currentCar.tuning || "";
     form.serviceOnTime.value = currentCar.serviceOnTime ? "yes" : "no";
   }
+
+  renderCarPhoto();
 }
 
-// Сохранение гаража
+// Сохранение
 function saveGarageAndCurrent() {
   garage[currentCarIndex] = { ...garage[currentCarIndex], ...currentCar };
   try {
     localStorage.setItem("aq_garage", JSON.stringify(garage));
-    localStorage.setItem("aq_car", JSON.stringify(currentCar)); // для совместимости
+    localStorage.setItem("aq_car", JSON.stringify(currentCar));
   } catch (e) {
     // ignore
   }
 }
 
-// Рендер "Мой гараж"
+// Гараж
 function renderGarage() {
   const container = document.getElementById("garage-list");
   if (!container) return;
@@ -287,17 +316,26 @@ function renderGarage() {
 
   const cards = [];
 
-  garage.forEach((car, index) => {
+  garage.forEach((car) => {
     const health = calcHealthScore(car);
-    const mileageStr = (Number(car.mileage) || 0).toLocaleString("ru-RU") + " km";
+    const mileageStr = (Number(car.mileage) || 0).toLocaleString("ru-RU") + " км";
     const primaryPill = car.isPrimary ? `<span class="garage-pill">${dict.garage_primary}</span>` : "";
+
+    const thumbHtml = car.photoData
+      ? `<img src="${car.photoData}" alt="car" />`
+      : `<div class="garage-thumb-placeholder">AQ</div>`;
 
     cards.push(`
       <div class="garage-card ${car.isPrimary ? "primary" : ""}">
-        <div class="garage-main">
-          <div class="garage-title">${car.brand} ${car.model} ${car.year}</div>
-          <div class="garage-meta">${mileageStr}</div>
-          ${primaryPill}
+        <div class="garage-left">
+          <div class="garage-thumb">
+            ${thumbHtml}
+          </div>
+          <div class="garage-main">
+            <div class="garage-title">${car.brand} ${car.model} ${car.year}</div>
+            <div class="garage-meta">${mileageStr}</div>
+            ${primaryPill}
+          </div>
         </div>
         <div class="garage-right">
           <div class="garage-health-label">${dict.garage_health}</div>
@@ -307,7 +345,7 @@ function renderGarage() {
     `);
   });
 
-  // Премиум-ячейка (вторая машина — платная)
+  // Премиум-ячейка
   cards.push(`
     <div class="garage-card locked">
       <div class="garage-main">
@@ -323,38 +361,67 @@ function renderGarage() {
   `;
 }
 
-// Рендер рейтинга (демо)
+// Рейтинг
 function renderRating() {
   const container = document.getElementById("rating-list");
   if (!container) return;
   const dict = TEXTS[currentLang];
+  const hasPhoto = !!currentCar.photoData;
 
-  container.innerHTML = demoRating
-    .map((item, index) => {
-      const posClass = index === 0 ? "rating-pos top-1" : "rating-pos";
-      const badge = dict.rating_badge;
+  if (!hasPhoto) {
+    container.innerHTML = `<p class="muted small">${dict.rating_empty}</p>`;
+    return;
+  }
 
-      return `
-        <div class="rating-item">
-          <div class="rating-left">
-            <div class="${posClass}">${item.pos}</div>
-            <div class="rating-main">
-              <div class="rating-owner">${item.owner}</div>
-              <div class="rating-car">${item.car}</div>
-              <div class="badge">${badge}</div>
-            </div>
-          </div>
-          <div class="rating-right">
-            <span>${dict.rating_health}</span>
-            <span class="rating-health">${item.health}</span>
+  const health = calcHealthScore(currentCar);
+  const carTitle = `${currentCar.brand} ${currentCar.model} ${currentCar.year}`;
+  const mileageStr = (Number(currentCar.mileage) || 0).toLocaleString("ru-RU") + " км";
+
+  const username =
+    tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.username
+      ? "@" + tg.initDataUnsafe.user.username
+      : currentLang === "ru"
+      ? "Вы"
+      : "Siz";
+
+  if (ratingMode === "owners") {
+    container.innerHTML = `
+      <div class="rating-item">
+        <div class="rating-left">
+          <div class="rating-pos top-1">1</div>
+          <div class="rating-main">
+            <div class="rating-owner">${username}</div>
+            <div class="rating-car">${carTitle}</div>
           </div>
         </div>
-      `;
-    })
-    .join("");
+        <div class="rating-right">
+          <span>${dict.rating_health}</span>
+          <span class="rating-health">${health}</span>
+        </div>
+      </div>
+      <p class="muted small">${dict.rating_local_notice}</p>
+    `;
+  } else {
+    container.innerHTML = `
+      <div class="rating-item">
+        <div class="rating-left">
+          <div class="rating-pos top-1">1</div>
+          <div class="rating-main">
+            <div class="rating-owner">${carTitle}</div>
+            <div class="rating-car">${mileageStr}</div>
+          </div>
+        </div>
+        <div class="rating-right">
+          <span>${dict.rating_health}</span>
+          <span class="rating-health">${health}</span>
+        </div>
+      </div>
+      <p class="muted small">${dict.rating_local_notice}</p>
+    `;
+  }
 }
 
-// Переключатель языка
+// Языки
 function initLangSwitch() {
   const buttons = document.querySelectorAll(".lang-btn");
   buttons.forEach((btn) => {
@@ -373,7 +440,7 @@ function initLangSwitch() {
   });
 }
 
-// Переключатель вкладок
+// Вкладки
 function initTabs() {
   const buttons = document.querySelectorAll(".tab-btn");
   const screens = document.querySelectorAll(".screen");
@@ -391,7 +458,22 @@ function initTabs() {
   });
 }
 
-// Popup / alert о сохранении
+// Переключатель режимов рейтинга
+function initRatingModeSwitch() {
+  const buttons = document.querySelectorAll(".rating-mode-btn");
+  buttons.forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.mode === ratingMode);
+    btn.addEventListener("click", () => {
+      const mode = btn.dataset.mode;
+      if (mode === ratingMode) return;
+      ratingMode = mode;
+      buttons.forEach((b) => b.classList.toggle("active", b.dataset.mode === ratingMode));
+      renderRating();
+    });
+  });
+}
+
+// Уведомление о сохранении
 function notifySaved() {
   const msg = currentLang === "ru" ? "Сохранено ✅" : "Saqlandi ✅";
   if (tg && tg.showPopup) {
@@ -405,10 +487,27 @@ function notifySaved() {
   }
 }
 
-// Форма обновления машины
+// Форма
 function initForm() {
   const form = document.getElementById("car-form");
   if (!form) return;
+
+  const photoInput = document.getElementById("car-photo-input");
+  if (photoInput) {
+    photoInput.addEventListener("change", () => {
+      const file = photoInput.files && photoInput.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        currentCar.photoData = reader.result;
+        saveGarageAndCurrent();
+        renderCarPhoto();
+        renderGarage();
+        renderRating();
+      };
+      reader.readAsDataURL(file);
+    });
+  }
 
   form.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -420,12 +519,22 @@ function initForm() {
     const serviceOnTime = fd.get("serviceOnTime") === "yes";
     const tuning = (fd.get("tuning") || "").toString().trim();
 
-    currentCar = { brand, model, year, mileage, serviceOnTime, tuning, isPrimary: true };
+    currentCar = {
+      brand,
+      model,
+      year,
+      mileage,
+      serviceOnTime,
+      tuning,
+      isPrimary: true,
+      photoData: currentCar.photoData
+    };
     garage[currentCarIndex] = { ...garage[currentCarIndex], ...currentCar };
 
     saveGarageAndCurrent();
     renderCar();
     renderGarage();
+    renderRating();
     notifySaved();
   });
 }
@@ -436,6 +545,7 @@ document.addEventListener("DOMContentLoaded", () => {
   applyTexts(currentLang);
   initLangSwitch();
   initTabs();
+  initRatingModeSwitch();
   initForm();
   renderCar();
   renderGarage();
