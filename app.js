@@ -3,7 +3,7 @@ const tg = window.Telegram ? window.Telegram.WebApp : null;
 // Тексты RU / UZ
 const TEXTS = {
   ru: {
-    subtitle: "Честный рейтинг и состояние твоего авто",
+    subtitle: "Дневник и честный рейтинг твоего авто",
 
     tab_home: "Моя машина",
     tab_garage: "Мой гараж",
@@ -11,7 +11,8 @@ const TEXTS = {
     tab_market: "Объявления",
 
     home_title: "",
-    home_desc: "Заполни данные по машине, следи за состоянием и попади в рейтинг владельцев.",
+    home_desc:
+      "Записывай пробег, сервис, ремонты и цену. AutoQiyos помогает не забывать о машине и показывает её место в честном рейтинге среди таких же автомобилей.",
 
     your_car: "Твоя машина",
     health: "Состояние",
@@ -21,29 +22,35 @@ const TEXTS = {
     field_model: "Модель",
     field_year: "Год",
     field_mileage: "Пробег, км",
+    field_price: "Оценочная цена, $",
     field_service: "Обслуживание вовремя",
     field_tuning: "Особенности / тюнинг",
     field_photo: "Фото автомобиля",
     btn_save: "Сохранить",
-    save_hint: "Данные хранятся только у тебя на устройстве.",
+    save_hint: "Всё хранится только на твоём устройстве.",
 
-    service_hint: "Отмечай, если ТО проходишь по регламенту.",
-    photo_hint: "Загрузи реальное фото своей машины — без него рейтинг будет недоступен.",
+    service_hint: "Отметь, если масло и сервис проходишь вовремя.",
+    photo_hint:
+      "Загрузи реальное фото своей машины — без фото мы не сможем показать тебя в рейтинге.",
     label_yes: "Да",
     label_no: "Нет",
 
     // Гараж
     garage_title: "Мой гараж",
-    garage_desc: "Здесь собраны все твои машины. Бесплатно ведём одну, остальные — премиум-ячейки.",
+    garage_desc:
+      "Здесь собраны все твои машины. Пока можно бесплатно вести одну, остальные будут премиум-ячейками.",
     garage_primary: "Основная машина",
     garage_health: "Состояние",
-    garage_free_note: "Сейчас можно бесплатно добавить и вести одну машину. Вторая и далее — платно.",
+    garage_free_note:
+      "Сейчас можно бесплатно добавить и вести одну машину. Вторая и далее — по подписке.",
     garage_premium_title: "Премиум-ячейка",
-    garage_premium_body: "Вторая машина будет доступна по подписке AutoQiyos (скоро).",
+    garage_premium_body:
+      "Вторая машина появится здесь позже — после включения подписки AutoQiyos.",
 
     // Рейтинг
     rating_title: "Рейтинг",
-    rating_desc: "Здесь появится рейтинг владельцев и моделей после добавления машин.",
+    rating_desc:
+      "Здесь будет честный рейтинг владельцев и моделей на основе реальных данных из дневников.",
     rating_mode_owners: "Владельцы",
     rating_mode_cars: "Модели",
     rating_badge: "Топ–5 по модели",
@@ -52,18 +59,19 @@ const TEXTS = {
     rating_empty:
       "Пока ещё никто не добавил свою машину. Добавь своё авто с фото — после модерации оно появится в рейтинге.",
     rating_local_notice:
-      "Сейчас ты видишь только своё авто. Общий рейтинг по всей стране появится после подключения серверной части.",
+      "Сейчас ты видишь только свои данные. Общий рейтинг по всей стране появится после подключения сервера.",
 
     // Объявления
     market_title: "Объявления AutoQiyos",
     market_desc:
-      "Здесь будут честные объявления с оценкой цены. В текущем MVP показываем только пример.",
+      "Позже здесь будут честные объявления с оценкой цены. Пока показываем только пример.",
     market_demo_title: "Пример объявления",
     market_demo_body:
       "Chevrolet Cobalt 2022, 1.5, автомат, 45 000 км. Оценка цены: адекватно. Размещение объявлений будет доступно через бота."
   },
+
   uz: {
-    subtitle: "Mashinangiz holati va halol reytingi",
+    subtitle: "Mashinangiz uchun kundalik va halol reyting",
 
     tab_home: "Mening mashinam",
     tab_garage: "Mening garajim",
@@ -72,7 +80,7 @@ const TEXTS = {
 
     home_title: "",
     home_desc:
-      "Mashinangiz haqidagi maʼlumotlarni kiriting, holatini kuzating va reytingga chiqing.",
+      "Yo‘l yurgan masofa, servis, taʼmir va narxni yozib boring. AutoQiyos mashinangizni unutmaslikka yordam beradi va u boshqa shunga o‘xshash avtomobillar orasida qaysi o‘rinda turganini ko‘rsatadi.",
 
     your_car: "Sizning mashinangiz",
     health: "Holati",
@@ -82,31 +90,36 @@ const TEXTS = {
     field_model: "Model",
     field_year: "Yil",
     field_mileage: "Yurish, km",
+    field_price: "Taxminiy narx, $",
     field_service: "Texnik xizmat o‘z vaqtida",
-    field_tuning: "Qo‘shimcha opsiyalar / tyuning",
+    field_tuning: "Qo‘shimcha jihozlar / tuning",
     field_photo: "Avtomobil surati",
     btn_save: "Saqlash",
-    save_hint: "Maʼlumot faqat sizning qurilmangizda saqlanadi.",
+    save_hint: "Hammasi faqat sizning qurilmangizda saqlanadi.",
 
-    service_hint: "Agar TO reglament bo‘yicha o‘tgan bo‘lsa, belgilang.",
-    photo_hint: "Rejalik avtomobil rasmini yuklang — rasimsiz reytingda qatnashib bo‘lmaydi.",
+    service_hint:
+      "Agar moy va texnik xizmatni vaqtida qiladigan bo‘lsangiz, belgini qo‘ying.",
+    photo_hint:
+      "Mashinangizning haqiqiy rasmini yuklang — rasm bo‘lmasa, reytingda qatnashib bo‘lmaydi.",
     label_yes: "Ha",
     label_no: "Yo‘q",
 
     // Garaj
     garage_title: "Mening garajim",
     garage_desc:
-      "Bu yerda barcha mashinalaringiz. Hozircha 1 ta mashinani bepul yuritish mumkin, qolganlari — premium uyachalar.",
+      "Bu yerda barcha mashinalaringiz ko‘rinadi. Hozircha 1 ta mashinani bepul yuritish mumkin, qolganlari premium uyachalar bo‘ladi.",
     garage_primary: "Asosiy mashina",
     garage_health: "Holati",
-    garage_free_note: "Hozircha 1 ta mashina bepul. Ikkinchi va boshqalar pullik bo‘ladi.",
+    garage_free_note:
+      "Hozircha 1 ta mashina bepul. Ikkinchi va keyingilar obuna orqali ochiladi.",
     garage_premium_title: "Premium uyacha",
     garage_premium_body:
-      "Ikkinchi mashina tez orada AutoQiyos obunasi orqali ochiladi (yaqinda).",
+      "Ikkinchi mashina tez orada AutoQiyos obunasi orqali ochiladi.",
 
     // Reyting
     rating_title: "Reyting",
-    rating_desc: "Mashinalar qo‘shilgach, egalari va modellar reytingi bu yerda ko‘rinadi.",
+    rating_desc:
+      "Bu yerda egalari va modellar reytingi real maʼlumotlar asosida ko‘rinadi.",
     rating_mode_owners: "Egalari",
     rating_mode_cars: "Modellar",
     rating_badge: "Model bo‘yicha Top–5",
@@ -115,12 +128,12 @@ const TEXTS = {
     rating_empty:
       "Hozircha hech kim mashinasini qo‘shmadi. Mashinangizni rasm bilan qo‘shing — moderatsiyadan so‘ng reytingda ko‘rinadi.",
     rating_local_notice:
-      "Hozircha faqat o‘z mashinangizni ko‘ryapsiz. Umumiy reyting server ulangandan keyin paydo bo‘ladi.",
+      "Hozircha faqat o‘z maʼlumotlaringizni ko‘ryapsiz. Umumiy reyting server ulanganidan keyin paydo bo‘ladi.",
 
     // E'lonlar
     market_title: "AutoQiyos e'lonlari",
     market_desc:
-      "Bu yerda adolatli baholangan eʼlonlar bo‘ladi. Hozircha faqat namuna ko‘rsatilgan.",
+      "Bu yerda narxi adolatli baholangan eʼlonlar bo‘ladi. Hozircha faqat bitta namunaviy eʼlon ko‘rsatilgan.",
     market_demo_title: "Namuna e'lon",
     market_demo_body:
       "Chevrolet Cobalt 2022, 1.5, avtomat, 45 000 km. Narx bahosi: adekvat. Eʼlon joylash tez orada bot orqali ishlaydi."
@@ -134,6 +147,7 @@ const defaultCar = {
   model: "1.5 AT",
   year: 2021,
   mileage: 45000,
+  price: 12000,
   serviceOnTime: true,
   tuning: "Литые диски, камера заднего вида"
 };
@@ -188,7 +202,7 @@ function initTelegram() {
   tg.expand();
 }
 
-// Формула здоровья (теперь фактически состояние)
+// Формула здоровья (состояние)
 function calcHealthScore(car) {
   let score = 100;
 
@@ -263,12 +277,22 @@ function renderCar() {
     const mileageLabel = dict.field_mileage;
     const serviceLabel = dict.field_service;
     const tuningLabel = dict.field_tuning;
+    const priceLabel = dict.field_price;
     const yes = dict.label_yes;
     const no = dict.label_no;
 
-    const mileageStr = (Number(currentCar.mileage) || 0).toLocaleString("ru-RU") + " км";
+    const mileageStr =
+      (Number(currentCar.mileage) || 0).toLocaleString("ru-RU") + " км";
+
+    const priceStr = currentCar.price
+      ? Number(currentCar.price).toLocaleString("ru-RU") + " $"
+      : "—";
 
     statsEl.innerHTML = `
+      <div class="stat-row">
+        <span>${priceLabel}</span>
+        <span>${priceStr}</span>
+      </div>
       <div class="stat-row">
         <span>${mileageLabel}</span>
         <span>${mileageStr}</span>
@@ -290,6 +314,7 @@ function renderCar() {
     form.model.value = currentCar.model || "";
     form.year.value = currentCar.year || "";
     form.mileage.value = currentCar.mileage || "";
+    form.price.value = currentCar.price || "";
     form.tuning.value = currentCar.tuning || "";
     form.serviceOnTime.value = currentCar.serviceOnTime ? "yes" : "no";
   }
@@ -318,8 +343,16 @@ function renderGarage() {
 
   garage.forEach((car) => {
     const health = calcHealthScore(car);
-    const mileageStr = (Number(car.mileage) || 0).toLocaleString("ru-RU") + " км";
-    const primaryPill = car.isPrimary ? `<span class="garage-pill">${dict.garage_primary}</span>` : "";
+    const mileageStr =
+      (Number(car.mileage) || 0).toLocaleString("ru-RU") + " км";
+    const priceStr = car.price
+      ? Number(car.price).toLocaleString("ru-RU") + " $"
+      : "";
+    const metaExtra = priceStr ? `${mileageStr} • ${priceStr}` : mileageStr;
+
+    const primaryPill = car.isPrimary
+      ? `<span class="garage-pill">${dict.garage_primary}</span>`
+      : "";
 
     const thumbHtml = car.photoData
       ? `<img src="${car.photoData}" alt="car" />`
@@ -333,7 +366,7 @@ function renderGarage() {
           </div>
           <div class="garage-main">
             <div class="garage-title">${car.brand} ${car.model} ${car.year}</div>
-            <div class="garage-meta">${mileageStr}</div>
+            <div class="garage-meta">${metaExtra}</div>
             ${primaryPill}
           </div>
         </div>
@@ -375,10 +408,14 @@ function renderRating() {
 
   const health = calcHealthScore(currentCar);
   const carTitle = `${currentCar.brand} ${currentCar.model} ${currentCar.year}`;
-  const mileageStr = (Number(currentCar.mileage) || 0).toLocaleString("ru-RU") + " км";
+  const mileageStr =
+    (Number(currentCar.mileage) || 0).toLocaleString("ru-RU") + " км";
 
   const username =
-    tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.username
+    tg &&
+    tg.initDataUnsafe &&
+    tg.initDataUnsafe.user &&
+    tg.initDataUnsafe.user.username
       ? "@" + tg.initDataUnsafe.user.username
       : currentLang === "ru"
       ? "Вы"
@@ -431,7 +468,9 @@ function initLangSwitch() {
       if (lang === currentLang) return;
       currentLang = lang;
       localStorage.setItem("aq_lang", currentLang);
-      buttons.forEach((b) => b.classList.toggle("active", b.dataset.lang === currentLang));
+      buttons.forEach((b) =>
+        b.classList.toggle("active", b.dataset.lang === currentLang)
+      );
       applyTexts(currentLang);
       renderCar();
       renderGarage();
@@ -467,7 +506,9 @@ function initRatingModeSwitch() {
       const mode = btn.dataset.mode;
       if (mode === ratingMode) return;
       ratingMode = mode;
-      buttons.forEach((b) => b.classList.toggle("active", b.dataset.mode === ratingMode));
+      buttons.forEach((b) =>
+        b.classList.toggle("active", b.dataset.mode === ratingMode)
+      );
       renderRating();
     });
   });
@@ -512,10 +553,13 @@ function initForm() {
   form.addEventListener("submit", (e) => {
     e.preventDefault();
     const fd = new FormData(form);
-    const brand = (fd.get("brand") || "").toString().trim() || defaultCar.brand;
-    const model = (fd.get("model") || "").toString().trim() || defaultCar.model;
+    const brand =
+      (fd.get("brand") || "").toString().trim() || defaultCar.brand;
+    const model =
+      (fd.get("model") || "").toString().trim() || defaultCar.model;
     const year = Number(fd.get("year")) || defaultCar.year;
     const mileage = Number(fd.get("mileage")) || defaultCar.mileage;
+    const price = Number(fd.get("price")) || defaultCar.price;
     const serviceOnTime = fd.get("serviceOnTime") === "yes";
     const tuning = (fd.get("tuning") || "").toString().trim();
 
@@ -524,6 +568,7 @@ function initForm() {
       model,
       year,
       mileage,
+      price,
       serviceOnTime,
       tuning,
       isPrimary: true,
@@ -551,6 +596,3 @@ document.addEventListener("DOMContentLoaded", () => {
   renderGarage();
   renderRating();
 });
-
-
-
