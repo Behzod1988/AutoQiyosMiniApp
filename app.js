@@ -47,7 +47,7 @@ const TEXTS = {
     label_yes: "Да",
     label_no: "Нет",
 
-    // опции статуса
+    // статус
     opt_status_none: "— не выбран —",
     opt_status_follow: "Слежу за машиной",
     opt_status_prepare_sell: "Готовлюсь продать",
@@ -55,21 +55,22 @@ const TEXTS = {
     opt_status_consider: "Рассматриваю предложения",
     opt_status_want_buy: "Хочу купить",
     status_cta_btn: "Перейти к объявлениям",
+    status_for_sale: "В продаже",
 
-    // опции коробки передач
+    // коробка передач
     opt_trans_none: "— не указано —",
     opt_trans_manual: "Механическая",
     opt_trans_auto: "Автоматическая",
     opt_trans_robot: "Роботизированная",
     opt_trans_cvt: "Вариатор",
 
-    // опции состояния кузова
+    // состояние кузова
     opt_bodycond_none: "— не указано —",
     opt_bodycond_painted: "Крашенная",
     opt_bodycond_original: "Родная краска",
     opt_bodycond_scratches: "Есть царапины",
 
-    // опции типа кузова
+    // тип кузова
     opt_bodytype_none: "— не указано —",
     opt_bodytype_sedan: "Седан",
     opt_bodytype_hatch: "Хэтчбек",
@@ -79,7 +80,7 @@ const TEXTS = {
     opt_bodytype_minivan: "Минивэн",
     opt_bodytype_pickup: "Пикап",
 
-    // опции двигателя
+    // двигатель
     opt_engine_none: "— не указано —",
     opt_engine_petrol: "Бензин",
     opt_engine_diesel: "Дизель",
@@ -170,7 +171,7 @@ const TEXTS = {
     label_yes: "Ha",
     label_no: "Yo‘q",
 
-    // uz опции статуса
+    // status
     opt_status_none: "— tanlanmagan —",
     opt_status_follow: "Mashinamni kuzataman",
     opt_status_prepare_sell: "Sotishga tayyorlanyapman",
@@ -178,8 +179,9 @@ const TEXTS = {
     opt_status_consider: "Takliflarni ko‘rib chiqaman",
     opt_status_want_buy: "Sotib olmoqchiman",
     status_cta_btn: "E'lonlarga o'tish",
+    status_for_sale: "Sotuvda",
 
-    // uz опции коробки передач
+    // uz коробка
     opt_trans_none: "— ko‘rsatilmagan —",
     opt_trans_manual: "Mexanik",
     opt_trans_auto: "Avtomat",
@@ -271,7 +273,7 @@ const defaultCar = {
   media: [] // [{ type: 'image'|'video', data: 'dataURL' }]
 };
 
-// Нормализация старых записей (одна картинка photoData -> media[])
+// нормализация старого формата
 function normalizeCar(car) {
   const merged = { ...defaultCar, ...car };
 
@@ -336,7 +338,7 @@ function initTelegram() {
   tg.expand();
 }
 
-// Формула здоровья (состояние)
+// Формула здоровья
 function calcHealthScore(car) {
   let score = 100;
 
@@ -375,7 +377,7 @@ function applyTexts(lang) {
   });
 }
 
-// Маппинг значений селектов к локализованным текстам
+// Маппинг значений
 function getTransmissionLabel(value, dict) {
   switch (value) {
     case "manual":
@@ -461,7 +463,7 @@ function getStatusLabel(value, dict) {
   }
 }
 
-// Фото/видео на главной (слайдер + мини-рамки)
+// Фото/видео на главной: одна большая квадратная рамка
 function renderCarMedia() {
   const img = document.getElementById("car-photo-main");
   const video = document.getElementById("car-video-main");
@@ -469,16 +471,15 @@ function renderCarMedia() {
   const prevBtn = document.getElementById("car-photo-prev");
   const nextBtn = document.getElementById("car-photo-next");
   const counter = document.getElementById("car-photo-counter");
-  const thumbs = document.getElementById("car-photo-thumbs");
 
-  if (!img || !video || !placeholder || !prevBtn || !nextBtn || !counter || !thumbs) return;
+  if (!img || !video || !placeholder || !prevBtn || !nextBtn || !counter) return;
 
   const media = Array.isArray(currentCar.media) ? currentCar.media : [];
-  thumbs.innerHTML = "";
 
   if (!media.length) {
     img.style.display = "none";
     video.style.display = "none";
+    video.pause();
     placeholder.style.display = "flex";
     prevBtn.style.display = "none";
     nextBtn.style.display = "none";
@@ -516,39 +517,6 @@ function renderCarMedia() {
     img.src = item.data;
     img.style.display = "block";
   }
-
-  // Мини-рамки (3 шт, третья собирает 4,5,6 и т.д.)
-  const maxThumbs = 3;
-  const baseCount = Math.min(media.length, maxThumbs);
-
-  for (let i = 0; i < baseCount; i++) {
-    const m = media[i];
-    const thumb = document.createElement("div");
-    thumb.className = "car-photo-thumb";
-
-    if (i === 2 && media.length > 3) {
-      thumb.classList.add("more");
-      thumb.setAttribute("data-more", "+" + (media.length - 3));
-    }
-
-    if (m.type === "image") {
-      const imgThumb = document.createElement("img");
-      imgThumb.src = m.data;
-      thumb.appendChild(imgThumb);
-    } else {
-      const videoThumb = document.createElement("video");
-      videoThumb.src = m.data;
-      videoThumb.muted = true;
-      thumb.appendChild(videoThumb);
-    }
-
-    thumb.addEventListener("click", () => {
-      currentMediaIndex = i;
-      renderCarMedia();
-    });
-
-    thumbs.appendChild(thumb);
-  }
 }
 
 // Рендер главной машины
@@ -566,6 +534,20 @@ function renderCar() {
   if (healthEl) {
     healthEl.textContent = health;
   }
+
+  const statusText = getStatusLabel(currentCar.status, dict);
+
+  const statusPillEl = document.getElementById("car-status-pill");
+  if (statusPillEl) {
+    if (currentCar.status === "sell") {
+      statusPillEl.style.display = "inline-flex";
+      statusPillEl.textContent = dict.status_for_sale;
+    } else {
+      statusPillEl.style.display = "none";
+      statusPillEl.textContent = "";
+    }
+  }
+
   if (statsEl) {
     const mileageLabel = dict.field_mileage;
     const serviceLabel = dict.field_service;
@@ -593,7 +575,6 @@ function renderCar() {
     const bodyConditionText = getBodyConditionLabel(currentCar.bodyCondition, dict);
     const engineTypeText = getEngineTypeLabel(currentCar.engineType, dict);
     const transmissionText = getTransmissionLabel(currentCar.transmission, dict);
-    const statusText = getStatusLabel(currentCar.status, dict);
 
     const rows = [];
 
@@ -731,6 +712,11 @@ function renderGarage() {
       ? `<span class="garage-pill">${dict.garage_primary}</span>`
       : "";
 
+    const statusSalePill =
+      car.status === "sell"
+        ? `<span class="garage-pill garage-pill-sale">${dict.status_for_sale}</span>`
+        : "";
+
     let thumbHtml = `<div class="garage-thumb-placeholder">AQ</div>`;
     if (Array.isArray(car.media) && car.media.length) {
       const first = car.media[0];
@@ -751,6 +737,7 @@ function renderGarage() {
             <div class="garage-title">${car.brand} ${car.model} ${car.year}</div>
             <div class="garage-meta">${metaExtra}</div>
             ${primaryPill}
+            ${statusSalePill}
           </div>
         </div>
         <div class="garage-right">
@@ -761,7 +748,7 @@ function renderGarage() {
     `);
   });
 
-  // Закрытая ячейка "добавить ещё автомобили"
+  // Закрытая ячейка
   cards.push(`
     <div class="garage-card locked">
       <div class="garage-main">
@@ -842,7 +829,7 @@ function renderRating() {
   }
 }
 
-// Объявления: показываем машину, если статус "хочу продать"
+// Объявления: показываем машину, если статус "sell"
 function renderMarket() {
   const container = document.getElementById("market-user-list");
   if (!container) return;
@@ -932,7 +919,7 @@ function initRatingModeSwitch() {
   });
 }
 
-// Навигация по фото/видео
+// Навигация по медиа
 function initPhotoNav() {
   const prevBtn = document.getElementById("car-photo-prev");
   const nextBtn = document.getElementById("car-photo-next");
@@ -954,7 +941,7 @@ function initPhotoNav() {
   });
 }
 
-// Кнопка из статуса "хочу купить" -> переходим во вкладку Объявления
+// CTA из статуса "хочу купить"
 function updateStatusCta() {
   const wrap = document.getElementById("status-cta-wrap");
   const btn = document.getElementById("status-cta-btn");
@@ -1012,7 +999,6 @@ function initForm() {
       const files = Array.from(photoInput.files || []);
       if (!files.length) return;
 
-      // Перезаписываем медиа на новые (чтобы не раздувать localStorage)
       currentCar.media = [];
       currentMediaIndex = 0;
 
@@ -1043,6 +1029,8 @@ function initForm() {
       saveGarageAndCurrent();
       updateStatusCta();
       renderMarket();
+      renderGarage();
+      renderCar();
     });
   }
 
