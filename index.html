@@ -76,7 +76,7 @@
       gap: 10px;
     }
 
-    /* ОБНОВЛЁННЫЙ КРУГ С ЛОГО */
+    /* Круг с лого */
     .logo-circle {
       width: 40px;
       height: 40px;
@@ -282,11 +282,17 @@
         linear-gradient(135deg, rgba(30, 64, 175, 0.7), rgba(15, 23, 42, 0.9));
     }
 
-    .car-photo-frame img {
+    .car-photo-frame img,
+    .car-photo-frame video {
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      object-fit: contain; /* важно: чтобы машина полностью влезала в рамку */
       display: none;
+      background: #020617;
+    }
+
+    .car-photo-frame video {
+      background: #000;
     }
 
     .car-photo-placeholder {
@@ -300,6 +306,44 @@
       letter-spacing: 0.06em;
       color: var(--text-muted);
       background: radial-gradient(circle at 50% 0%, rgba(148, 163, 184, 0.2), rgba(15, 23, 42, 0.95));
+    }
+
+    .photo-nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 18px;
+      height: 24px;
+      border-radius: 999px;
+      border: none;
+      background: rgba(15, 23, 42, 0.6);
+      color: #e5f2ff;
+      font-size: 14px;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+
+    .photo-nav.prev {
+      left: 2px;
+    }
+
+    .photo-nav.next {
+      right: 2px;
+    }
+
+    .car-photo-counter {
+      position: absolute;
+      right: 4px;
+      bottom: 3px;
+      padding: 1px 6px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.7);
+      font-size: 9px;
+      color: #e5f2ff;
+      display: none;
     }
 
     /* Car info */
@@ -349,10 +393,15 @@
       justify-content: space-between;
       font-size: 12px;
       padding: 2px 0;
+      gap: 8px;
     }
 
     .stat-row span:first-child {
       color: var(--text-muted);
+    }
+
+    .stat-row span:last-child {
+      text-align: right;
     }
 
     /* Form */
@@ -457,8 +506,9 @@
     .garage-thumb img {
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      object-fit: contain;
       display: block;
+      background: #020617;
     }
 
     .garage-thumb-placeholder {
@@ -682,9 +732,13 @@
             <div class="car-hero-right">
               <div class="car-photo-frame">
                 <img id="car-photo-main" alt="Фото машины" />
+                <video id="car-video-main" playsinline muted loop></video>
                 <div class="car-photo-placeholder" id="car-photo-placeholder">
-                  <span>Фото авто</span>
+                  <span data-i18n="car_photo_placeholder"></span>
                 </div>
+                <button class="photo-nav prev" id="car-photo-prev">‹</button>
+                <button class="photo-nav next" id="car-photo-next">›</button>
+                <div class="car-photo-counter" id="car-photo-counter"></div>
               </div>
               <div class="health">
                 <span data-i18n="health"></span>
@@ -721,6 +775,80 @@
                 <label data-i18n="field_price"></label>
                 <input type="number" name="price" min="0" step="100" />
               </div>
+
+              <div class="field">
+                <label data-i18n="field_color"></label>
+                <input type="text" name="color" />
+              </div>
+
+              <div class="field">
+                <label data-i18n="field_body_type"></label>
+                <select name="bodyType" id="field-body-type">
+                  <option value="" data-i18n="opt_bodytype_none"></option>
+                  <option value="sedan" data-i18n="opt_bodytype_sedan"></option>
+                  <option value="hatchback" data-i18n="opt_bodytype_hatch"></option>
+                  <option value="crossover" data-i18n="opt_bodytype_crossover"></option>
+                  <option value="suv" data-i18n="opt_bodytype_suv"></option>
+                  <option value="wagon" data-i18n="opt_bodytype_wagon"></option>
+                  <option value="minivan" data-i18n="opt_bodytype_minivan"></option>
+                  <option value="pickup" data-i18n="opt_bodytype_pickup"></option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label data-i18n="field_body_condition"></label>
+                <select name="bodyCondition" id="field-body-condition">
+                  <option value="" data-i18n="opt_bodycond_none"></option>
+                  <option value="painted" data-i18n="opt_bodycond_painted"></option>
+                  <option value="original" data-i18n="opt_bodycond_original"></option>
+                  <option value="scratches" data-i18n="opt_bodycond_scratches"></option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label data-i18n="field_engine_type"></label>
+                <select name="engineType" id="field-engine-type">
+                  <option value="" data-i18n="opt_engine_none"></option>
+                  <option value="petrol" data-i18n="opt_engine_petrol"></option>
+                  <option value="diesel" data-i18n="opt_engine_diesel"></option>
+                  <option value="lpg" data-i18n="opt_engine_lpg"></option>
+                  <option value="cng" data-i18n="opt_engine_cng"></option>
+                  <option value="hybrid" data-i18n="opt_engine_hybrid"></option>
+                  <option value="electric" data-i18n="opt_engine_electric"></option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label data-i18n="field_transmission"></label>
+                <select name="transmission" id="field-transmission">
+                  <option value="" data-i18n="opt_trans_none"></option>
+                  <option value="manual" data-i18n="opt_trans_manual"></option>
+                  <option value="automatic" data-i18n="opt_trans_auto"></option>
+                  <option value="robot" data-i18n="opt_trans_robot"></option>
+                  <option value="cvt" data-i18n="opt_trans_cvt"></option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label data-i18n="field_purchase_info"></label>
+                <input type="text" name="purchaseInfo" />
+              </div>
+
+              <div class="field">
+                <label data-i18n="field_oil_mileage"></label>
+                <input type="number" name="oilMileage" min="0" step="1" />
+              </div>
+
+              <div class="field">
+                <label data-i18n="field_daily_mileage"></label>
+                <input type="number" name="dailyMileage" min="0" step="1" />
+              </div>
+
+              <div class="field">
+                <label data-i18n="field_last_service"></label>
+                <textarea name="lastService" rows="2"></textarea>
+              </div>
+
               <div class="field">
                 <label data-i18n="field_service"></label>
                 <select name="serviceOnTime" id="field-service">
@@ -729,13 +857,20 @@
                 </select>
                 <div class="hint" data-i18n="service_hint"></div>
               </div>
+
               <div class="field">
                 <label data-i18n="field_tuning"></label>
                 <textarea name="tuning" rows="2"></textarea>
               </div>
+
               <div class="field">
                 <label data-i18n="field_photo"></label>
-                <input type="file" id="car-photo-input" accept="image/*" />
+                <input
+                  type="file"
+                  id="car-photo-input"
+                  accept="image/*,video/*"
+                  multiple
+                />
                 <div class="hint" data-i18n="photo_hint"></div>
               </div>
 
