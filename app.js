@@ -1,3 +1,10 @@
+// Конфигурация Supabase - ЗАМЕНИТЕ НА ВАШИ ДАННЫЕ
+const SUPABASE_URL = 'https://your-project.supabase.co';
+const SUPABASE_ANON_KEY = 'your-anon-key';
+
+// Инициализация Supabase
+const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
 const tg = window.Telegram ? window.Telegram.WebApp : null;
 
 // Тексты RU / UZ
@@ -39,7 +46,7 @@ const TEXTS = {
     field_tuning: "Особенности / тюнинг",
     field_photo: "Фото автомобиля",
     btn_save: "Сохранить",
-    save_hint: "Всё хранится только на твоём устройстве.",
+    save_hint: "Данные синхронизируются с облаком.",
 
     service_hint: "Отметь, если масло и сервис проходишь вовремя.",
     photo_hint:
@@ -135,7 +142,7 @@ const TEXTS = {
 
     home_title: "",
     home_desc:
-      "Yo‘l yurgan masofa, servis, taʼmir va narxni yozib boring. AutoQiyos mashinangizni unutmaslikka yordam beradi va u boshqa shunga o‘xshash avtomobillar orasida qaysi o‘rinda turganini ko‘rsatadi.",
+      "Yo'l yurgan masofa, servis, taʼmir va narxni yozib boring. AutoQiyos mashinangizni unutmaslikka yordam beradi va u boshqa shunga o'xshash avtomobillar orasida qaysi o'rinda turganini ko'rsatadi.",
 
     your_car: "Sizning mashinangiz",
     health: "Holati",
@@ -158,54 +165,54 @@ const TEXTS = {
     field_oil_mileage: "Yog' almashtirilganda yurish, km",
     field_daily_mileage: "Kunlik yurish, km",
     field_last_service: "Oxirgi tex. xizmat",
-    field_service: "Texnik xizmat o‘z vaqtida",
-    field_tuning: "Qo‘shimcha jihozlar / tuning",
+    field_service: "Texnik xizmat o'z vaqtida",
+    field_tuning: "Qo'shimcha jihozlar / tuning",
     field_photo: "Avtomobil surati",
     btn_save: "Saqlash",
-    save_hint: "Hammasi faqat sizning qurilmangizda saqlanadi.",
+    save_hint: "Ma'lumotlar bulutga sinxronlanadi.",
 
     service_hint:
-      "Agar moy va texnik xizmatni vaqtida qiladigan bo‘lsangiz, belgini qo‘ying.",
+      "Agar moy va texnik xizmatni vaqtida qiladigan bo'lsangiz, belgini qo'ying.",
     photo_hint:
-      "Mashinangizning haqiqiy rasmlarini yoki qisqa videoni yuklang — media bo‘lmasa, reytingda qatnasha olmaysiz.",
+      "Mashinangizning haqiqiy rasmlarini yoki qisqa videoni yuklang — media bo'lmasa, reytingda qatnasha olmaysiz.",
     label_yes: "Ha",
-    label_no: "Yo‘q",
+    label_no: "Yo'q",
 
     // status
     opt_status_none: "— tanlanmagan —",
     opt_status_follow: "Mashinamni kuzataman",
     opt_status_prepare_sell: "Sotishga tayyorlanyapman",
     opt_status_sell: "Sotmoqchiman",
-    opt_status_consider: "Takliflarni ko‘rib chiqaman",
+    opt_status_consider: "Takliflarni ko'rib chiqaman",
     opt_status_want_buy: "Sotib olmoqchiman",
     status_cta_btn: "E'lonlarga o'tish",
     status_for_sale: "Sotuvda",
 
     // uz коробка
-    opt_trans_none: "— ko‘rsatilmagan —",
+    opt_trans_none: "— ko'rsatilmagan —",
     opt_trans_manual: "Mexanik",
     opt_trans_auto: "Avtomat",
     opt_trans_robot: "Robotlashtirilgan",
     opt_trans_cvt: "Variator",
 
     // uz состояние кузова
-    opt_bodycond_none: "— ko‘rsatilmagan —",
-    opt_bodycond_painted: "Bo‘yalgan",
-    opt_bodycond_original: "Bo‘yalmagan (zavod bo‘yog‘i)",
+    opt_bodycond_none: "— ko'rsatilmagan —",
+    opt_bodycond_painted: "Bo'yalgan",
+    opt_bodycond_original: "Bo'yalmagan (zavod bo'yog'i)",
     opt_bodycond_scratches: "Chizilgan joylar bor",
 
     // uz тип кузова
-    opt_bodytype_none: "— ko‘rsatilmagan —",
+    opt_bodytype_none: "— ko'rsatilmagan —",
     opt_bodytype_sedan: "Sedan",
     opt_bodytype_hatch: "Xetchbek",
     opt_bodytype_crossover: "Krossover",
-    opt_bodytype_suv: "SUV / yo‘ltanlamas",
+    opt_bodytype_suv: "SUV / yo'ltanlamas",
     opt_bodytype_wagon: "Universal",
     opt_bodytype_minivan: "Miniven",
     opt_bodytype_pickup: "Pikap",
 
     // uz двигатель
-    opt_engine_none: "— ko‘rsatilmagan —",
+    opt_engine_none: "— ko'rsatilmagan —",
     opt_engine_petrol: "Benzin",
     opt_engine_diesel: "Dizel",
     opt_engine_lpg: "Propan / benzin",
@@ -216,33 +223,33 @@ const TEXTS = {
     // Garaj
     garage_title: "Mening garajim",
     garage_desc:
-      "Bu yerda barcha mashinalaringiz ko‘rinadi. Hozircha 1 ta mashinani bepul yuritish mumkin, qolganlari yopiq uyachalar bo‘ladi.",
+      "Bu yerda barcha mashinalaringiz ko'rinadi. Hozircha 1 ta mashinani bepul yuritish mumkin, qolganlari yopiq uyachalar bo'ladi.",
     garage_primary: "Asosiy mashina",
     garage_health: "Holati",
     garage_free_note:
       "Hozircha 1 ta mashina bepul. Ikkinchi va keyingilar yopiq holatda saqlanadi.",
-    garage_premium_title: "Yana boshqa avtomobillarni qo‘shish",
+    garage_premium_title: "Yana boshqa avtomobillarni qo'shish",
     garage_premium_body:
-      "Bu uyacha boshqa mashinalar uchun. Keyinchalik faqat profil egasi ochishi mumkin bo‘ladi.",
+      "Bu uyacha boshqa mashinalar uchun. Keyinchalik faqat profil egasi ochishi mumkin bo'ladi.",
 
     // Reyting
     rating_title: "Reyting",
     rating_desc:
-      "Bu yerda egalari va modellar reytingi real maʼlumotlar asosida ko‘rinadi.",
+      "Bu yerda egalari va modellar reytingi real maʼlumotlar asosida ko'rinadi.",
     rating_mode_owners: "Egalari",
     rating_mode_cars: "Modellar",
-    rating_badge: "Model bo‘yicha Top–5",
-    rating_pos: "o‘rin",
+    rating_badge: "Model bo'yicha Top–5",
+    rating_pos: "o'rin",
     rating_health: "holati",
     rating_empty:
-      "Hozircha hech kim mashinasini qo‘shmadi. Mashinangizni rasm bilan qo‘shing — moderatsiyadan so‘ng reytingda ko‘rinadi.",
+      "Hozircha hech kim mashinasini qo'shmadi. Mashinangizni rasm bilan qo'shing — moderatsiyadan so'ng reytingda ko'rinadi.",
     rating_local_notice:
-      "Hozircha faqat o‘z maʼlumotlaringizni ko‘ryapsiz. Umumiy reyting server ulanganidan keyin paydo bo‘ladi.",
+      "Hozircha faqat o'z maʼlumotlaringizni ko'ryapsiz. Umumiy reyting server ulanganidan keyin paydo bo'ladi.",
 
     // E'lonlar
     market_title: "AutoQiyos e'lonlari",
     market_desc:
-      "Bu yerda narxi adolatli baholangan eʼlonlar bo‘ladi. Hozircha faqat namunaviy eʼlon va agar sotmoqchi bo‘lsangiz, o‘z mashinangiz ko‘rsatiladi.",
+      "Bu yerda narxi adolatli baholangan eʼlonlar bo'ladi. Hozircha faqat namunaviy eʼlon va agar sotmoqchi bo'lsangiz, o'z mashinangiz ko'rsatiladi.",
     market_demo_title: "Namuna e'lon",
     market_demo_body:
       "Chevrolet Cobalt 2022, 1.5, avtomat, 45 000 km. Narx bahosi: adekvat. Eʼlon joylash tez orada bot orqali ishlaydi.",
@@ -250,7 +257,14 @@ const TEXTS = {
   }
 };
 
+// Глобальные переменные
 let currentLang = localStorage.getItem("aq_lang") || "ru";
+let currentUser = null;
+let garage = [];
+let currentCarIndex = 0;
+let currentCar = null;
+let currentMediaIndex = 0;
+let ratingMode = "owners";
 
 const defaultCar = {
   brand: "Chevrolet Cobalt",
@@ -270,36 +284,286 @@ const defaultCar = {
   engineType: "",
   transmission: "",
   status: "",
-  media: [] // [{ type: 'image'|'video', data: 'dataURL' }]
+  media: []
 };
 
-// нормализация старого формата
-function normalizeCar(car) {
-  const merged = { ...defaultCar, ...car };
+// ========== SUPABASE FUNCTIONS ==========
 
-  if (!Array.isArray(merged.media)) {
-    merged.media = [];
+// Инициализация пользователя
+async function initUser() {
+  if (!supabase || !tg?.initDataUnsafe?.user) {
+    showSyncStatus('no-auth', 'Оффлайн режим');
+    return null;
   }
-  if (merged.photoData && !merged.media.length) {
-    merged.media.push({ type: "image", data: merged.photoData });
-  }
-  return merged;
-}
 
-// Старый формат (одна машина)
-function loadSingleCarFromStorage() {
+  const telegramUser = tg.initDataUnsafe.user;
+  
   try {
-    const raw = localStorage.getItem("aq_car");
-    if (!raw) return normalizeCar({});
-    const parsed = JSON.parse(raw);
-    return normalizeCar(parsed);
-  } catch (e) {
-    return normalizeCar({});
+    showSyncStatus('syncing', 'Синхронизация...');
+
+    // Пытаемся войти
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      email: `${telegramUser.id}@telegram.autoqiyos.com`,
+      password: telegramUser.id.toString()
+    });
+
+    if (signInError) {
+      // Если пользователя нет, регистрируем
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email: `${telegramUser.id}@telegram.autoqiyos.com`,
+        password: telegramUser.id.toString(),
+        options: {
+          data: {
+            telegram_id: telegramUser.id,
+            username: telegramUser.username,
+            first_name: telegramUser.first_name,
+            last_name: telegramUser.last_name
+          }
+        }
+      });
+
+      if (signUpError) throw signUpError;
+      currentUser = signUpData.user;
+    } else {
+      currentUser = signInData.user;
+    }
+
+    // Создаем/обновляем профиль
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .upsert({
+        id: currentUser.id,
+        telegram_id: telegramUser.id,
+        username: telegramUser.username,
+        first_name: telegramUser.first_name,
+        last_name: telegramUser.last_name,
+        language: currentLang,
+        updated_at: new Date().toISOString()
+      });
+
+    if (profileError) throw profileError;
+
+    showSyncStatus('synced', 'Синхронизировано');
+    return currentUser;
+
+  } catch (error) {
+    console.error('Error initializing user:', error);
+    showSyncStatus('error', 'Ошибка синхронизации');
+    return null;
   }
 }
 
-// Новый формат — гараж
-function loadGarage() {
+// Загрузка гаража из Supabase
+async function loadGarageFromSupabase() {
+  if (!currentUser) return [];
+
+  try {
+    showSyncStatus('syncing', 'Загрузка данных...');
+
+    const { data: cars, error } = await supabase
+      .from('cars')
+      .select(`
+        *,
+        car_media (*)
+      `)
+      .eq('user_id', currentUser.id)
+      .order('is_primary', { ascending: false })
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+
+    const formattedCars = (cars || []).map(car => ({
+      id: car.id,
+      brand: car.brand,
+      model: car.model,
+      year: car.year,
+      mileage: car.mileage,
+      price: car.price,
+      serviceOnTime: car.service_on_time,
+      tuning: car.tuning,
+      color: car.color,
+      bodyType: car.body_type,
+      bodyCondition: car.body_condition,
+      engineType: car.engine_type,
+      transmission: car.transmission,
+      purchaseInfo: car.purchase_info,
+      oilMileage: car.oil_mileage,
+      dailyMileage: car.daily_mileage,
+      lastService: car.last_service,
+      status: car.status,
+      isPrimary: car.is_primary,
+      media: (car.car_media || []).map(media => ({
+        type: media.type,
+        data: media.url,
+        id: media.id
+      }))
+    }));
+
+    showSyncStatus('synced', 'Данные загружены');
+    return formattedCars;
+
+  } catch (error) {
+    console.error('Error loading garage from Supabase:', error);
+    showSyncStatus('error', 'Ошибка загрузки');
+    return [];
+  }
+}
+
+// Сохранение автомобиля в Supabase
+async function saveCarToSupabase(car) {
+  if (!currentUser) return car;
+
+  try {
+    showSyncStatus('syncing', 'Сохранение...');
+
+    const carData = {
+      user_id: currentUser.id,
+      brand: car.brand || defaultCar.brand,
+      model: car.model || defaultCar.model,
+      year: car.year || defaultCar.year,
+      mileage: car.mileage || defaultCar.mileage,
+      price: car.price || defaultCar.price,
+      service_on_time: car.serviceOnTime !== undefined ? car.serviceOnTime : defaultCar.serviceOnTime,
+      tuning: car.tuning || defaultCar.tuning,
+      color: car.color || '',
+      body_type: car.bodyType || '',
+      body_condition: car.bodyCondition || '',
+      engine_type: car.engineType || '',
+      transmission: car.transmission || '',
+      purchase_info: car.purchaseInfo || '',
+      oil_mileage: car.oilMileage || '',
+      daily_mileage: car.dailyMileage || '',
+      last_service: car.lastService || '',
+      status: car.status || '',
+      is_primary: car.isPrimary !== undefined ? car.isPrimary : true,
+      updated_at: new Date().toISOString()
+    };
+
+    let result;
+    if (car.id) {
+      // Обновление существующего автомобиля
+      result = await supabase
+        .from('cars')
+        .update(carData)
+        .eq('id', car.id)
+        .select();
+    } else {
+      // Создание нового автомобиля
+      result = await supabase
+        .from('cars')
+        .insert([carData])
+        .select();
+    }
+
+    if (result.error) throw result.error;
+    
+    const savedCar = result.data[0];
+    
+    // Сохраняем медиа файлы
+    if (car.media && car.media.length > 0) {
+      await saveCarMediaToSupabase(savedCar.id, car.media);
+    }
+
+    // Сохраняем рейтинг
+    await saveRatingToSupabase(savedCar.id);
+
+    showSyncStatus('synced', 'Сохранено');
+    return { ...car, id: savedCar.id };
+
+  } catch (error) {
+    console.error('Error saving car to Supabase:', error);
+    showSyncStatus('error', 'Ошибка сохранения');
+    return car;
+  }
+}
+
+// Сохранение медиа файлов
+async function saveCarMediaToSupabase(carId, mediaArray) {
+  if (!currentUser) return;
+
+  try {
+    // Удаляем старые медиа
+    await supabase
+      .from('car_media')
+      .delete()
+      .eq('car_id', carId);
+
+    // Сохраняем новые медиа
+    const mediaPromises = mediaArray.map((media, index) => 
+      supabase
+        .from('car_media')
+        .insert({
+          car_id: carId,
+          type: media.type,
+          url: media.data,
+          order_index: index
+        })
+    );
+
+    await Promise.all(mediaPromises);
+
+  } catch (error) {
+    console.error('Error saving car media:', error);
+  }
+}
+
+// Сохранение рейтинга
+async function saveRatingToSupabase(carId) {
+  if (!currentUser || !currentCar) return;
+
+  try {
+    const healthScore = calcHealthScore(currentCar);
+    
+    await supabase
+      .from('ratings')
+      .insert({
+        car_id: carId,
+        health_score: healthScore,
+        calculated_at: new Date().toISOString()
+      });
+
+  } catch (error) {
+    console.error('Error saving rating:', error);
+  }
+}
+
+// Загрузка рейтингов
+async function loadRatingsFromSupabase() {
+  if (!currentUser) return [];
+
+  try {
+    const { data, error } = await supabase
+      .from('ratings')
+      .select(`
+        health_score,
+        calculated_at,
+        cars (
+          brand,
+          model,
+          year,
+          mileage,
+          profiles (
+            username,
+            first_name,
+            last_name
+          )
+        )
+      `)
+      .order('health_score', { ascending: false })
+      .limit(50);
+
+    if (error) throw error;
+    return data || [];
+
+  } catch (error) {
+    console.error('Error loading ratings:', error);
+    return [];
+  }
+}
+
+// ========== LOCAL STORAGE FUNCTIONS ==========
+
+function loadGarageFromStorage() {
   try {
     const raw = localStorage.getItem("aq_garage");
     if (raw) {
@@ -322,21 +586,146 @@ function loadGarage() {
   return [normalized];
 }
 
-let garage = loadGarage();
-let currentCarIndex = garage.findIndex((c) => c.isPrimary);
-if (currentCarIndex === -1) {
-  currentCarIndex = 0;
-  garage[0].isPrimary = true;
+function normalizeCar(car) {
+  const merged = { ...defaultCar, ...car };
+  if (!Array.isArray(merged.media)) {
+    merged.media = [];
+  }
+  if (merged.photoData && !merged.media.length) {
+    merged.media.push({ type: "image", data: merged.photoData });
+  }
+  return merged;
 }
-let currentCar = { ...garage[currentCarIndex] };
-let currentMediaIndex = 0;
-let ratingMode = "owners";
 
-function initTelegram() {
-  if (!tg) return;
-  tg.ready();
-  tg.expand();
+function loadSingleCarFromStorage() {
+  try {
+    const raw = localStorage.getItem("aq_car");
+    if (!raw) return normalizeCar({});
+    const parsed = JSON.parse(raw);
+    return normalizeCar(parsed);
+  } catch (e) {
+    return normalizeCar({});
+  }
 }
+
+// ========== CORE APPLICATION FUNCTIONS ==========
+
+// Статус синхронизации
+function showSyncStatus(type, message) {
+  const statusEl = document.getElementById('sync-status');
+  if (!statusEl) return;
+
+  statusEl.textContent = message;
+  statusEl.className = 'sync-status';
+  statusEl.style.display = 'block';
+
+  if (type === 'syncing') statusEl.classList.add('syncing');
+  else if (type === 'synced') statusEl.classList.add('synced');
+  else if (type === 'error') statusEl.classList.add('error');
+  else if (type === 'no-auth') statusEl.classList.add('error');
+
+  if (type === 'synced') {
+    setTimeout(() => {
+      statusEl.style.display = 'none';
+    }, 2000);
+  }
+}
+
+// Инициализация приложения
+async function initApp() {
+  initTelegram();
+  applyTexts(currentLang);
+  initLangSwitch();
+  initTabs();
+  initRatingModeSwitch();
+  initPhotoNav();
+  initStatusCta();
+  initForm();
+
+  // Инициализируем пользователя и загружаем данные
+  currentUser = await initUser();
+  
+  if (currentUser && supabase) {
+    garage = await loadGarageFromSupabase();
+  } else {
+    garage = loadGarageFromStorage();
+  }
+
+  if (garage.length > 0) {
+    currentCarIndex = garage.findIndex(c => c.isPrimary) || 0;
+    if (currentCarIndex === -1) currentCarIndex = 0;
+    currentCar = { ...garage[currentCarIndex] };
+  } else {
+    currentCar = { ...defaultCar, isPrimary: true };
+    garage = [currentCar];
+  }
+
+  renderCar();
+  renderGarage();
+  renderRating();
+  renderMarket();
+}
+
+// Сохранение данных
+async function saveGarageAndCurrent() {
+  // Обновляем текущую машину в гараже
+  garage[currentCarIndex] = { ...garage[currentCarIndex], ...currentCar };
+  
+  // Сохраняем в Supabase
+  if (currentUser && supabase) {
+    const savedCar = await saveCarToSupabase(currentCar);
+    if (savedCar && savedCar.id) {
+      currentCar.id = savedCar.id;
+      garage[currentCarIndex].id = savedCar.id;
+    }
+  }
+  
+  // Сохраняем в localStorage как fallback
+  try {
+    localStorage.setItem("aq_garage", JSON.stringify(garage));
+    localStorage.setItem("aq_car", JSON.stringify(currentCar));
+  } catch (e) {
+    console.error('Error saving to localStorage:', e);
+  }
+}
+
+// Обработка загрузки медиа
+async function handleMediaUpload(files) {
+  if (!files.length) return;
+
+  currentCar.media = [];
+  currentMediaIndex = 0;
+
+  const maxItems = 10;
+  const filesToProcess = files.slice(0, maxItems);
+
+  for (const file of filesToProcess) {
+    if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) {
+      continue;
+    }
+
+    const type = file.type.startsWith("video/") ? "video" : "image";
+    const dataUrl = await readFileAsDataURL(file);
+    currentCar.media.push({ type, data: dataUrl });
+  }
+
+  await saveGarageAndCurrent();
+  renderCarMedia();
+  renderGarage();
+  renderRating();
+  renderMarket();
+}
+
+function readFileAsDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// ========== RENDERING FUNCTIONS ==========
 
 // Формула здоровья
 function calcHealthScore(car) {
@@ -380,90 +769,60 @@ function applyTexts(lang) {
 // Маппинг значений
 function getTransmissionLabel(value, dict) {
   switch (value) {
-    case "manual":
-      return dict.opt_trans_manual;
-    case "automatic":
-      return dict.opt_trans_auto;
-    case "robot":
-      return dict.opt_trans_robot;
-    case "cvt":
-      return dict.opt_trans_cvt;
-    default:
-      return "";
+    case "manual": return dict.opt_trans_manual;
+    case "automatic": return dict.opt_trans_auto;
+    case "robot": return dict.opt_trans_robot;
+    case "cvt": return dict.opt_trans_cvt;
+    default: return "";
   }
 }
 
 function getBodyConditionLabel(value, dict) {
   switch (value) {
-    case "painted":
-      return dict.opt_bodycond_painted;
-    case "original":
-      return dict.opt_bodycond_original;
-    case "scratches":
-      return dict.opt_bodycond_scratches;
-    default:
-      return "";
+    case "painted": return dict.opt_bodycond_painted;
+    case "original": return dict.opt_bodycond_original;
+    case "scratches": return dict.opt_bodycond_scratches;
+    default: return "";
   }
 }
 
 function getBodyTypeLabel(value, dict) {
   switch (value) {
-    case "sedan":
-      return dict.opt_bodytype_sedan;
-    case "hatchback":
-      return dict.opt_bodytype_hatch;
-    case "crossover":
-      return dict.opt_bodytype_crossover;
-    case "suv":
-      return dict.opt_bodytype_suv;
-    case "wagon":
-      return dict.opt_bodytype_wagon;
-    case "minivan":
-      return dict.opt_bodytype_minivan;
-    case "pickup":
-      return dict.opt_bodytype_pickup;
-    default:
-      return "";
+    case "sedan": return dict.opt_bodytype_sedan;
+    case "hatchback": return dict.opt_bodytype_hatch;
+    case "crossover": return dict.opt_bodytype_crossover;
+    case "suv": return dict.opt_bodytype_suv;
+    case "wagon": return dict.opt_bodytype_wagon;
+    case "minivan": return dict.opt_bodytype_minivan;
+    case "pickup": return dict.opt_bodytype_pickup;
+    default: return "";
   }
 }
 
 function getEngineTypeLabel(value, dict) {
   switch (value) {
-    case "petrol":
-      return dict.opt_engine_petrol;
-    case "diesel":
-      return dict.opt_engine_diesel;
-    case "lpg":
-      return dict.opt_engine_lpg;
-    case "cng":
-      return dict.opt_engine_cng;
-    case "hybrid":
-      return dict.opt_engine_hybrid;
-    case "electric":
-      return dict.opt_engine_electric;
-    default:
-      return "";
+    case "petrol": return dict.opt_engine_petrol;
+    case "diesel": return dict.opt_engine_diesel;
+    case "lpg": return dict.opt_engine_lpg;
+    case "cng": return dict.opt_engine_cng;
+    case "hybrid": return dict.opt_engine_hybrid;
+    case "electric": return dict.opt_engine_electric;
+    default: return "";
   }
 }
 
 function getStatusLabel(value, dict) {
   switch (value) {
-    case "follow":
-      return dict.opt_status_follow;
-    case "prepare_sell":
-      return dict.opt_status_prepare_sell;
-    case "sell":
-      return dict.opt_status_sell;
-    case "consider_offers":
-      return dict.opt_status_consider;
-    case "want_buy":
-      return dict.opt_status_want_buy;
-    default:
-      return "";
+    case "follow": return dict.opt_status_follow;
+    case "prepare_sell": return dict.opt_status_prepare_sell;
+    case "sell": return dict.opt_status_sell;
+    case "consider_offers": return dict.opt_status_consider;
+    case "want_buy": return dict.opt_status_want_buy;
+    default: return "";
   }
 }
 
-// Фото/видео на главной: одна большая рамка
+// Фото/видео на главной
 function renderCarMedia() {
   const img = document.getElementById("car-photo-main");
   const video = document.getElementById("car-video-main");
@@ -560,21 +919,10 @@ function renderCar() {
     const yes = dict.label_yes;
     const no = dict.label_no;
 
-    const mileageStr =
-      (Number(currentCar.mileage) || 0).toLocaleString("ru-RU") + " км";
-
-    const priceStr = currentCar.price
-      ? Number(currentCar.price).toLocaleString("ru-RU") + " $"
-      : "—";
-
-    const oilMileageStr = currentCar.oilMileage
-      ? Number(currentCar.oilMileage).toLocaleString("ru-RU") + " км"
-      : "";
-
-    const dailyMileageStr = currentCar.dailyMileage
-      ? Number(currentCar.dailyMileage).toLocaleString("ru-RU") + " км"
-      : "";
-
+    const mileageStr = (Number(currentCar.mileage) || 0).toLocaleString("ru-RU") + " км";
+    const priceStr = currentCar.price ? Number(currentCar.price).toLocaleString("ru-RU") + " $" : "—";
+    const oilMileageStr = currentCar.oilMileage ? Number(currentCar.oilMileage).toLocaleString("ru-RU") + " км" : "";
+    const dailyMileageStr = currentCar.dailyMileage ? Number(currentCar.dailyMileage).toLocaleString("ru-RU") + " км" : "";
     const bodyTypeText = getBodyTypeLabel(currentCar.bodyType, dict);
     const bodyConditionText = getBodyConditionLabel(currentCar.bodyCondition, dict);
     const engineTypeText = getEngineTypeLabel(currentCar.engineType, dict);
@@ -584,57 +932,38 @@ function renderCar() {
 
     rows.push({ label: priceLabel, value: priceStr });
     rows.push({ label: mileageLabel, value: mileageStr });
-    rows.push({
-      label: serviceLabel,
-      value: currentCar.serviceOnTime ? yes : no
-    });
+    rows.push({ label: serviceLabel, value: currentCar.serviceOnTime ? yes : no });
 
     if (statusText) {
       rows.push({ label: dict.field_status, value: statusText });
     }
-
     if (engineTypeText) {
       rows.push({ label: dict.field_engine_type, value: engineTypeText });
     }
-
     if (transmissionText) {
       rows.push({ label: dict.field_transmission, value: transmissionText });
     }
-
     if (bodyTypeText) {
       rows.push({ label: dict.field_body_type, value: bodyTypeText });
     }
-
     if (bodyConditionText) {
       rows.push({ label: dict.field_body_condition, value: bodyConditionText });
     }
-
     if (currentCar.color) {
       rows.push({ label: dict.field_color, value: currentCar.color });
     }
-
     if (oilMileageStr) {
       rows.push({ label: dict.field_oil_mileage, value: oilMileageStr });
     }
-
     if (dailyMileageStr) {
       rows.push({ label: dict.field_daily_mileage, value: dailyMileageStr });
     }
-
     if (currentCar.purchaseInfo) {
-      rows.push({
-        label: dict.field_purchase_info,
-        value: currentCar.purchaseInfo
-      });
+      rows.push({ label: dict.field_purchase_info, value: currentCar.purchaseInfo });
     }
-
     if (currentCar.lastService) {
-      rows.push({
-        label: dict.field_last_service,
-        value: currentCar.lastService
-      });
+      rows.push({ label: dict.field_last_service, value: currentCar.lastService });
     }
-
     if (currentCar.tuning) {
       rows.push({ label: tuningLabel, value: currentCar.tuning });
     }
@@ -662,37 +991,19 @@ function renderCar() {
 
     if (form.color) form.color.value = currentCar.color || "";
     if (form.bodyType) form.bodyType.value = currentCar.bodyType || "";
-    if (form.bodyCondition)
-      form.bodyCondition.value = currentCar.bodyCondition || "";
+    if (form.bodyCondition) form.bodyCondition.value = currentCar.bodyCondition || "";
     if (form.engineType) form.engineType.value = currentCar.engineType || "";
-    if (form.transmission)
-      form.transmission.value = currentCar.transmission || "";
-    if (form.purchaseInfo)
-      form.purchaseInfo.value = currentCar.purchaseInfo || "";
-    if (form.oilMileage)
-      form.oilMileage.value = currentCar.oilMileage || "";
-    if (form.dailyMileage)
-      form.dailyMileage.value = currentCar.dailyMileage || "";
-    if (form.lastService)
-      form.lastService.value = currentCar.lastService || "";
-    if (form.status)
-      form.status.value = currentCar.status || "";
+    if (form.transmission) form.transmission.value = currentCar.transmission || "";
+    if (form.purchaseInfo) form.purchaseInfo.value = currentCar.purchaseInfo || "";
+    if (form.oilMileage) form.oilMileage.value = currentCar.oilMileage || "";
+    if (form.dailyMileage) form.dailyMileage.value = currentCar.dailyMileage || "";
+    if (form.lastService) form.lastService.value = currentCar.lastService || "";
+    if (form.status) form.status.value = currentCar.status || "";
   }
 
   renderCarMedia();
   updateStatusCta();
   renderMarket();
-}
-
-// Сохранение
-function saveGarageAndCurrent() {
-  garage[currentCarIndex] = { ...garage[currentCarIndex], ...currentCar };
-  try {
-    localStorage.setItem("aq_garage", JSON.stringify(garage));
-    localStorage.setItem("aq_car", JSON.stringify(currentCar));
-  } catch (e) {
-    // ignore
-  }
 }
 
 // Гараж
@@ -705,21 +1016,12 @@ function renderGarage() {
 
   garage.forEach((car) => {
     const health = calcHealthScore(car);
-    const mileageStr =
-      (Number(car.mileage) || 0).toLocaleString("ru-RU") + " км";
-    const priceStr = car.price
-      ? Number(car.price).toLocaleString("ru-RU") + " $"
-      : "";
+    const mileageStr = (Number(car.mileage) || 0).toLocaleString("ru-RU") + " км";
+    const priceStr = car.price ? Number(car.price).toLocaleString("ru-RU") + " $" : "";
     const metaExtra = priceStr ? `${mileageStr} • ${priceStr}` : mileageStr;
 
-    const primaryPill = car.isPrimary
-      ? `<span class="garage-pill">${dict.garage_primary}</span>`
-      : "";
-
-    const statusSalePill =
-      car.status === "sell"
-        ? `<span class="garage-pill garage-pill-sale">${dict.status_for_sale}</span>`
-        : "";
+    const primaryPill = car.isPrimary ? `<span class="garage-pill">${dict.garage_primary}</span>` : "";
+    const statusSalePill = car.status === "sell" ? `<span class="garage-pill garage-pill-sale">${dict.status_for_sale}</span>` : "";
 
     let thumbHtml = `<div class="garage-thumb-placeholder">AQ</div>`;
     if (Array.isArray(car.media) && car.media.length) {
@@ -773,8 +1075,7 @@ function renderRating() {
   const container = document.getElementById("rating-list");
   if (!container) return;
   const dict = TEXTS[currentLang];
-  const hasMedia =
-    Array.isArray(currentCar.media) && currentCar.media.length > 0;
+  const hasMedia = Array.isArray(currentCar.media) && currentCar.media.length > 0;
 
   if (!hasMedia) {
     container.innerHTML = `<p class="muted small">${dict.rating_empty}</p>`;
@@ -783,18 +1084,11 @@ function renderRating() {
 
   const health = calcHealthScore(currentCar);
   const carTitle = `${currentCar.brand} ${currentCar.model} ${currentCar.year}`;
-  const mileageStr =
-    (Number(currentCar.mileage) || 0).toLocaleString("ru-RU") + " км";
+  const mileageStr = (Number(currentCar.mileage) || 0).toLocaleString("ru-RU") + " км";
 
-  const username =
-    tg &&
-    tg.initDataUnsafe &&
-    tg.initDataUnsafe.user &&
-    tg.initDataUnsafe.user.username
-      ? "@" + tg.initDataUnsafe.user.username
-      : currentLang === "ru"
-      ? "Вы"
-      : "Siz";
+  const username = tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.username
+    ? "@" + tg.initDataUnsafe.user.username
+    : currentLang === "ru" ? "Вы" : "Siz";
 
   if (ratingMode === "owners") {
     container.innerHTML = `
@@ -833,7 +1127,7 @@ function renderRating() {
   }
 }
 
-// Объявления: показываем машину, если статус "sell"
+// Объявления
 function renderMarket() {
   const container = document.getElementById("market-user-list");
   if (!container) return;
@@ -846,11 +1140,8 @@ function renderMarket() {
 
   const health = calcHealthScore(currentCar);
   const carTitle = `${currentCar.brand} ${currentCar.model} ${currentCar.year}`;
-  const mileageStr =
-    (Number(currentCar.mileage) || 0).toLocaleString("ru-RU") + " км";
-  const priceStr = currentCar.price
-    ? Number(currentCar.price).toLocaleString("ru-RU") + " $"
-    : "";
+  const mileageStr = (Number(currentCar.mileage) || 0).toLocaleString("ru-RU") + " км";
+  const priceStr = currentCar.price ? Number(currentCar.price).toLocaleString("ru-RU") + " $" : "";
 
   container.innerHTML = `
     <div class="card">
@@ -866,7 +1157,14 @@ function renderMarket() {
   `;
 }
 
-// Языки
+// ========== INITIALIZATION FUNCTIONS ==========
+
+function initTelegram() {
+  if (!tg) return;
+  tg.ready();
+  tg.expand();
+}
+
 function initLangSwitch() {
   const buttons = document.querySelectorAll(".lang-btn");
   buttons.forEach((btn) => {
@@ -876,9 +1174,7 @@ function initLangSwitch() {
       if (lang === currentLang) return;
       currentLang = lang;
       localStorage.setItem("aq_lang", currentLang);
-      buttons.forEach((b) =>
-        b.classList.toggle("active", b.dataset.lang === currentLang)
-      );
+      buttons.forEach((b) => b.classList.toggle("active", b.dataset.lang === currentLang));
       applyTexts(currentLang);
       renderCar();
       renderGarage();
@@ -888,7 +1184,6 @@ function initLangSwitch() {
   });
 }
 
-// Вкладки
 function initTabs() {
   const buttons = document.querySelectorAll(".tab-btn");
   const screens = document.querySelectorAll(".screen");
@@ -906,7 +1201,6 @@ function initTabs() {
   });
 }
 
-// Переключатель режимов рейтинга
 function initRatingModeSwitch() {
   const buttons = document.querySelectorAll(".rating-mode-btn");
   buttons.forEach((btn) => {
@@ -915,15 +1209,12 @@ function initRatingModeSwitch() {
       const mode = btn.dataset.mode;
       if (mode === ratingMode) return;
       ratingMode = mode;
-      buttons.forEach((b) =>
-        b.classList.toggle("active", b.dataset.mode === ratingMode)
-      );
+      buttons.forEach((b) => b.classList.toggle("active", b.dataset.mode === ratingMode));
       renderRating();
     });
   });
 }
 
-// Навигация по медиа
 function initPhotoNav() {
   const prevBtn = document.getElementById("car-photo-prev");
   const nextBtn = document.getElementById("car-photo-next");
@@ -932,8 +1223,7 @@ function initPhotoNav() {
   prevBtn.addEventListener("click", () => {
     const media = Array.isArray(currentCar.media) ? currentCar.media : [];
     if (!media.length) return;
-    currentMediaIndex =
-      (currentMediaIndex - 1 + media.length) % media.length;
+    currentMediaIndex = (currentMediaIndex - 1 + media.length) % media.length;
     renderCarMedia();
   });
 
@@ -945,7 +1235,6 @@ function initPhotoNav() {
   });
 }
 
-// CTA из статуса "хочу купить"
 function updateStatusCta() {
   const wrap = document.getElementById("status-cta-wrap");
   const btn = document.getElementById("status-cta-btn");
@@ -978,7 +1267,6 @@ function initStatusCta() {
   });
 }
 
-// Уведомление о сохранении
 function notifySaved() {
   const msg = currentLang === "ru" ? "Сохранено ✅" : "Saqlandi ✅";
   if (tg && tg.showPopup) {
@@ -992,37 +1280,16 @@ function notifySaved() {
   }
 }
 
-// Форма
 function initForm() {
   const form = document.getElementById("car-form");
   if (!form) return;
 
   const photoInput = document.getElementById("car-photo-input");
   if (photoInput) {
-    photoInput.addEventListener("change", () => {
-      const files = Array.from(photoInput.files || []);
+    photoInput.addEventListener("change", (e) => {
+      const files = Array.from(e.target.files || []);
       if (!files.length) return;
-
-      currentCar.media = [];
-      currentMediaIndex = 0;
-
-      const maxItems = 10;
-      files.slice(0, maxItems).forEach((file) => {
-        if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) {
-          return;
-        }
-        const type = file.type.startsWith("video/") ? "video" : "image";
-        const reader = new FileReader();
-        reader.onload = () => {
-          currentCar.media.push({ type, data: reader.result });
-          saveGarageAndCurrent();
-          renderCarMedia();
-          renderGarage();
-          renderRating();
-          renderMarket();
-        };
-        reader.readAsDataURL(file);
-      });
+      handleMediaUpload(files);
     });
   }
 
@@ -1038,79 +1305,56 @@ function initForm() {
     });
   }
 
-  form.addEventListener("submit", (e) => {
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
+    
+    // Показываем состояние загрузки
+    const saveBtn = document.getElementById('save-btn');
+    const originalText = saveBtn.textContent;
+    saveBtn.textContent = currentLang === 'ru' ? 'Сохранение...' : 'Saqlanmoqda...';
+    saveBtn.disabled = true;
+
     const fd = new FormData(form);
-    const brand =
-      (fd.get("brand") || "").toString().trim() || defaultCar.brand;
-    const model =
-      (fd.get("model") || "").toString().trim() || defaultCar.model;
-    const year = Number(fd.get("year")) || defaultCar.year;
-    const mileage = Number(fd.get("mileage")) || defaultCar.mileage;
-    const price = Number(fd.get("price")) || defaultCar.price;
-    const serviceOnTime = fd.get("serviceOnTime") === "yes";
-    const tuning = (fd.get("tuning") || "").toString().trim();
-
-    const color = (fd.get("color") || "").toString().trim();
-    const bodyType = (fd.get("bodyType") || "").toString();
-    const bodyCondition = (fd.get("bodyCondition") || "").toString();
-    const engineType = (fd.get("engineType") || "").toString();
-    const transmission = (fd.get("transmission") || "").toString();
-    const purchaseInfo = (fd.get("purchaseInfo") || "").toString().trim();
-
-    const oilMileageRaw = (fd.get("oilMileage") || "").toString().trim();
-    const oilMileage = oilMileageRaw ? Number(oilMileageRaw) : "";
-
-    const dailyMileageRaw = (fd.get("dailyMileage") || "").toString().trim();
-    const dailyMileage = dailyMileageRaw ? Number(dailyMileageRaw) : "";
-
-    const lastService = (fd.get("lastService") || "").toString().trim();
-    const status = (fd.get("status") || "").toString();
-
+    
     currentCar = {
-      brand,
-      model,
-      year,
-      mileage,
-      price,
-      serviceOnTime,
-      tuning,
-      color,
-      bodyType,
-      bodyCondition,
-      engineType,
-      transmission,
-      purchaseInfo,
-      oilMileage,
-      dailyMileage,
-      lastService,
-      status,
+      ...currentCar,
+      brand: (fd.get("brand") || "").toString().trim() || defaultCar.brand,
+      model: (fd.get("model") || "").toString().trim() || defaultCar.model,
+      year: Number(fd.get("year")) || defaultCar.year,
+      mileage: Number(fd.get("mileage")) || defaultCar.mileage,
+      price: Number(fd.get("price")) || defaultCar.price,
+      serviceOnTime: fd.get("serviceOnTime") === "yes",
+      tuning: (fd.get("tuning") || "").toString().trim(),
+      color: (fd.get("color") || "").toString().trim(),
+      bodyType: (fd.get("bodyType") || "").toString(),
+      bodyCondition: (fd.get("bodyCondition") || "").toString(),
+      engineType: (fd.get("engineType") || "").toString(),
+      transmission: (fd.get("transmission") || "").toString(),
+      purchaseInfo: (fd.get("purchaseInfo") || "").toString().trim(),
+      oilMileage: (fd.get("oilMileage") || "").toString().trim() ? Number(fd.get("oilMileage")) : "",
+      dailyMileage: (fd.get("dailyMileage") || "").toString().trim() ? Number(fd.get("dailyMileage")) : "",
+      lastService: (fd.get("lastService") || "").toString().trim(),
+      status: (fd.get("status") || "").toString(),
       isPrimary: true,
       media: currentCar.media
     };
+
     garage[currentCarIndex] = { ...garage[currentCarIndex], ...currentCar };
 
-    saveGarageAndCurrent();
+    await saveGarageAndCurrent();
     renderCar();
     renderGarage();
     renderRating();
     renderMarket();
     notifySaved();
+
+    // Восстанавливаем кнопку
+    saveBtn.textContent = originalText;
+    saveBtn.disabled = false;
   });
 }
 
-// Инициализация
+// Запуск приложения
 document.addEventListener("DOMContentLoaded", () => {
-  initTelegram();
-  applyTexts(currentLang);
-  initLangSwitch();
-  initTabs();
-  initRatingModeSwitch();
-  initPhotoNav();
-  initStatusCta();
-  initForm();
-  renderCar();
-  renderGarage();
-  renderRating();
-  renderMarket();
+  initApp();
 });
