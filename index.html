@@ -8,7 +8,7 @@
   <!-- Telegram WebApp API -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-  <!-- Supabase JS SDK -->
+  <!-- Supabase JS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <!-- Шрифт -->
@@ -245,7 +245,7 @@
       font-size: 13px;
     }
 
-    /* Car hero — БОЛЬШАЯ РАМКА, ЧУТЬ МЕНЬШЕ И ПО ЦЕНТРУ */
+    /* Car hero */
     .car-hero::before {
       content: "";
       position: absolute;
@@ -269,7 +269,6 @@
       background:
         radial-gradient(circle at 0% 0%, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.8)),
         linear-gradient(135deg, rgba(30, 64, 175, 0.7), rgba(15, 23, 42, 0.9));
-      /* Фиксированная пропорция ~4:3 через padding, чтобы везде работало */
       height: 0;
       padding-bottom: 75%;
     }
@@ -280,7 +279,7 @@
       inset: 0;
       width: 100%;
       height: 100%;
-      object-fit: contain; /* весь авто в рамке */
+      object-fit: contain;
       display: none;
     }
 
@@ -672,68 +671,69 @@
       color: #e5f2ff;
     }
 
-    /* Модалка профиля */
-    .profile-modal {
+    /* Оверлей подробностей по машине */
+    .owner-detail-backdrop {
       position: fixed;
       inset: 0;
+      background: rgba(15, 23, 42, 0.85);
       display: none;
       align-items: center;
       justify-content: center;
-      z-index: 1000;
+      z-index: 999;
+      padding: 16px;
     }
 
-    .profile-modal.visible {
-      display: flex;
-    }
-
-    .profile-modal-backdrop {
-      position: absolute;
-      inset: 0;
-      background: rgba(15, 23, 42, 0.86);
-    }
-
-    .profile-modal-content {
-      position: relative;
-      z-index: 2;
-      width: calc(100% - 32px);
-      max-width: 520px;
+    .owner-detail-card {
+      width: 100%;
+      max-width: 420px;
       background: rgba(15, 23, 42, 0.98);
-      border-radius: 18px;
-      border: 1px solid var(--border-subtle);
-      padding: 12px 14px 14px;
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(148, 163, 184, 0.7);
       box-shadow: var(--shadow-soft);
-      font-size: 13px;
+      padding: 14px 14px 12px;
     }
 
-    .profile-modal-title {
-      font-size: 16px;
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
-
-    .profile-modal-owner {
-      font-size: 12px;
-      color: var(--text-muted);
+    .owner-detail-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
       margin-bottom: 6px;
     }
 
-    .profile-modal-row {
+    .owner-detail-title {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .owner-detail-owner {
       font-size: 12px;
-      margin-bottom: 3px;
-    }
-
-    .profile-modal-close {
-      position: absolute;
-      top: 6px;
-      right: 8px;
-      border: none;
-      background: transparent;
       color: var(--text-muted);
-      font-size: 18px;
-      cursor: pointer;
     }
 
-    /* Адаптив */
+    .owner-detail-close {
+      border: none;
+      background: rgba(15, 23, 42, 0.9);
+      border-radius: 999px;
+      width: 26px;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .owner-detail-stats {
+      margin-top: 4px;
+      border-radius: var(--radius-md);
+      border: 1px dashed rgba(148, 163, 184, 0.4);
+      padding: 6px 8px;
+      background: rgba(15, 23, 42, 0.9);
+      font-size: 12px;
+    }
+
     @media (max-width: 400px) {
       .app-header {
         padding-inline: 10px;
@@ -1001,20 +1001,17 @@
     </main>
   </div>
 
-  <!-- Модалка профиля машины (по клику в рейтинге / объявлениях) -->
-  <div id="profile-modal" class="profile-modal">
-    <div class="profile-modal-backdrop"></div>
-    <div class="profile-modal-content">
-      <button type="button" class="profile-modal-close" data-profile-close>×</button>
-      <div class="profile-modal-title" data-profile-title></div>
-      <div class="profile-modal-owner" data-profile-owner></div>
-      <div class="profile-modal-row" data-profile-year-mileage></div>
-      <div class="profile-modal-row" data-profile-status></div>
-      <div class="profile-modal-row" data-profile-price></div>
-      <div class="profile-modal-row" data-profile-extra></div>
-      <div class="profile-modal-row" data-profile-tuning></div>
-      <div class="profile-modal-row" data-profile-health></div>
-      <p class="muted small" data-i18n="profile_note"></p>
+  <!-- Оверлей подробностей по машине/владельцу -->
+  <div id="owner-detail" class="owner-detail-backdrop">
+    <div class="owner-detail-card">
+      <div class="owner-detail-header">
+        <div>
+          <div id="owner-detail-title" class="owner-detail-title"></div>
+          <div id="owner-detail-owner" class="owner-detail-owner"></div>
+        </div>
+        <button id="owner-detail-close" class="owner-detail-close">×</button>
+      </div>
+      <div id="owner-detail-stats" class="owner-detail-stats"></div>
     </div>
   </div>
 
