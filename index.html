@@ -7,8 +7,6 @@
 
   <!-- Telegram WebApp API -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <!-- Supabase JS -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <!-- Шрифт -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -18,7 +16,7 @@
     rel="stylesheet"
   />
 
-  <!-- Встроенный CSS (твой) -->
+  <!-- Встроенный CSS -->
   <style>
     :root {
       --primary: #1b6cf0;
@@ -385,7 +383,6 @@
       color: var(--accent-good);
     }
 
-    /* Stat rows */
     #car-stats {
       border-radius: var(--radius-md);
       background: rgba(15, 23, 42, 0.85);
@@ -405,7 +402,6 @@
       color: var(--text-muted);
     }
 
-    /* Form */
     .field {
       display: flex;
       flex-direction: column;
@@ -458,7 +454,6 @@
       color: #e5f2ff;
     }
 
-    /* Гараж */
     .garage-list {
       display: flex;
       flex-direction: column;
@@ -573,7 +568,6 @@
       margin-bottom: 4px;
     }
 
-    /* Rating list */
     .list {
       display: flex;
       flex-direction: column;
@@ -588,6 +582,7 @@
       border-radius: var(--radius-md);
       background: rgba(15, 23, 42, 0.92);
       border: 1px solid rgba(148, 163, 184, 0.6);
+      cursor: pointer;
     }
 
     .rating-left {
@@ -644,7 +639,6 @@
       color: var(--accent-good);
     }
 
-    /* Переключатель режимов рейтинга */
     .rating-mode-switch {
       display: inline-flex;
       padding: 3px;
@@ -892,7 +886,6 @@
       <section id="screen-garage" class="screen">
         <h2 data-i18n="garage_title"></h2>
         <p class="muted" data-i18n="garage_desc"></p>
-
         <div id="garage-list" class="garage-list"></div>
       </section>
 
@@ -915,8 +908,6 @@
         </div>
 
         <div id="rating-list" class="list"></div>
-        <!-- здесь будут подробности по клику на пользователя / машину -->
-        <div id="rating-details"></div>
       </section>
 
       <!-- Объявления -->
@@ -934,12 +925,12 @@
         </div>
 
         <div id="market-user-list"></div>
-        <!-- Общие объявления (все, у кого статус "sell") -->
-        <div id="market-global-list"></div>
       </section>
     </main>
   </div>
 
+  <!-- Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- Логика miniapp -->
   <script src="app.js"></script>
 </body>
