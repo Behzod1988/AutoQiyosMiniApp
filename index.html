@@ -76,7 +76,7 @@
       gap: 10px;
     }
 
-    /* Круг с лого */
+    /* ОБНОВЛЁННЫЙ КРУГ С ЛОГО */
     .logo-circle {
       width: 40px;
       height: 40px;
@@ -286,13 +286,8 @@
     .car-photo-frame video {
       width: 100%;
       height: 100%;
-      object-fit: contain; /* важно: чтобы машина полностью влезала в рамку */
+      object-fit: contain;
       display: none;
-      background: #020617;
-    }
-
-    .car-photo-frame video {
-      background: #000;
     }
 
     .car-photo-placeholder {
@@ -313,37 +308,78 @@
       top: 50%;
       transform: translateY(-50%);
       width: 18px;
-      height: 24px;
+      height: 22px;
       border-radius: 999px;
-      border: none;
-      background: rgba(15, 23, 42, 0.6);
-      color: #e5f2ff;
-      font-size: 14px;
-      cursor: pointer;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      background: rgba(15, 23, 42, 0.8);
+      color: #e5e7eb;
+      font-size: 13px;
       display: none;
       align-items: center;
       justify-content: center;
+      cursor: pointer;
       padding: 0;
     }
 
     .photo-nav.prev {
-      left: 2px;
+      left: 4px;
     }
 
     .photo-nav.next {
-      right: 2px;
+      right: 4px;
     }
 
     .car-photo-counter {
       position: absolute;
-      right: 4px;
-      bottom: 3px;
-      padding: 1px 6px;
+      right: 6px;
+      bottom: 4px;
+      font-size: 10px;
+      padding: 2px 6px;
       border-radius: 999px;
-      background: rgba(15, 23, 42, 0.7);
-      font-size: 9px;
-      color: #e5f2ff;
+      background: rgba(15, 23, 42, 0.85);
+      color: var(--text-muted);
+      border: 1px solid rgba(148, 163, 184, 0.7);
       display: none;
+    }
+
+    .car-photo-thumbs {
+      margin-top: 4px;
+      display: flex;
+      gap: 4px;
+      justify-content: flex-end;
+    }
+
+    .car-photo-thumb {
+      width: 32px;
+      height: 24px;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      background: #020617;
+      position: relative;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .car-photo-thumb img,
+    .car-photo-thumb video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .car-photo-thumb.more::after {
+      content: attr(data-more);
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 600;
+      background: rgba(15, 23, 42, 0.7);
+      color: #e5f2ff;
     }
 
     /* Car info */
@@ -393,15 +429,10 @@
       justify-content: space-between;
       font-size: 12px;
       padding: 2px 0;
-      gap: 8px;
     }
 
     .stat-row span:first-child {
       color: var(--text-muted);
-    }
-
-    .stat-row span:last-child {
-      text-align: right;
     }
 
     /* Form */
@@ -506,9 +537,8 @@
     .garage-thumb img {
       width: 100%;
       height: 100%;
-      object-fit: contain;
+      object-fit: cover;
       display: block;
-      background: #020617;
     }
 
     .garage-thumb-placeholder {
@@ -685,6 +715,10 @@
       .car-hero-right {
         align-items: flex-start;
       }
+
+      .car-photo-thumbs {
+        justify-content: flex-start;
+      }
     }
   </style>
 </head>
@@ -732,14 +766,15 @@
             <div class="car-hero-right">
               <div class="car-photo-frame">
                 <img id="car-photo-main" alt="Фото машины" />
-                <video id="car-video-main" playsinline muted loop></video>
+                <video id="car-video-main" playsinline muted></video>
                 <div class="car-photo-placeholder" id="car-photo-placeholder">
                   <span data-i18n="car_photo_placeholder"></span>
                 </div>
-                <button class="photo-nav prev" id="car-photo-prev">‹</button>
-                <button class="photo-nav next" id="car-photo-next">›</button>
+                <button type="button" class="photo-nav prev" id="car-photo-prev">‹</button>
+                <button type="button" class="photo-nav next" id="car-photo-next">›</button>
                 <div class="car-photo-counter" id="car-photo-counter"></div>
               </div>
+              <div class="car-photo-thumbs" id="car-photo-thumbs"></div>
               <div class="health">
                 <span data-i18n="health"></span>
                 <span id="health-score">82</span>
@@ -777,13 +812,57 @@
               </div>
 
               <div class="field">
-                <label data-i18n="field_color"></label>
-                <input type="text" name="color" />
+                <label data-i18n="field_status"></label>
+                <select name="status" id="field-status">
+                  <option value="" data-i18n="opt_status_none"></option>
+                  <option value="follow" data-i18n="opt_status_follow"></option>
+                  <option value="prepare_sell" data-i18n="opt_status_prepare_sell"></option>
+                  <option value="sell" data-i18n="opt_status_sell"></option>
+                  <option value="consider_offers" data-i18n="opt_status_consider"></option>
+                  <option value="want_buy" data-i18n="opt_status_want_buy"></option>
+                </select>
+              </div>
+
+              <div class="field" id="status-cta-wrap" style="display:none;">
+                <button type="button" class="primary-btn" id="status-cta-btn" data-i18n="status_cta_btn"></button>
+              </div>
+
+              <div class="field">
+                <label data-i18n="field_service"></label>
+                <select name="serviceOnTime" id="field-service">
+                  <option value="yes" data-i18n-opt-yes>Да</option>
+                  <option value="no" data-i18n-opt-no>Нет</option>
+                </select>
+                <div class="hint" data-i18n="service_hint"></div>
+              </div>
+
+              <div class="field">
+                <label data-i18n="field_engine_type"></label>
+                <select name="engineType">
+                  <option value="" data-i18n="opt_engine_none"></option>
+                  <option value="petrol" data-i18n="opt_engine_petrol"></option>
+                  <option value="diesel" data-i18n="opt_engine_diesel"></option>
+                  <option value="lpg" data-i18n="opt_engine_lpg"></option>
+                  <option value="cng" data-i18n="opt_engine_cng"></option>
+                  <option value="hybrid" data-i18n="opt_engine_hybrid"></option>
+                  <option value="electric" data-i18n="opt_engine_electric"></option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label data-i18n="field_transmission"></label>
+                <select name="transmission">
+                  <option value="" data-i18n="opt_trans_none"></option>
+                  <option value="manual" data-i18n="opt_trans_manual"></option>
+                  <option value="automatic" data-i18n="opt_trans_auto"></option>
+                  <option value="robot" data-i18n="opt_trans_robot"></option>
+                  <option value="cvt" data-i18n="opt_trans_cvt"></option>
+                </select>
               </div>
 
               <div class="field">
                 <label data-i18n="field_body_type"></label>
-                <select name="bodyType" id="field-body-type">
+                <select name="bodyType">
                   <option value="" data-i18n="opt_bodytype_none"></option>
                   <option value="sedan" data-i18n="opt_bodytype_sedan"></option>
                   <option value="hatchback" data-i18n="opt_bodytype_hatch"></option>
@@ -797,7 +876,7 @@
 
               <div class="field">
                 <label data-i18n="field_body_condition"></label>
-                <select name="bodyCondition" id="field-body-condition">
+                <select name="bodyCondition">
                   <option value="" data-i18n="opt_bodycond_none"></option>
                   <option value="painted" data-i18n="opt_bodycond_painted"></option>
                   <option value="original" data-i18n="opt_bodycond_original"></option>
@@ -806,27 +885,8 @@
               </div>
 
               <div class="field">
-                <label data-i18n="field_engine_type"></label>
-                <select name="engineType" id="field-engine-type">
-                  <option value="" data-i18n="opt_engine_none"></option>
-                  <option value="petrol" data-i18n="opt_engine_petrol"></option>
-                  <option value="diesel" data-i18n="opt_engine_diesel"></option>
-                  <option value="lpg" data-i18n="opt_engine_lpg"></option>
-                  <option value="cng" data-i18n="opt_engine_cng"></option>
-                  <option value="hybrid" data-i18n="opt_engine_hybrid"></option>
-                  <option value="electric" data-i18n="opt_engine_electric"></option>
-                </select>
-              </div>
-
-              <div class="field">
-                <label data-i18n="field_transmission"></label>
-                <select name="transmission" id="field-transmission">
-                  <option value="" data-i18n="opt_trans_none"></option>
-                  <option value="manual" data-i18n="opt_trans_manual"></option>
-                  <option value="automatic" data-i18n="opt_trans_auto"></option>
-                  <option value="robot" data-i18n="opt_trans_robot"></option>
-                  <option value="cvt" data-i18n="opt_trans_cvt"></option>
-                </select>
+                <label data-i18n="field_color"></label>
+                <input type="text" name="color" />
               </div>
 
               <div class="field">
@@ -836,7 +896,7 @@
 
               <div class="field">
                 <label data-i18n="field_oil_mileage"></label>
-                <input type="number" name="oilMileage" min="0" step="1" />
+                <input type="number" name="oilMileage" min="0" step="100" />
               </div>
 
               <div class="field">
@@ -846,16 +906,7 @@
 
               <div class="field">
                 <label data-i18n="field_last_service"></label>
-                <textarea name="lastService" rows="2"></textarea>
-              </div>
-
-              <div class="field">
-                <label data-i18n="field_service"></label>
-                <select name="serviceOnTime" id="field-service">
-                  <option value="yes" data-i18n-opt-yes>Да</option>
-                  <option value="no" data-i18n-opt-no>Нет</option>
-                </select>
-                <div class="hint" data-i18n="service_hint"></div>
+                <input type="text" name="lastService" />
               </div>
 
               <div class="field">
@@ -865,12 +916,7 @@
 
               <div class="field">
                 <label data-i18n="field_photo"></label>
-                <input
-                  type="file"
-                  id="car-photo-input"
-                  accept="image/*,video/*"
-                  multiple
-                />
+                <input type="file" id="car-photo-input" accept="image/*,video/*" multiple />
                 <div class="hint" data-i18n="photo_hint"></div>
               </div>
 
@@ -910,7 +956,7 @@
         <div id="rating-list" class="list"></div>
       </section>
 
-      <!-- Объявления (демо) -->
+      <!-- Объявления (демо + ваша машина) -->
       <section id="screen-market" class="screen">
         <h2 data-i18n="market_title"></h2>
         <p class="muted" data-i18n="market_desc"></p>
@@ -923,6 +969,8 @@
             <p data-i18n="market_demo_body"></p>
           </div>
         </div>
+
+        <div id="market-user-list"></div>
       </section>
     </main>
   </div>
