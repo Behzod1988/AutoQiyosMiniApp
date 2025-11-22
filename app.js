@@ -4,6 +4,10 @@ const tg = window.Telegram ? window.Telegram.WebApp : null;
 const SAVE_CAR_URL =
   "https://dlefczzippvfudcdtlxz.supabase.co/functions/v1/save-car";
 
+// Публичный anon key (можно использовать на фронтенде)
+const SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRsZWZjenppcHB2ZnVkY2R0bHh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3OTY0OTMsImV4cCI6MjA3OTM3MjQ5M30.jSJYcF3o00yDx41EtbQUye8_tl3AzIaCkrPT9uZ22kY";
+
 // Тексты RU / UZ
 const TEXTS = {
   ru: {
@@ -336,83 +340,6 @@ let currentCar = { ...garage[currentCarIndex] };
 let currentMediaIndex = 0;
 let ratingMode = "owners";
 
-// === Supabase helpers ===
-
-// получаем Telegram-пользователя
-function getTelegramUser() {
-  if (!tg || !tg.initDataUnsafe || !tg.initDataUnsafe.user) return null;
-  return tg.initDataUnsafe.user;
-}
-
-// число или null
-function toNullableNumber(value) {
-  if (value === "" || value === null || value === undefined) return null;
-  const n = Number(value);
-  return Number.isFinite(n) ? n : null;
-}
-
-// отправка текущей машины на Supabase
-async function sendCarToSupabase() {
-  const user = getTelegramUser();
-  if (!user) {
-    console.log(
-      "Нет Telegram user – miniapp, скорее всего, открыт не из Telegram. Пропускаем отправку."
-    );
-    return;
-  }
-
-  const media = Array.isArray(currentCar.media) ? currentCar.media : [];
-  const firstMedia =
-    media.length > 0
-      ? media.find((m) => m.type === "image") || media[0]
-      : null;
-
-  const carPayload = {
-    brand: currentCar.brand || null,
-    model: currentCar.model || null,
-    year: toNullableNumber(currentCar.year),
-    mileage: toNullableNumber(currentCar.mileage),
-    price: toNullableNumber(currentCar.price),
-
-    serviceOnTime: !!currentCar.serviceOnTime,
-    transmission: currentCar.transmission || null,
-    color: currentCar.color || null,
-    bodyType: currentCar.bodyType || null,
-    bodyCondition: currentCar.bodyCondition || null,
-    status: currentCar.status || null,
-
-    purchaseInfo: currentCar.purchaseInfo || null,
-    lastOilChangeMileage: toNullableNumber(currentCar.oilMileage),
-    dailyMileage: toNullableNumber(currentCar.dailyMileage),
-    lastServiceText: currentCar.lastService || null,
-
-    engineType: currentCar.engineType || null,
-
-    photoData: firstMedia ? firstMedia.data : null
-  };
-
-  try {
-    const res = await fetch(SAVE_CAR_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-        // позже добавим apikey / Authorization при необходимости
-      },
-      body: JSON.stringify({
-        user,
-        car: carPayload
-      })
-    });
-
-    const data = await res.json();
-    console.log("Supabase save-car response:", data);
-  } catch (err) {
-    console.error("Ошибка отправки в Supabase:", err);
-  }
-}
-
-// =======================
-
 function initTelegram() {
   if (!tg) return;
   tg.ready();
@@ -544,6 +471,81 @@ function getStatusLabel(value, dict) {
   }
 }
 
+// вспомогательные для Supabase
+function toNullableNumber(value) {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : null;
+}
+
+function getTelegramUser() {
+  if (!tg || !tg.initDataUnsafe || !tg.initDataUnsafe.user) return null;
+  const u = tg.initDataUnsafe.user;
+  return {
+    id: u.id,
+    username: u.username || null,
+    first_name: u.first_name || null,
+    last_name: u.last_name || null,
+    language_code: u.language_code || null
+  };
+}
+
+// Отправка машины в Supabase
+async function sendCarToSupabase() {
+  const user = getTelegramUser();
+  if (!user) {
+    console.log(
+      "Нет Telegram user – miniapp, скорее всего, открыт не из Telegram. Пропускаем отправку."
+    );
+    return;
+  }
+
+  const media = Array.isArray(currentCar.media) ? currentCar.media : [];
+  const firstMedia =
+    media.length > 0
+      ? media.find((m) => m.type === "image") || media[0]
+      : null;
+
+  const carPayload = {
+    brand: currentCar.brand || null,
+    model: currentCar.model || null,
+    year: toNullableNumber(currentCar.year),
+    mileage: toNullableNumber(currentCar.mileage),
+    price: toNullableNumber(currentCar.price),
+    serviceOnTime: !!currentCar.serviceOnTime,
+    transmission: currentCar.transmission || null,
+    color: currentCar.color || null,
+    bodyType: currentCar.bodyType || null,
+    bodyCondition: currentCar.bodyCondition || null,
+    status: currentCar.status || null,
+    purchaseInfo: currentCar.purchaseInfo || null,
+    lastOilChangeMileage: toNullableNumber(currentCar.oilMileage),
+    dailyMileage: toNullableNumber(currentCar.dailyMileage),
+    lastServiceText: currentCar.lastService || null,
+    engineType: currentCar.engineType || null,
+    photoData: firstMedia ? firstMedia.data : null
+  };
+
+  try {
+    const res = await fetch(SAVE_CAR_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`
+      },
+      body: JSON.stringify({
+        user,
+        car: carPayload
+      })
+    });
+
+    const text = await res.text();
+    console.log("Supabase save-car status:", res.status, "body:", text);
+  } catch (err) {
+    console.error("Ошибка отправки в Supabase:", err);
+  }
+}
+
 // Фото/видео на главной: одна большая рамка
 function renderCarMedia() {
   const img = document.getElementById("car-photo-main");
@@ -579,7 +581,7 @@ function renderCarMedia() {
   placeholder.style.display = "none";
 
   if (counter) {
-    counter.style.display = media.length > 1 ? "block" : "none";
+    counter.display = media.length > 1 ? "block" : "none";
     counter.textContent = `${currentMediaIndex + 1}/${media.length}`;
   }
 
@@ -685,7 +687,10 @@ function renderCar() {
     }
 
     if (transmissionText) {
-      rows.push({ label: dict.field_transmission, value: transmissionText });
+      rows.push({
+        label: dict.field_transmission,
+        value: transmissionText
+      });
     }
 
     if (bodyTypeText) {
@@ -704,7 +709,10 @@ function renderCar() {
     }
 
     if (oilMileageStr) {
-      rows.push({ label: dict.field_oil_mileage, value: oilMileageStr });
+      rows.push({
+        label: dict.field_oil_mileage,
+        value: oilMileageStr
+      });
     }
 
     if (dailyMileageStr) {
@@ -782,6 +790,7 @@ function saveGarageAndCurrent() {
     localStorage.setItem("aq_garage", JSON.stringify(garage));
     localStorage.setItem("aq_car", JSON.stringify(currentCar));
   } catch (e) {
+    // ignore
   }
 }
 
@@ -1098,10 +1107,7 @@ function initForm() {
 
       const maxItems = 10;
       files.slice(0, maxItems).forEach((file) => {
-        if (
-          !file.type.startsWith("image/") &&
-          !file.type.startsWith("video/")
-        ) {
+        if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) {
           return;
         }
         const type = file.type.startsWith("video/") ? "video" : "image";
@@ -1113,8 +1119,6 @@ function initForm() {
           renderGarage();
           renderRating();
           renderMarket();
-          // отправляем обновлённые данные на сервер
-          sendCarToSupabase();
         };
         reader.readAsDataURL(file);
       });
@@ -1130,8 +1134,6 @@ function initForm() {
       renderMarket();
       renderGarage();
       renderCar();
-      // статусы продажи тоже отправим
-      sendCarToSupabase();
     });
   }
 
@@ -1192,10 +1194,7 @@ function initForm() {
     renderGarage();
     renderRating();
     renderMarket();
-
-    // отправляем новую версию машины на Supabase
-    sendCarToSupabase();
-
+    sendCarToSupabase(); // ← отправка в Supabase
     notifySaved();
   });
 }
