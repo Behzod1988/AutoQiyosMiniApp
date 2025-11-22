@@ -7,8 +7,8 @@
 
   <!-- Telegram WebApp API -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  
-  <!-- Supabase -->
+
+  <!-- Supabase JS SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <!-- Шрифт -->
@@ -590,6 +590,7 @@
       border-radius: var(--radius-md);
       background: rgba(15, 23, 42, 0.92);
       border: 1px solid rgba(148, 163, 184, 0.6);
+      cursor: pointer;
     }
 
     .rating-left {
@@ -671,6 +672,67 @@
       color: #e5f2ff;
     }
 
+    /* Модалка профиля */
+    .profile-modal {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .profile-modal.visible {
+      display: flex;
+    }
+
+    .profile-modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.86);
+    }
+
+    .profile-modal-content {
+      position: relative;
+      z-index: 2;
+      width: calc(100% - 32px);
+      max-width: 520px;
+      background: rgba(15, 23, 42, 0.98);
+      border-radius: 18px;
+      border: 1px solid var(--border-subtle);
+      padding: 12px 14px 14px;
+      box-shadow: var(--shadow-soft);
+      font-size: 13px;
+    }
+
+    .profile-modal-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .profile-modal-owner {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .profile-modal-row {
+      font-size: 12px;
+      margin-bottom: 3px;
+    }
+
+    .profile-modal-close {
+      position: absolute;
+      top: 6px;
+      right: 8px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 18px;
+      cursor: pointer;
+    }
+
     /* Адаптив */
     @media (max-width: 400px) {
       .app-header {
@@ -685,42 +747,9 @@
         font-size: 16px;
       }
     }
-
-    /* Loading states */
-    .loading {
-      opacity: 0.7;
-      pointer-events: none;
-    }
-
-    .sync-status {
-      position: fixed;
-      top: 10px;
-      right: 10px;
-      padding: 4px 8px;
-      border-radius: 12px;
-      font-size: 10px;
-      z-index: 1000;
-    }
-
-    .sync-status.syncing {
-      background: #f59e0b;
-      color: white;
-    }
-
-    .sync-status.synced {
-      background: #10b981;
-      color: white;
-    }
-
-    .sync-status.error {
-      background: #ef4444;
-      color: white;
-    }
   </style>
 </head>
 <body>
-  <div class="sync-status" id="sync-status" style="display: none;"></div>
-  
   <div class="app">
     <!-- Шапка -->
     <header class="app-header">
@@ -917,7 +946,7 @@
                 <div class="hint" data-i18n="photo_hint"></div>
               </div>
 
-              <button type="submit" class="primary-btn" id="save-btn" data-i18n="btn_save"></button>
+              <button type="submit" class="primary-btn" data-i18n="btn_save"></button>
             </form>
             <p class="muted small" data-i18n="save_hint"></p>
           </div>
@@ -970,6 +999,23 @@
         <div id="market-user-list"></div>
       </section>
     </main>
+  </div>
+
+  <!-- Модалка профиля машины (по клику в рейтинге / объявлениях) -->
+  <div id="profile-modal" class="profile-modal">
+    <div class="profile-modal-backdrop"></div>
+    <div class="profile-modal-content">
+      <button type="button" class="profile-modal-close" data-profile-close>×</button>
+      <div class="profile-modal-title" data-profile-title></div>
+      <div class="profile-modal-owner" data-profile-owner></div>
+      <div class="profile-modal-row" data-profile-year-mileage></div>
+      <div class="profile-modal-row" data-profile-status></div>
+      <div class="profile-modal-row" data-profile-price></div>
+      <div class="profile-modal-row" data-profile-extra></div>
+      <div class="profile-modal-row" data-profile-tuning></div>
+      <div class="profile-modal-row" data-profile-health></div>
+      <p class="muted small" data-i18n="profile_note"></p>
+    </div>
   </div>
 
   <!-- Логика miniapp -->
