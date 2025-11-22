@@ -7,6 +7,8 @@
 
   <!-- Telegram WebApp API -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <!-- Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <!-- Шрифт -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -16,7 +18,7 @@
     rel="stylesheet"
   />
 
-  <!-- Встроенный CSS -->
+  <!-- Встроенный CSS (твой) -->
   <style>
     :root {
       --primary: #1b6cf0;
@@ -242,7 +244,7 @@
       font-size: 13px;
     }
 
-    /* Car hero — БОЛЬШАЯ РАМКА, ЧУТЬ МЕНЬШЕ И ПО ЦЕНТРУ */
+    /* Car hero */
     .car-hero::before {
       content: "";
       position: absolute;
@@ -266,7 +268,6 @@
       background:
         radial-gradient(circle at 0% 0%, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.8)),
         linear-gradient(135deg, rgba(30, 64, 175, 0.7), rgba(15, 23, 42, 0.9));
-      /* Фиксированная пропорция ~4:3 через padding, чтобы везде работало */
       height: 0;
       padding-bottom: 75%;
     }
@@ -277,7 +278,7 @@
       inset: 0;
       width: 100%;
       height: 100%;
-      object-fit: contain; /* весь авто в рамке */
+      object-fit: contain;
       display: none;
     }
 
@@ -668,7 +669,6 @@
       color: #e5f2ff;
     }
 
-    /* Адаптив */
     @media (max-width: 400px) {
       .app-header {
         padding-inline: 10px;
@@ -915,6 +915,8 @@
         </div>
 
         <div id="rating-list" class="list"></div>
+        <!-- здесь будут подробности по клику на пользователя / машину -->
+        <div id="rating-details"></div>
       </section>
 
       <!-- Объявления -->
@@ -932,6 +934,8 @@
         </div>
 
         <div id="market-user-list"></div>
+        <!-- Общие объявления (все, у кого статус "sell") -->
+        <div id="market-global-list"></div>
       </section>
     </main>
   </div>
