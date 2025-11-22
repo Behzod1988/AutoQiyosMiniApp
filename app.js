@@ -25,6 +25,7 @@ const TEXTS = {
     field_year: "Год",
     field_mileage: "Пробег, км",
     field_price: "Цена моего авто, $",
+    field_status: "Статус",
     field_color: "Цвет",
     field_body_type: "Тип кузова",
     field_body_condition: "Состояние кузова",
@@ -45,6 +46,15 @@ const TEXTS = {
       "Загрузи реальные фото или короткое видео своей машины — без медиа мы не сможем показать тебя в рейтинге.",
     label_yes: "Да",
     label_no: "Нет",
+
+    // опции статуса
+    opt_status_none: "— не выбран —",
+    opt_status_follow: "Слежу за машиной",
+    opt_status_prepare_sell: "Готовлюсь продать",
+    opt_status_sell: "Хочу продать",
+    opt_status_consider: "Рассматриваю предложения",
+    opt_status_want_buy: "Хочу купить",
+    status_cta_btn: "Перейти к объявлениям",
 
     // опции коробки передач
     opt_trans_none: "— не указано —",
@@ -81,14 +91,14 @@ const TEXTS = {
     // Гараж
     garage_title: "Мой гараж",
     garage_desc:
-      "Здесь собраны все твои машины. Пока можно бесплатно вести одну, остальные будут премиум-ячейками.",
+      "Здесь собраны все твои машины. Пока можно бесплатно вести одну, остальные позже откроются отдельно.",
     garage_primary: "Основная машина",
     garage_health: "Состояние",
     garage_free_note:
-      "Сейчас можно бесплатно добавить и вести одну машину. Вторая и далее — по подписке.",
-    garage_premium_title: "Премиум-ячейка",
+      "Сейчас можно бесплатно добавить и вести одну машину. Остальные ячейки будут приватными.",
+    garage_premium_title: "Добавить ещё другие автомобили",
     garage_premium_body:
-      "Вторая машина появится здесь позже — после включения подписки AutoQiyos.",
+      "Закрытая ячейка для других машин. Позже её можно будет открыть только владельцу профиля.",
 
     // Рейтинг
     rating_title: "Рейтинг",
@@ -107,10 +117,11 @@ const TEXTS = {
     // Объявления
     market_title: "Объявления AutoQiyos",
     market_desc:
-      "Позже здесь будут честные объявления с оценкой цены. Пока показываем только пример.",
+      "Позже здесь будут честные объявления с оценкой цены. Пока показываем только пример и вашу машину (если хотите продать).",
     market_demo_title: "Пример объявления",
     market_demo_body:
-      "Chevrolet Cobalt 2022, 1.5, автомат, 45 000 км. Оценка цены: адекватно. Размещение объявлений будет доступно через бота."
+      "Chevrolet Cobalt 2022, 1.5, автомат, 45 000 км. Оценка цены: адекватно. Размещение объявлений будет доступно через бота.",
+    market_user_title: "Ваше объявление"
   },
 
   uz: {
@@ -136,6 +147,7 @@ const TEXTS = {
     field_year: "Yil",
     field_mileage: "Yurish, km",
     field_price: "Mashinam narxi, $",
+    field_status: "Status",
     field_color: "Rangi",
     field_body_type: "Kuzov turi",
     field_body_condition: "Kuzov holati",
@@ -157,6 +169,15 @@ const TEXTS = {
       "Mashinangizning haqiqiy rasmlarini yoki qisqa videoni yuklang — media bo‘lmasa, reytingda qatnasha olmaysiz.",
     label_yes: "Ha",
     label_no: "Yo‘q",
+
+    // uz опции статуса
+    opt_status_none: "— tanlanmagan —",
+    opt_status_follow: "Mashinamni kuzataman",
+    opt_status_prepare_sell: "Sotishga tayyorlanyapman",
+    opt_status_sell: "Sotmoqchiman",
+    opt_status_consider: "Takliflarni ko‘rib chiqaman",
+    opt_status_want_buy: "Sotib olmoqchiman",
+    status_cta_btn: "E'lonlarga o'tish",
 
     // uz опции коробки передач
     opt_trans_none: "— ko‘rsatilmagan —",
@@ -193,14 +214,14 @@ const TEXTS = {
     // Garaj
     garage_title: "Mening garajim",
     garage_desc:
-      "Bu yerda barcha mashinalaringiz ko‘rinadi. Hozircha 1 ta mashinani bepul yuritish mumkin, qolganlari premium uyachalar bo‘ladi.",
+      "Bu yerda barcha mashinalaringiz ko‘rinadi. Hozircha 1 ta mashinani bepul yuritish mumkin, qolganlari yopiq uyachalar bo‘ladi.",
     garage_primary: "Asosiy mashina",
     garage_health: "Holati",
     garage_free_note:
-      "Hozircha 1 ta mashina bepul. Ikkinchi va keyingilar obuna orqali ochiladi.",
-    garage_premium_title: "Premium uyacha",
+      "Hozircha 1 ta mashina bepul. Ikkinchi va keyingilar yopiq holatda saqlanadi.",
+    garage_premium_title: "Yana boshqa avtomobillarni qo‘shish",
     garage_premium_body:
-      "Ikkinchi mashina tez orada AutoQiyos obunasi orqali ochiladi.",
+      "Bu uyacha boshqa mashinalar uchun. Keyinchalik faqat profil egasi ochishi mumkin bo‘ladi.",
 
     // Reyting
     rating_title: "Reyting",
@@ -219,10 +240,11 @@ const TEXTS = {
     // E'lonlar
     market_title: "AutoQiyos e'lonlari",
     market_desc:
-      "Bu yerda narxi adolatli baholangan eʼlonlar bo‘ladi. Hozircha faqat bitta namunaviy eʼlon ko‘rsatilgan.",
+      "Bu yerda narxi adolatli baholangan eʼlonlar bo‘ladi. Hozircha faqat namunaviy eʼlon va agar sotmoqchi bo‘lsangiz, o‘z mashinangiz ko‘rsatiladi.",
     market_demo_title: "Namuna e'lon",
     market_demo_body:
-      "Chevrolet Cobalt 2022, 1.5, avtomat, 45 000 km. Narx bahosi: adekvat. Eʼlon joylash tez orada bot orqali ishlaydi."
+      "Chevrolet Cobalt 2022, 1.5, avtomat, 45 000 km. Narx bahosi: adekvat. Eʼlon joylash tez orada bot orqali ishlaydi.",
+    market_user_title: "Sizning e'loningiz"
   }
 };
 
@@ -245,6 +267,7 @@ const defaultCar = {
   lastService: "",
   engineType: "",
   transmission: "",
+  status: "",
   media: [] // [{ type: 'image'|'video', data: 'dataURL' }]
 };
 
@@ -421,7 +444,24 @@ function getEngineTypeLabel(value, dict) {
   }
 }
 
-// Фото/видео на главной (слайдер)
+function getStatusLabel(value, dict) {
+  switch (value) {
+    case "follow":
+      return dict.opt_status_follow;
+    case "prepare_sell":
+      return dict.opt_status_prepare_sell;
+    case "sell":
+      return dict.opt_status_sell;
+    case "consider_offers":
+      return dict.opt_status_consider;
+    case "want_buy":
+      return dict.opt_status_want_buy;
+    default:
+      return "";
+  }
+}
+
+// Фото/видео на главной (слайдер + мини-рамки)
 function renderCarMedia() {
   const img = document.getElementById("car-photo-main");
   const video = document.getElementById("car-video-main");
@@ -429,10 +469,13 @@ function renderCarMedia() {
   const prevBtn = document.getElementById("car-photo-prev");
   const nextBtn = document.getElementById("car-photo-next");
   const counter = document.getElementById("car-photo-counter");
+  const thumbs = document.getElementById("car-photo-thumbs");
 
-  if (!img || !video || !placeholder || !prevBtn || !nextBtn || !counter) return;
+  if (!img || !video || !placeholder || !prevBtn || !nextBtn || !counter || !thumbs) return;
 
   const media = Array.isArray(currentCar.media) ? currentCar.media : [];
+  thumbs.innerHTML = "";
+
   if (!media.length) {
     img.style.display = "none";
     video.style.display = "none";
@@ -468,11 +511,43 @@ function renderCarMedia() {
   if (item.type === "video") {
     video.src = item.data;
     video.style.display = "block";
-    // Автовоспроизведение заглушим, браузер может заблокировать, но попробовать можно
     video.play().catch(() => {});
   } else {
     img.src = item.data;
     img.style.display = "block";
+  }
+
+  // Мини-рамки (3 шт, третья собирает 4,5,6 и т.д.)
+  const maxThumbs = 3;
+  const baseCount = Math.min(media.length, maxThumbs);
+
+  for (let i = 0; i < baseCount; i++) {
+    const m = media[i];
+    const thumb = document.createElement("div");
+    thumb.className = "car-photo-thumb";
+
+    if (i === 2 && media.length > 3) {
+      thumb.classList.add("more");
+      thumb.setAttribute("data-more", "+" + (media.length - 3));
+    }
+
+    if (m.type === "image") {
+      const imgThumb = document.createElement("img");
+      imgThumb.src = m.data;
+      thumb.appendChild(imgThumb);
+    } else {
+      const videoThumb = document.createElement("video");
+      videoThumb.src = m.data;
+      videoThumb.muted = true;
+      thumb.appendChild(videoThumb);
+    }
+
+    thumb.addEventListener("click", () => {
+      currentMediaIndex = i;
+      renderCarMedia();
+    });
+
+    thumbs.appendChild(thumb);
   }
 }
 
@@ -518,6 +593,7 @@ function renderCar() {
     const bodyConditionText = getBodyConditionLabel(currentCar.bodyCondition, dict);
     const engineTypeText = getEngineTypeLabel(currentCar.engineType, dict);
     const transmissionText = getTransmissionLabel(currentCar.transmission, dict);
+    const statusText = getStatusLabel(currentCar.status, dict);
 
     const rows = [];
 
@@ -527,6 +603,10 @@ function renderCar() {
       label: serviceLabel,
       value: currentCar.serviceOnTime ? yes : no
     });
+
+    if (statusText) {
+      rows.push({ label: dict.field_status, value: statusText });
+    }
 
     if (engineTypeText) {
       rows.push({ label: dict.field_engine_type, value: engineTypeText });
@@ -610,9 +690,13 @@ function renderCar() {
       form.dailyMileage.value = currentCar.dailyMileage || "";
     if (form.lastService)
       form.lastService.value = currentCar.lastService || "";
+    if (form.status)
+      form.status.value = currentCar.status || "";
   }
 
   renderCarMedia();
+  updateStatusCta();
+  renderMarket();
 }
 
 // Сохранение
@@ -677,7 +761,7 @@ function renderGarage() {
     `);
   });
 
-  // Премиум-ячейка
+  // Закрытая ячейка "добавить ещё автомобили"
   cards.push(`
     <div class="garage-card locked">
       <div class="garage-main">
@@ -758,6 +842,39 @@ function renderRating() {
   }
 }
 
+// Объявления: показываем машину, если статус "хочу продать"
+function renderMarket() {
+  const container = document.getElementById("market-user-list");
+  if (!container) return;
+  const dict = TEXTS[currentLang];
+
+  if (currentCar.status !== "sell") {
+    container.innerHTML = "";
+    return;
+  }
+
+  const health = calcHealthScore(currentCar);
+  const carTitle = `${currentCar.brand} ${currentCar.model} ${currentCar.year}`;
+  const mileageStr =
+    (Number(currentCar.mileage) || 0).toLocaleString("ru-RU") + " км";
+  const priceStr = currentCar.price
+    ? Number(currentCar.price).toLocaleString("ru-RU") + " $"
+    : "";
+
+  container.innerHTML = `
+    <div class="card">
+      <div class="card-header">
+        <span>${dict.market_user_title}</span>
+      </div>
+      <div class="card-body">
+        <p>${carTitle}</p>
+        <p>${mileageStr}${priceStr ? " • " + priceStr : ""}</p>
+        <p>${dict.rating_health}: <strong>${health}</strong></p>
+      </div>
+    </div>
+  `;
+}
+
 // Языки
 function initLangSwitch() {
   const buttons = document.querySelectorAll(".lang-btn");
@@ -775,6 +892,7 @@ function initLangSwitch() {
       renderCar();
       renderGarage();
       renderRating();
+      renderMarket();
     });
   });
 }
@@ -836,6 +954,39 @@ function initPhotoNav() {
   });
 }
 
+// Кнопка из статуса "хочу купить" -> переходим во вкладку Объявления
+function updateStatusCta() {
+  const wrap = document.getElementById("status-cta-wrap");
+  const btn = document.getElementById("status-cta-btn");
+  if (!wrap || !btn) return;
+
+  if (currentCar.status === "want_buy") {
+    wrap.style.display = "block";
+  } else {
+    wrap.style.display = "none";
+  }
+}
+
+function initStatusCta() {
+  const btn = document.getElementById("status-cta-btn");
+  if (!btn) return;
+
+  btn.addEventListener("click", () => {
+    const tabButtons = document.querySelectorAll(".tab-btn");
+    const screens = document.querySelectorAll(".screen");
+
+    tabButtons.forEach((b) => {
+      const screenId = b.getAttribute("data-screen");
+      const isMarket = screenId === "market";
+      b.classList.toggle("active", isMarket);
+    });
+
+    screens.forEach((s) => {
+      s.classList.toggle("active", s.id === "screen-market");
+    });
+  });
+}
+
 // Уведомление о сохранении
 function notifySaved() {
   const msg = currentLang === "ru" ? "Сохранено ✅" : "Saqlandi ✅";
@@ -878,9 +1029,20 @@ function initForm() {
           renderCarMedia();
           renderGarage();
           renderRating();
+          renderMarket();
         };
         reader.readAsDataURL(file);
       });
+    });
+  }
+
+  const statusSelect = document.getElementById("field-status");
+  if (statusSelect) {
+    statusSelect.addEventListener("change", () => {
+      currentCar.status = statusSelect.value || "";
+      saveGarageAndCurrent();
+      updateStatusCta();
+      renderMarket();
     });
   }
 
@@ -911,6 +1073,7 @@ function initForm() {
     const dailyMileage = dailyMileageRaw ? Number(dailyMileageRaw) : "";
 
     const lastService = (fd.get("lastService") || "").toString().trim();
+    const status = (fd.get("status") || "").toString();
 
     currentCar = {
       brand,
@@ -929,6 +1092,7 @@ function initForm() {
       oilMileage,
       dailyMileage,
       lastService,
+      status,
       isPrimary: true,
       media: currentCar.media
     };
@@ -938,6 +1102,7 @@ function initForm() {
     renderCar();
     renderGarage();
     renderRating();
+    renderMarket();
     notifySaved();
   });
 }
@@ -950,8 +1115,10 @@ document.addEventListener("DOMContentLoaded", () => {
   initTabs();
   initRatingModeSwitch();
   initPhotoNav();
+  initStatusCta();
   initForm();
   renderCar();
   renderGarage();
   renderRating();
+  renderMarket();
 });
