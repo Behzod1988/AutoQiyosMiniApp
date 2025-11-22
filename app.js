@@ -463,7 +463,7 @@ function getStatusLabel(value, dict) {
   }
 }
 
-// Фото/видео на главной: одна большая квадратная рамка
+// Фото/видео на главной: одна большая рамка
 function renderCarMedia() {
   const img = document.getElementById("car-photo-main");
   const video = document.getElementById("car-video-main");
@@ -472,18 +472,20 @@ function renderCarMedia() {
   const nextBtn = document.getElementById("car-photo-next");
   const counter = document.getElementById("car-photo-counter");
 
-  if (!img || !video || !placeholder || !prevBtn || !nextBtn || !counter) return;
+  if (!img || !placeholder) return;
 
   const media = Array.isArray(currentCar.media) ? currentCar.media : [];
 
   if (!media.length) {
     img.style.display = "none";
-    video.style.display = "none";
-    video.pause();
+    if (video) {
+      video.style.display = "none";
+      if (typeof video.pause === "function") video.pause();
+    }
     placeholder.style.display = "flex";
-    prevBtn.style.display = "none";
-    nextBtn.style.display = "none";
-    counter.style.display = "none";
+    if (prevBtn) prevBtn.style.display = "none";
+    if (nextBtn) nextBtn.style.display = "none";
+    if (counter) counter.style.display = "none";
     return;
   }
 
@@ -494,25 +496,27 @@ function renderCarMedia() {
   const item = media[currentMediaIndex];
 
   placeholder.style.display = "none";
-  counter.style.display = media.length > 1 ? "block" : "none";
-  counter.textContent = `${currentMediaIndex + 1}/${media.length}`;
 
-  if (media.length > 1) {
-    prevBtn.style.display = "flex";
-    nextBtn.style.display = "flex";
-  } else {
-    prevBtn.style.display = "none";
-    nextBtn.style.display = "none";
+  if (counter) {
+    counter.style.display = media.length > 1 ? "block" : "none";
+    counter.textContent = `${currentMediaIndex + 1}/${media.length}`;
   }
 
-  img.style.display = "none";
-  video.style.display = "none";
-  video.pause();
+  if (prevBtn) prevBtn.style.display = media.length > 1 ? "flex" : "none";
+  if (nextBtn) nextBtn.style.display = media.length > 1 ? "flex" : "none";
 
-  if (item.type === "video") {
+  img.style.display = "none";
+  if (video) {
+    video.style.display = "none";
+    if (typeof video.pause === "function") video.pause();
+  }
+
+  if (item.type === "video" && video) {
     video.src = item.data;
     video.style.display = "block";
-    video.play().catch(() => {});
+    if (typeof video.play === "function") {
+      video.play().catch(() => {});
+    }
   } else {
     img.src = item.data;
     img.style.display = "block";
