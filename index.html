@@ -7,6 +7,8 @@
 
   <!-- Telegram WebApp API -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <!-- Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <!-- Шрифт -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -242,7 +244,7 @@
       font-size: 13px;
     }
 
-    /* Car hero — фото */
+    /* Car hero */
     .car-hero::before {
       content: "";
       position: absolute;
@@ -383,7 +385,6 @@
       color: var(--accent-good);
     }
 
-    /* Stat rows */
     #car-stats {
       border-radius: var(--radius-md);
       background: rgba(15, 23, 42, 0.85);
@@ -403,7 +404,6 @@
       color: var(--text-muted);
     }
 
-    /* Form */
     .field {
       display: flex;
       flex-direction: column;
@@ -456,7 +456,6 @@
       color: #e5f2ff;
     }
 
-    /* Гараж */
     .garage-list {
       display: flex;
       flex-direction: column;
@@ -571,7 +570,6 @@
       margin-bottom: 4px;
     }
 
-    /* Rating list */
     .list {
       display: flex;
       flex-direction: column;
@@ -643,7 +641,6 @@
       color: var(--accent-good);
     }
 
-    /* Переключатель режимов рейтинга */
     .rating-mode-switch {
       display: inline-flex;
       padding: 3px;
@@ -668,52 +665,6 @@
       color: #e5f2ff;
     }
 
-    /* Оверлей карточки машины */
-    .overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(15, 23, 42, 0.9);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 999;
-    }
-
-    .overlay-inner {
-      position: relative;
-      width: 100%;
-      max-width: 560px;
-      max-height: 90vh;
-      padding: 10px 12px 16px;
-      overflow-y: auto;
-    }
-
-    .overlay-close {
-      position: absolute;
-      top: 4px;
-      right: 8px;
-      border: none;
-      background: rgba(15, 23, 42, 0.9);
-      color: #e5e7eb;
-      border-radius: 999px;
-      width: 28px;
-      height: 28px;
-      cursor: pointer;
-      font-size: 18px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .car-details-photo img,
-    .car-details-photo video {
-      width: 100%;
-      border-radius: 14px;
-      border: 1px solid rgba(148, 163, 184, 0.6);
-      margin-bottom: 8px;
-    }
-
-    /* Адаптив */
     @media (max-width: 400px) {
       .app-header {
         padding-inline: 10px;
@@ -960,6 +911,7 @@
         </div>
 
         <div id="rating-list" class="list"></div>
+        <div id="rating-detail"></div>
       </section>
 
       <!-- Объявления -->
@@ -981,16 +933,6 @@
     </main>
   </div>
 
-  <!-- Оверлей карточки машины (для клика из рейтинга и объявлений) -->
-  <div id="car-details-overlay" class="overlay">
-    <div class="overlay-inner">
-      <button id="car-details-close" class="overlay-close">×</button>
-      <div id="car-details-content"></div>
-    </div>
-  </div>
-
-  <!-- Supabase UMD -->
-  <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <!-- Логика miniapp -->
   <script src="app.js"></script>
 </body>
