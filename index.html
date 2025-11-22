@@ -7,6 +7,9 @@
 
   <!-- Telegram WebApp API -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <!-- Шрифт -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -682,9 +685,42 @@
         font-size: 16px;
       }
     }
+
+    /* Loading states */
+    .loading {
+      opacity: 0.7;
+      pointer-events: none;
+    }
+
+    .sync-status {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 10px;
+      z-index: 1000;
+    }
+
+    .sync-status.syncing {
+      background: #f59e0b;
+      color: white;
+    }
+
+    .sync-status.synced {
+      background: #10b981;
+      color: white;
+    }
+
+    .sync-status.error {
+      background: #ef4444;
+      color: white;
+    }
   </style>
 </head>
 <body>
+  <div class="sync-status" id="sync-status" style="display: none;"></div>
+  
   <div class="app">
     <!-- Шапка -->
     <header class="app-header">
@@ -881,7 +917,7 @@
                 <div class="hint" data-i18n="photo_hint"></div>
               </div>
 
-              <button type="submit" class="primary-btn" data-i18n="btn_save"></button>
+              <button type="submit" class="primary-btn" id="save-btn" data-i18n="btn_save"></button>
             </form>
             <p class="muted small" data-i18n="save_hint"></p>
           </div>
