@@ -1,23 +1,24 @@
-// ---------- 1. НАСТРОЙКИ SUPABASE (ВСТАВЬ СВОИ КЛЮЧИ!) ----------
+// ---------- CONFIG ----------
 const SUPABASE_URL = 'https://dlefczzippvfudcdtlxz.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRsZWZjenppcHB2ZnVkY2R0bHh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3OTY0OTMsImV4cCI6MjA3OTM3MjQ5M30.jSJYcF3o00yDx41EtbQUye8_tl3AzIaCkrPT9uZ22kY';
 
-// --- ИНИЦИАЛИЗАЦИЯ ---
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const tg = window.Telegram ? window.Telegram.WebApp : null;
 
 if (tg) { tg.ready(); tg.expand(); }
 
-// --- ДАННЫЕ ---
+// ---------- STATE ----------
 let currentLang = localStorage.getItem("aq_lang") || "ru";
 let currentMediaIndex = 0;
 let currentCar = {
     brand: "Chevrolet", model: "Cobalt", year: 2022, mileage: 0, price: 0,
-    status: "follow", media: [] 
+    status: "follow", media: [], serviceOnTime: true,
+    transmission: "", engineType: "", bodyType: "", color: "", tuning: ""
 };
 let globalCars = [];
 
+// ---------- TEXTS ----------
 const TEXTS = {
   ru: {
     subtitle: "Дневник и рейтинг", tab_home: "Авто", tab_garage: "Гараж", tab_rating: "Топ", tab_market: "Рынок",
@@ -29,9 +30,8 @@ const TEXTS = {
     opt_status_follow: "Катаюсь", opt_status_sell: "Продаю", opt_status_want_buy: "Хочу купить",
     rating_title: "Топ владельцев", market_title: "Рынок авто", rating_empty: "Пусто",
     label_yes: "Да", label_no: "Нет", garage_primary: "Основная", garage_title: "Гараж",
-    opt_trans_manual: "Механика", opt_trans_auto: "Автомат",
-    opt_engine_petrol: "Бензин", opt_engine_cng: "Газ",
-    opt_bodytype_sedan: "Седан", opt_bodytype_suv: "Джип"
+    opt_trans_manual: "Механика", opt_trans_auto: "Автомат", opt_engine_petrol: "Бензин", opt_engine_cng: "Газ",
+    opt_bodytype_sedan: "Седан", opt_bodytype_suv: "Джип", car_photo_placeholder: "НЕТ ФОТО"
   },
   uz: {
     subtitle: "Avto kundalik", tab_home: "Avto", tab_garage: "Garaj", tab_rating: "Top", tab_market: "Bozor",
@@ -43,17 +43,15 @@ const TEXTS = {
     opt_status_follow: "Haydayapman", opt_status_sell: "Sotaman", opt_status_want_buy: "Olmoqchiman",
     rating_title: "Top reyting", market_title: "Avto bozor", rating_empty: "Bo'sh",
     label_yes: "Ha", label_no: "Yo'q", garage_primary: "Asosiy", garage_title: "Garaj",
-    opt_trans_manual: "Mexanik", opt_trans_auto: "Avtomat",
-    opt_engine_petrol: "Benzin", opt_engine_cng: "Gaz",
-    opt_bodytype_sedan: "Sedan", opt_bodytype_suv: "Jip"
+    opt_trans_manual: "Mexanik", opt_trans_auto: "Avtomat", opt_engine_petrol: "Benzin", opt_engine_cng: "Gaz",
+    opt_bodytype_sedan: "Sedan", opt_bodytype_suv: "Jip", car_photo_placeholder: "RASM YO'Q"
   }
 };
 
-// --- ФУНКЦИИ ПОМОЩНИКИ ---
-
+// ---------- HELPERS ----------
 function getUser() {
     if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) return tg.initDataUnsafe.user;
-    return { id: "test_user_fast", first_name: "Test", username: "browser_fast" };
+    return { id: "test_user_final", first_name: "Test", username: "browser_final" };
 }
 
 function calcHealth(car) {
@@ -72,18 +70,15 @@ function getLabel(key, val) {
     if(val === 'automatic') return t.opt_trans_auto;
     if(val === 'petrol') return t.opt_engine_petrol;
     if(val === 'cng') return t.opt_engine_cng;
+    if(val === 'sedan') return t.opt_bodytype_sedan;
+    if(val === 'suv') return t.opt_bodytype_suv;
     return val;
 }
 
-// --- СЖАТИЕ ФОТО (ОПТИМИЗАЦИЯ) ---
+// ---------- COMPRESSION & UPLOAD ----------
 function compressImage(file) {
     return new Promise((resolve) => {
-        // Если это видео, не сжимаем
-        if (file.type.startsWith('video')) {
-            resolve(file);
-            return;
-        }
-
+        if (file.type.startsWith('video')) { resolve(file); return; }
         const reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onload = (event) => {
@@ -91,74 +86,47 @@ function compressImage(file) {
             img.src = event.target.result;
             img.onload = () => {
                 const canvas = document.createElement('canvas');
-                // Максимальная ширина 1000px (достаточно для телефона)
                 const maxWidth = 1000;
                 let width = img.width;
                 let height = img.height;
-
-                if (width > maxWidth) {
-                    height = Math.round((height * maxWidth) / width);
-                    width = maxWidth;
-                }
-
-                canvas.width = width;
-                canvas.height = height;
+                if (width > maxWidth) { height = Math.round((height * maxWidth) / width); width = maxWidth; }
+                canvas.width = width; canvas.height = height;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
-
-                // Конвертируем в JPEG с качеством 70%
                 canvas.toBlob((blob) => {
-                    // Восстанавливаем имя файла
-                    const newFile = new File([blob], file.name, {
-                        type: 'image/jpeg',
-                        lastModified: Date.now(),
-                    });
-                    resolve(newFile);
+                    resolve(new File([blob], file.name, { type: 'image/jpeg', lastModified: Date.now() }));
                 }, 'image/jpeg', 0.7);
             };
         };
     });
 }
 
-// --- ЗАГРУЗКА В SUPABASE ---
-
 async function uploadFile(file) {
     const user = getUser();
     const timestamp = Date.now();
-    // Сжимаем перед загрузкой
-    const compressedFile = await compressImage(file);
-    
-    // Расширение ставим .jpg, так как сжимаем в jpeg
+    const compressed = await compressImage(file);
     const ext = file.type.startsWith('video') ? file.name.split('.').pop() : 'jpg';
     const fileName = `${user.id}/${timestamp}.${ext}`;
 
-    const { data, error } = await sb.storage
-        .from('car-photos')
-        .upload(fileName, compressedFile, { cacheControl: '3600', upsert: false });
-
-    if (error) {
-        console.error('Upload error:', error);
-        return null;
-    }
-
+    const { data, error } = await sb.storage.from('car-photos').upload(fileName, compressed, { upsert: false });
+    if (error) { console.error(error); return null; }
+    
     const { data: urlData } = sb.storage.from('car-photos').getPublicUrl(fileName);
-    return { type: file.type.startsWith('video') ? 'video' : 'image', url: urlData.publicUrl };
+    return { type: file.type.startsWith('video')?'video':'image', url: urlData.publicUrl };
 }
 
-// --- БАЗА ДАННЫХ ---
-
+// ---------- DB ACTIONS ----------
 async function loadData() {
     const user = getUser();
     const { data } = await sb.from('cars').select('*').eq('telegram_id', String(user.id)).single();
     if (data) {
         currentCar = {
             brand: data.brand, model: data.model, year: data.year, mileage: data.mileage, price: data.price,
-            status: data.status, serviceOnTime: data.service, transmission: data.transmission,
-            engineType: data.engine_type, bodyType: data.body_type, color: data.color,
-            tuning: data.tuning, media: data.media || []
+            status: data.status, serviceOnTime: data.service, tuning: data.tuning, color: data.color,
+            transmission: data.transmission, engineType: data.engine_type, bodyType: data.body_type,
+            media: data.media || []
         };
-        renderUI();
-        updateGarage();
+        renderUI(); updateGarage();
     }
 }
 
@@ -168,25 +136,15 @@ async function saveData() {
         telegram_id: String(user.id),
         username: user.username,
         full_name: user.first_name,
-        brand: currentCar.brand,
-        model: currentCar.model,
-        year: Number(currentCar.year),
-        mileage: Number(currentCar.mileage),
-        price: Number(currentCar.price),
-        status: currentCar.status,
-        service: currentCar.serviceOnTime,
-        transmission: currentCar.transmission,
-        engine_type: currentCar.engineType,
-        body_type: currentCar.bodyType,
-        color: currentCar.color,
-        tuning: currentCar.tuning,
-        media: currentCar.media,
-        health: calcHealth(currentCar),
+        brand: currentCar.brand, model: currentCar.model, year: Number(currentCar.year),
+        mileage: Number(currentCar.mileage), price: Number(currentCar.price), status: currentCar.status,
+        service: currentCar.serviceOnTime, transmission: currentCar.transmission,
+        engine_type: currentCar.engineType, body_type: currentCar.bodyType, color: currentCar.color,
+        tuning: currentCar.tuning, media: currentCar.media, health: calcHealth(currentCar),
         updated_at: new Date().toISOString()
     };
-
     const { error } = await sb.from('cars').upsert(payload);
-    if(error) alert("Save Error: " + error.message);
+    if(error) alert("Error: " + error.message);
     else loadRating();
 }
 
@@ -194,86 +152,60 @@ async function loadRating() {
     const list = document.getElementById('rating-list');
     const market = document.getElementById('market-list');
     const { data } = await sb.from('cars').select('*').limit(50);
-    
     if(!data) return;
+    
     globalCars = data;
     globalCars.sort((a,b) => (b.health||0)-(a.health||0));
 
-    // Rating
     list.innerHTML = globalCars.map((c, i) => `
        <div class="rating-item">
           <div style="display:flex; align-items:center;">
-             <div class="pos ${i===0?'top':''}">${i+1}</div>
-             <div>
-                <div style="font-weight:bold;">${c.brand} ${c.model}</div>
-                <div style="font-size:11px; opacity:0.7;">${c.full_name}</div>
-             </div>
+             <div class="rank ${i===0?'top':''}">${i+1}</div>
+             <div><div style="font-weight:bold;">${c.brand} ${c.model}</div><div style="font-size:11px; opacity:0.7;">${c.full_name}</div></div>
           </div>
           <div style="font-weight:bold; color:#10b981;">${c.health}</div>
        </div>
     `).join('');
 
-    // Market
     const sellers = globalCars.filter(c => c.status === 'sell');
     market.innerHTML = sellers.length ? sellers.map(c => {
         const m = c.media && c.media[0];
         const url = m ? (m.url || m) : '';
         const thumb = url ? `<img src="${url}">` : '<div style="background:#333; width:100%; height:100%;"></div>';
-        return `
-        <div class="garage-item">
-           <div class="garage-thumb">${thumb}</div>
-           <div class="garage-info">
-              <div class="garage-title">${c.brand} ${c.model}</div>
-              <div class="garage-sub">${c.price}$ • ${c.year}</div>
-           </div>
-           <button onclick="Telegram.WebApp.openTelegramLink('https://t.me/${c.username}')" style="background:#2563eb; border:none; color:#fff; padding:6px 10px; border-radius:6px; font-size:12px;">SMS</button>
-        </div>
-        `;
+        return `<div class="garage-item"><div class="garage-thumb">${thumb}</div><div class="garage-info"><div class="garage-title">${c.brand} ${c.model}</div><div class="garage-sub">${c.price}$</div></div><button onclick="Telegram.WebApp.openTelegramLink('https://t.me/${c.username}')" style="background:#2563eb; color:white; border:none; padding:6px 10px; border-radius:6px;">SMS</button></div>`;
     }).join('') : `<div style="padding:20px; text-align:center; opacity:0.5;">${TEXTS[currentLang].rating_empty}</div>`;
 }
 
-// --- UI RENDER ---
-
+// ---------- UI ----------
 function renderUI() {
     const t = TEXTS[currentLang];
-    
     document.querySelectorAll('[data-i18n]').forEach(el => {
-        const k = el.getAttribute('data-i18n');
-        if(t[k]) el.textContent = t[k];
+        const k = el.getAttribute('data-i18n'); if(t[k]) el.textContent = t[k];
     });
-    document.querySelectorAll("[data-i18n-opt-yes]").forEach(el => el.textContent = t.label_yes);
-    document.querySelectorAll("[data-i18n-opt-no]").forEach(el => el.textContent = t.label_no);
-
+    
     document.getElementById('display-title').textContent = `${currentCar.brand} ${currentCar.model}`;
     document.getElementById('display-score').textContent = calcHealth(currentCar);
-    
-    const st = document.getElementById('display-status');
-    st.style.display = (currentCar.status === 'sell') ? 'inline-block' : 'none';
-    st.textContent = t.opt_status_sell;
+    document.getElementById('display-status').style.display = (currentCar.status === 'sell') ? 'inline-block' : 'none';
 
     // Stats
-    const statsGrid = document.getElementById('car-stats');
-    const rows = [
+    const stats = [
        { l: t.field_price, v: currentCar.price ? currentCar.price + ' $' : '-' },
        { l: t.field_mileage, v: currentCar.mileage + ' km' },
        { l: t.field_service, v: getLabel('service', currentCar.serviceOnTime) },
-       { l: t.field_transmission, v: getLabel('transmission', currentCar.transmission) }, // Исправлен ключ
+       { l: t.field_transmission, v: getLabel('transmission', currentCar.transmission) },
        { l: t.field_engine_type, v: getLabel('engineType', currentCar.engineType) },
        { l: t.field_color, v: currentCar.color },
        { l: t.field_tuning, v: currentCar.tuning }
     ].filter(r => r.v);
+    document.getElementById('car-stats').innerHTML = stats.map(r => `<div class="stat-row"><span class="stat-l">${r.l}</span><span class="stat-v">${r.v}</span></div>`).join('');
 
-    statsGrid.innerHTML = rows.map(r => `
-       <div class="stat-row"><span class="stat-label">${r.l}</span><span class="stat-val">${r.v}</span></div>
-    `).join('');
-
-    // Media Carousel
+    // Media
     const img = document.getElementById('main-img');
     const vid = document.getElementById('main-video');
     const ph = document.getElementById('main-placeholder');
     const next = document.getElementById('btn-next');
     const prev = document.getElementById('btn-prev');
-    const cnt = document.getElementById('photo-count');
+    const count = document.getElementById('photo-count');
 
     if (currentCar.media && currentCar.media.length > 0) {
         if (currentMediaIndex >= currentCar.media.length) currentMediaIndex = 0;
@@ -282,8 +214,8 @@ function renderUI() {
         const url = item.url || item;
         
         ph.style.display = 'none';
-        cnt.style.display = 'block';
-        cnt.textContent = `${currentMediaIndex+1}/${currentCar.media.length}`;
+        count.style.display = 'block';
+        count.textContent = `${currentMediaIndex+1}/${currentCar.media.length}`;
         
         if (currentCar.media.length > 1) { next.style.display = 'flex'; prev.style.display = 'flex'; }
         else { next.style.display = 'none'; prev.style.display = 'none'; }
@@ -292,10 +224,10 @@ function renderUI() {
         else { vid.style.display='none'; img.style.display='block'; img.src=url; }
     } else {
         img.style.display='none'; vid.style.display='none'; ph.style.display='flex';
-        next.style.display='none'; prev.style.display='none'; cnt.style.display='none';
+        next.style.display='none'; prev.style.display='none'; count.style.display='none';
     }
 
-    // Form Values
+    // Form
     const f = document.getElementById('car-form');
     f.brand.value = currentCar.brand || "";
     f.model.value = currentCar.model || "";
@@ -312,32 +244,16 @@ function renderUI() {
 }
 
 function updateGarage() {
-    const list = document.getElementById('garage-list');
+    const g = document.getElementById('garage-list');
     const m = currentCar.media && currentCar.media[0];
     const url = m ? (m.url || m) : '';
     const thumb = url ? `<img src="${url}">` : '<div style="background:#333; width:100%; height:100%;"></div>';
-    
-    list.innerHTML = `
-       <div class="garage-item primary">
-          <div class="garage-thumb">${thumb}</div>
-          <div class="garage-info">
-             <div class="garage-title">${currentCar.brand} ${currentCar.model}</div>
-             <div class="garage-sub">${currentCar.year} • ${currentCar.mileage}</div>
-          </div>
-          <div class="garage-score">${calcHealth(currentCar)}</div>
-       </div>
-       <div style="text-align:center; padding:15px; font-size:12px; opacity:0.5; border:1px dashed #555; border-radius:12px; margin-top:10px;">
-          🔒 Premium Garage
-       </div>
-    `;
+    g.innerHTML = `<div class="garage-item primary"><div class="garage-thumb">${thumb}</div><div class="garage-info"><div class="garage-title">${currentCar.brand}</div><div class="garage-sub">${currentCar.year} • ${currentCar.mileage}</div></div><div class="garage-score">${calcHealth(currentCar)}</div></div>`;
 }
 
-// --- EVENTS ---
-
+// ---------- EVENT LISTENERS ----------
 document.addEventListener("DOMContentLoaded", () => {
-    renderUI();
-    loadData();
-    loadRating();
+    renderUI(); loadData(); loadRating();
 
     document.querySelectorAll('.tab-btn').forEach(b => {
         b.addEventListener('click', () => {
@@ -361,53 +277,46 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById('btn-prev').onclick = () => { currentMediaIndex--; renderUI(); };
     document.getElementById('btn-next').onclick = () => { currentMediaIndex++; renderUI(); };
 
-    // UPDATED UPLOAD LOGIC
     document.getElementById('file-input').addEventListener('change', async (e) => {
         const files = Array.from(e.target.files);
         if(!files.length) return;
-        
         const st = document.getElementById('upload-status');
         st.textContent = "Сжатие и загрузка... ⏳";
-        
         try {
-            for (const f of files) {
+            for(const f of files) {
                 const res = await uploadFile(f);
                 if(res) currentCar.media.push(res);
             }
             await saveData();
             st.textContent = "Готово! ✅";
+            st.style.color = "#10b981";
             renderUI();
-        } catch (err) { console.error(err); st.textContent = "Ошибка ❌"; }
+        } catch(err) { console.error(err); st.textContent = "Ошибка ❌"; }
     });
 
     document.getElementById('car-form').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const f = new FormData(e.target);
-        
-        currentCar.brand = f.get('brand');
-        currentCar.model = f.get('model');
-        currentCar.year = f.get('year');
-        currentCar.mileage = f.get('mileage');
-        currentCar.price = f.get('price');
-        currentCar.status = f.get('status');
-        currentCar.serviceOnTime = f.get('serviceOnTime') === 'yes';
-        currentCar.transmission = f.get('transmission');
-        currentCar.engineType = f.get('engineType');
-        currentCar.bodyType = f.get('bodyType');
-        currentCar.color = f.get('color');
-        currentCar.tuning = f.get('tuning');
+        const fd = new FormData(e.target);
+        currentCar.brand = fd.get('brand');
+        currentCar.model = fd.get('model');
+        currentCar.year = fd.get('year');
+        currentCar.mileage = fd.get('mileage');
+        currentCar.price = fd.get('price');
+        currentCar.status = fd.get('status');
+        currentCar.serviceOnTime = fd.get('serviceOnTime') === 'yes';
+        currentCar.transmission = fd.get('transmission');
+        currentCar.engineType = fd.get('engineType');
+        currentCar.bodyType = fd.get('bodyType');
+        currentCar.color = fd.get('color');
+        currentCar.tuning = fd.get('tuning');
 
-        const btn = document.querySelector('.primary-btn');
-        const originalText = btn.textContent;
+        const btn = document.querySelector('.btn-save');
         btn.textContent = "Сохранение...";
         btn.disabled = true;
-        
         await saveData();
-        
         btn.textContent = TEXTS[currentLang].btn_save;
         btn.disabled = false;
-        alert("Saved! ✅");
-        renderUI();
-        updateGarage();
+        alert(currentLang === 'ru' ? "Сохранено! ✅" : "Saqlandi! ✅");
+        renderUI(); updateGarage();
     });
 });
