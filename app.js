@@ -18,8 +18,8 @@ let globalRatingCars = [];
 let garage = [];
 let ratingMode = "owners";
 
-const MAX_MEDIA = 5;          // максимум 5 фото/видео
-const MAX_IMAGE_BYTES = 100 * 1024; // 100 KB
+const MAX_MEDIA = 5;                 // максимум 5 фото/видео
+const MAX_IMAGE_BYTES = 100 * 1024;  // ~100 KB
 
 // ---------- DEFAULT CAR ----------
 const defaultCar = {
@@ -30,7 +30,6 @@ const defaultCar = {
   price: 0,
   status: "follow",
   serviceOnTime: true,
-  // ВАЖНО: тюнинг по умолчанию пустой, без текста-плейсхолдера
   tuning: "",
   color: "",
   bodyCondition: "",
@@ -142,6 +141,8 @@ const TEXTS = {
 
     rating_title: "Рейтинг",
     rating_desc: "Честный рейтинг владельцев.",
+    rating_desc_owners: "Честный рейтинг владельцев.",
+    rating_desc_models: "Рейтинг моделей.",
     rating_mode_owners: "Владельцы",
     rating_mode_cars: "Модели",
     rating_badge: "Топ–5 по модели",
@@ -158,7 +159,7 @@ const TEXTS = {
   },
 
   uz: {
-    subtitle: "Mashinangiz uchun kundalik",
+    subtitle: "Mashinangiz uchun kundalik va halol reyting",
     tab_home: "Mening mashinam",
     tab_garage: "Mening garajim",
     tab_rating: "Reyting",
@@ -245,6 +246,8 @@ const TEXTS = {
 
     rating_title: "Reyting",
     rating_desc: "Egalari reytingi.",
+    rating_desc_owners: "Avtomobil egalari reytingi.",
+    rating_desc_models: "Mashina modellarining reytingi.",
     rating_mode_owners: "Egalari",
     rating_mode_cars: "Modellar",
     rating_badge: "Top–5",
@@ -379,6 +382,18 @@ function applyTexts(lang) {
   document
     .querySelectorAll("[data-i18n-opt-no]")
     .forEach((el) => (el.textContent = dict.label_no));
+}
+
+// описание рейтинга в зависимости от режима
+function updateRatingDescription() {
+  const dict = TEXTS[currentLang];
+  const el = document.querySelector('[data-i18n="rating_desc"]');
+  if (!el) return;
+  if (ratingMode === "owners") {
+    el.textContent = dict.rating_desc_owners || dict.rating_desc;
+  } else {
+    el.textContent = dict.rating_desc_models || dict.rating_desc;
+  }
 }
 
 // ---------- ВАЛИДАЦИЯ ФОРМЫ ----------
@@ -790,6 +805,24 @@ function renderCar() {
   renderMarket();
 }
 
+// для красивого названия модели, чтобы не было "Nexia 3 Nexia 3"
+function buildModelLabel(brand, model) {
+  const b = (brand || "").trim();
+  const m = (model || "").trim();
+  if (!b && !m) return "Model";
+  if (!b) return m;
+  if (!m) return b;
+
+  const bLower = b.toLowerCase();
+  const mLower = m.toLowerCase();
+
+  if (bLower === mLower) return m;
+  if (bLower.includes(mLower)) return b;
+  if (mLower.includes(bLower)) return m;
+
+  return `${b} ${m}`;
+}
+
 function renderGarage() {
   const list = document.getElementById("garage-list");
   if (!list) return;
@@ -869,11 +902,13 @@ function renderRating() {
   } else {
     const agg = {};
     globalRatingCars.forEach((c) => {
-      const key = `${c.car.brand} ${c.car.model}`;
+      const b = (c.car.brand || "").trim();
+      const m = (c.car.model || "").trim();
+      const key = `${b}|${m}`;
       if (!agg[key]) {
         agg[key] = {
-          brand: c.car.brand,
-          model: c.car.model,
+          brand: b,
+          model: m,
           count: 0,
           healthSum: 0
         };
@@ -883,7 +918,9 @@ function renderRating() {
     });
 
     const models = Object.values(agg).map((m) => ({
-      label: `${m.brand} ${m.model}`,
+      brand: m.brand,
+      model: m.model,
+      label: buildModelLabel(m.brand, m.model),
       count: m.count,
       health: Math.round(m.healthSum / m.count)
     }));
@@ -909,6 +946,8 @@ function renderRating() {
       )
       .join("");
   }
+
+  updateRatingDescription();
 }
 
 function renderMarket() {
@@ -1019,9 +1058,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (tg) tg.ready();
 
   applyTexts(currentLang);
+  updateRatingDescription();
   renderCar(); // дефолт до Supabase
 
-  // Кнопка удаления фото создаётся динамически, без правки HTML
+  // Кнопка удаления фото (добавляем поверх HTML)
   const photoFrame = document.querySelector(".car-photo-frame");
   if (photoFrame && !document.getElementById("car-photo-delete")) {
     const delBtn = document.createElement("button");
@@ -1105,6 +1145,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         );
 
       applyTexts(currentLang);
+      updateRatingDescription();
       renderCar();
       renderRating();
       renderMarket();
@@ -1136,7 +1177,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (prev) prev.onclick = () => { currentMediaIndex--; renderCarMedia(); };
   if (next) next.onclick = () => { currentMediaIndex++; renderCarMedia(); };
 
-  // Upload (с лимитом 5 фото и авто-сжатием до 100KB)
+  // Upload (лимит 5 фото, авто-сжатие)
   const photoInput = document.getElementById("car-photo-input");
   if (photoInput) {
     photoInput.addEventListener("change", async (e) => {
@@ -1152,6 +1193,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (hint) hint.innerText = msg;
         if (tg && tg.showPopup) tg.showPopup({ message: msg });
         else alert(msg);
+        photoInput.value = "";
         return;
       }
 
@@ -1180,6 +1222,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       } catch (err) {
         console.error(err);
         if (hint) hint.innerText = "Ошибка при загрузке";
+        if (tg && tg.showPopup) tg.showPopup({ message: "Ошибка при загрузке фото." });
       } finally {
         photoInput.value = "";
       }
