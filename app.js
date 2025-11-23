@@ -155,7 +155,7 @@ const TEXTS = {
   },
 
   uz: {
-    subtitle: "Mashinangiz uchun kundalik",
+    subtitle: "Mashinangiz uchun kundalik va halol reyting",
     tab_home: "Mening mashinam",
     tab_garage: "Mening garajim",
     tab_rating: "Reyting",
@@ -1175,3 +1175,4 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 });
+
