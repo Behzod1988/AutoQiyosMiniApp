@@ -1,4 +1,4 @@
-// ---------- 1. SUPABASE CONFIG (Твои ключи) ----------
+// ---------- 1. SUPABASE CONFIG ----------
 const SUPABASE_URL = "https://dlefczzippvfudcdtlxz.supabase.co";
 const SUPABASE_ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRsZWZjenppcHB2ZnVkY2R0bHh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3OTY0OTMsImV4cCI6MjA3OTM3MjQ5M30.jSJYcF3o00yDx41EtbQUye8_tl3AzIaCkrPT9uZ22kY";
@@ -27,7 +27,8 @@ const defaultCar = {
   price: 0,
   status: "follow",
   serviceOnTime: true,
-  tuning: "Какие дополнительные навороты",
+  // важно: НЕ ставим текст по умолчанию в тюнинг
+  tuning: "",
   color: "",
   bodyCondition: "",
   bodyType: "",
@@ -48,7 +49,7 @@ function normalizeCar(car) {
 
 let currentCar = normalizeCar({});
 
-// ---------- ТВОИ ТЕКСТЫ ----------
+// ---------- ТЕКСТЫ ----------
 const TEXTS = {
   ru: {
     subtitle: "Дневник и честный рейтинг твоего авто",
@@ -265,10 +266,6 @@ function getUser() {
   return { id: "test_user_999", first_name: "Browser", username: "test" };
 }
 
-function getTelegramUserId() {
-  return getUser().id;
-}
-
 function calcHealthScore(car) {
   let score = 100;
   const mileage = Number(car.mileage) || 0;
@@ -284,7 +281,7 @@ function calcHealthScore(car) {
   return Math.max(20, Math.min(100, score));
 }
 
-// МЭППИНГ
+// Мэппинги
 function getTransmissionLabel(v, d) {
   const m = {
     manual: d.opt_trans_manual,
@@ -334,6 +331,38 @@ function getStatusLabel(v, d) {
     want_buy: d.opt_status_want_buy
   };
   return m[v] || "";
+}
+
+// контактное имя/ссылка: username -> phone -> full_name
+function getContactInfo(entry) {
+  const username = entry.username;
+  // если в таблице добавишь phone / telegram_phone — сюда подхватится
+  const phone =
+    entry.phone || entry.telegram_phone || entry.phone_number || null;
+  const name = entry.full_name;
+
+  if (username) {
+    return {
+      label: "@" + username,
+      url: `https://t.me/${username}`
+    };
+  }
+  if (phone) {
+    return {
+      label: phone,
+      url: `tel:${phone}`
+    };
+  }
+  if (name) {
+    return {
+      label: name,
+      url: ""
+    };
+  }
+  return {
+    label: "User",
+    url: ""
+  };
 }
 
 function applyTexts(lang) {
@@ -421,7 +450,6 @@ async function syncUserCarFromSupabase() {
     .single();
 
   if (error) {
-    // просто значит, что записи ещё нет
     console.log("No user car yet / error:", error.message);
     renderCar();
     return;
@@ -503,6 +531,7 @@ async function loadGlobalRating() {
       telegram_id: row.telegram_id,
       username: row.username,
       full_name: row.full_name,
+      phone: row.phone || row.telegram_phone || row.phone_number || null,
       health: row.health ?? calcHealthScore(row),
       car: normalizeCar({
         brand: row.brand,
@@ -620,7 +649,12 @@ function buildStatsRows(car, dict) {
       value: car.color
     });
   }
-  if (car.tuning) {
+  // важное исправление: игнорируем старый плейсхолдер "Какие дополнительные навороты"
+  if (
+    car.tuning &&
+    car.tuning.trim() &&
+    car.tuning.trim() !== "Какие дополнительные навороты"
+  ) {
     rows.push({
       label: dict.field_tuning,
       value: car.tuning
@@ -691,7 +725,6 @@ function renderCar() {
     f.lastService.value = currentCar.lastService || "";
   }
 
-  // синхронизируем гараж
   garage = [currentCar];
 
   renderCarMedia();
@@ -753,25 +786,30 @@ function renderRating() {
 
   if (ratingMode === "owners") {
     list.innerHTML = globalRatingCars
-      .map(
-        (c, i) => `
+      .map((c, i) => {
+        const contact = getContactInfo(c);
+        const contactHtml = contact.url
+          ? `<a href="${contact.url}" class="rating-contact" onclick="event.stopPropagation();" style="color:inherit;text-decoration:underline;">${contact.label}</a>`
+          : `<span class="rating-contact">${contact.label}</span>`;
+
+        return `
       <div class="rating-item" data-telegram-id="${c.telegram_id}">
         <div class="rating-left">
           <div class="rating-pos ${i === 0 ? "top-1" : ""}">${i + 1}</div>
           <div class="rating-main">
-            <div class="rating-owner">${c.full_name || c.username || "User"}</div>
-            <div class="rating-car">${c.car.brand} ${c.car.model}</div>
+            <div class="rating-owner" style="font-size:12px;">${contactHtml}</div>
+            <div class="rating-car" style="font-size:11px;">${c.car.brand} ${c.car.model}</div>
           </div>
         </div>
         <div class="rating-right">
           <span class="rating-health">${c.health}</span>
         </div>
       </div>
-    `
-      )
+    `;
+      })
       .join("");
   } else {
-    // режим "Модели" — агрегируем по brand+model
+    // режим "Модели"
     const agg = {};
     globalRatingCars.forEach((c) => {
       const key = `${c.car.brand} ${c.car.model}`;
@@ -802,8 +840,8 @@ function renderRating() {
         <div class="rating-left">
           <div class="rating-pos ${i === 0 ? "top-1" : ""}">${i + 1}</div>
           <div class="rating-main">
-            <div class="rating-owner">${m.label}</div>
-            <div class="rating-car">×${m.count}</div>
+            <div class="rating-owner" style="font-size:12px;">${m.label}</div>
+            <div class="rating-car" style="font-size:11px;">×${m.count}</div>
           </div>
         </div>
         <div class="rating-right">
@@ -836,29 +874,35 @@ function renderMarket() {
   }
 
   list.innerHTML = sellers
-    .map(
-      (c) => `
+    .map((c) => {
+      const contact = getContactInfo(c);
+      const contactHtml = contact.url
+        ? `<a href="${contact.url}" onclick="event.stopPropagation();" style="color:inherit;text-decoration:underline;">${contact.label}</a>`
+        : `<span>${contact.label}</span>`;
+
+      return `
     <div class="card market-item" data-telegram-id="${c.telegram_id}">
-      <div class="card-header">
-        <span>🚗 ${c.car.brand} ${c.car.model}</span>
+      <div class="card-header" style="padding:6px 8px;">
+        <span style="font-size:13px;">🚗 ${c.car.brand} ${c.car.model}</span>
       </div>
-      <div class="card-body">
-        <p><strong>${c.car.price ? c.car.price + "$" : ""}</strong></p>
-        <p>${dict.rating_health}: ${c.health}</p>
+      <div class="card-body" style="font-size:12px; line-height:1.3; padding:8px 9px;">
+        <p style="margin:0 0 2px;"><strong>${c.car.price ? c.car.price + "$" : ""}</strong></p>
+        <p style="margin:0 0 2px;">${dict.rating_health}: ${c.health}</p>
         ${
           c.car.mileage
-            ? `<p>${dict.field_mileage}: ${c.car.mileage} km</p>`
+            ? `<p style="margin:0 0 2px;">${dict.field_mileage}: ${c.car.mileage} km</p>`
             : ""
         }
         ${
           c.car.color
-            ? `<p>${dict.field_color}: ${c.car.color}</p>`
+            ? `<p style="margin:0 0 2px;">${dict.field_color}: ${c.car.color}</p>`
             : ""
         }
+        <p style="margin:4px 0 0;">${contactHtml}</p>
       </div>
     </div>
-  `
-    )
+  `;
+    })
     .join("");
 }
 
@@ -880,8 +924,14 @@ function openOwnerDetailById(telegramId) {
       entry.car.year || ""
     }`.trim();
   }
+
   if (ownerEl) {
-    ownerEl.textContent = entry.full_name || entry.username || "";
+    const contact = getContactInfo(entry);
+    if (contact.url) {
+      ownerEl.innerHTML = `<a href="${contact.url}" onclick="event.stopPropagation();" style="color:inherit;text-decoration:underline;">${contact.label}</a>`;
+    } else {
+      ownerEl.textContent = contact.label;
+    }
   }
 
   const rows = buildStatsRows(entry.car, dict);
@@ -912,7 +962,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (tg) tg.ready();
 
   applyTexts(currentLang);
-  renderCar(); // отрисовываем дефолт до Supabase
+  renderCar(); // дефолт до Supabase
 
   await syncUserCarFromSupabase();
   await loadGlobalRating();
@@ -1013,7 +1063,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // Status CTA (перейти к объявлениям)
+  // Status CTA
   const statusSelect = document.getElementById("field-status");
   const statusCtaWrap = document.getElementById("status-cta-wrap");
   const statusCtaBtn = document.getElementById("status-cta-btn");
