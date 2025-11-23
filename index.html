@@ -33,725 +33,145 @@
       --shadow-soft: 0 18px 45px rgba(15, 23, 42, 0.9);
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
-    html,
-    body {
-      margin: 0;
-      padding: 0;
+    html, body {
+      margin: 0; padding: 0;
       font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: radial-gradient(circle at top, #020617 0%, #020617 35%, #020617 70%, #020617 100%);
       color: var(--text-main);
     }
 
-    body {
-      min-height: 100vh;
-    }
+    body { min-height: 100vh; }
 
-    .app {
-      max-width: 640px;
-      margin: 0 auto;
-      padding: 10px 12px 18px;
-    }
+    .app { max-width: 640px; margin: 0 auto; padding: 10px 12px 18px; }
 
     /* Шапка */
     .app-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 12px;
-      border-radius: 999px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 12px; border-radius: 999px;
       background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.92));
       box-shadow: 0 16px 40px rgba(15, 23, 42, 0.9);
       border: 1px solid rgba(148, 163, 184, 0.35);
       margin-bottom: 12px;
     }
 
-    .logo-title {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
+    .logo-title { display: flex; align-items: center; gap: 10px; }
     .logo-circle {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background: #020617;
-      border: 2px solid rgba(148, 163, 184, 0.8);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      box-shadow: 0 16px 40px rgba(15, 23, 42, 0.9);
+      width: 40px; height: 40px; border-radius: 50%; background: #020617;
+      border: 2px solid rgba(148, 163, 184, 0.8); display: flex; align-items: center;
+      justify-content: center; overflow: hidden; box-shadow: 0 16px 40px rgba(15, 23, 42, 0.9);
       flex-shrink: 0;
     }
-
-    .logo-circle img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-
-    .app-name {
-      font-size: 18px;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-    }
-
-    .app-subtitle {
-      font-size: 11px;
-      color: var(--text-muted);
-    }
+    .logo-circle img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .app-name { font-size: 18px; font-weight: 700; letter-spacing: 0.04em; }
+    .app-subtitle { font-size: 11px; color: var(--text-muted); }
 
     /* Языки */
-    .lang-switch {
-      display: inline-flex;
-      padding: 3px;
-      border-radius: 999px;
-      background: rgba(15, 23, 42, 0.9);
-      border: 1px solid rgba(148, 163, 184, 0.4);
-    }
-
-    .lang-btn {
-      border: none;
-      background: transparent;
-      color: var(--text-muted);
-      font-size: 11px;
-      padding: 4px 9px;
-      border-radius: 999px;
-      cursor: pointer;
-    }
-
-    .lang-btn.active {
-      background: linear-gradient(135deg, rgba(37, 99, 235, 0.95), rgba(59, 130, 246, 0.95));
-      color: #e5f2ff;
-    }
+    .lang-switch { display: inline-flex; padding: 3px; border-radius: 999px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(148, 163, 184, 0.4); }
+    .lang-btn { border: none; background: transparent; color: var(--text-muted); font-size: 11px; padding: 4px 9px; border-radius: 999px; cursor: pointer; }
+    .lang-btn.active { background: linear-gradient(135deg, rgba(37, 99, 235, 0.95), rgba(59, 130, 246, 0.95)); color: #e5f2ff; }
 
     /* Tabs */
-    .tabs {
-      display: flex;
-      gap: 6px;
-      margin-bottom: 10px;
-    }
-
+    .tabs { display: flex; gap: 6px; margin-bottom: 10px; }
     .tab-btn {
-      flex: 1;
-      border-radius: 999px;
-      border: 1px solid rgba(148, 163, 184, 0.4);
-      background: rgba(15, 23, 42, 0.94);
-      color: var(--text-muted);
-      font-size: 13px;
-      padding: 8px 4px;
-      cursor: pointer;
+      flex: 1; border-radius: 999px; border: 1px solid rgba(148, 163, 184, 0.4);
+      background: rgba(15, 23, 42, 0.94); color: var(--text-muted); font-size: 13px;
+      padding: 8px 4px; cursor: pointer;
     }
-
-    .tab-btn.active {
-      background: radial-gradient(circle at 20% 0, #38bdf8, #1d4ed8);
-      color: #e5f2ff;
-      border-color: rgba(96, 165, 250, 0.9);
-    }
+    .tab-btn.active { background: radial-gradient(circle at 20% 0, #38bdf8, #1d4ed8); color: #e5f2ff; border-color: rgba(96, 165, 250, 0.9); }
 
     /* Screens */
-    .screens {
-      display: block;
-    }
-
-    .screen {
-      display: none;
-      position: relative;
-      padding-top: 4px;
-    }
-
-    .screen.active {
-      display: block;
-    }
-
-    /* Фон "Моя машина" */
-    #screen-home::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      opacity: 0.45;
-      background:
-        radial-gradient(circle at 10% 110%, rgba(15, 23, 42, 0.0), rgba(15, 23, 42, 0.85)),
-        radial-gradient(circle at 90% 0, rgba(56, 189, 248, 0.25), transparent 55%);
-      pointer-events: none;
-      z-index: -1;
-    }
-
-    /* Фон "Мой гараж" */
-    #screen-garage::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      opacity: 0.4;
-      background:
-        linear-gradient(to bottom, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.9) 35%, rgba(15, 23, 42, 0.85)),
-        repeating-linear-gradient(
-          -45deg,
-          rgba(30, 41, 59, 0.7),
-          rgba(30, 41, 59, 0.7) 6px,
-          rgba(15, 23, 42, 0.9) 6px,
-          rgba(15, 23, 42, 0.9) 12px
-        );
-      pointer-events: none;
-      z-index: -1;
-    }
-
-    h2 {
-      margin: 4px 2px 4px;
-      font-size: 18px;
-    }
-
-    h2:empty {
-      margin: 0;
-    }
-
-    .muted {
-      color: var(--text-muted);
-      font-size: 12px;
-      margin: 0 2px 10px;
-    }
-
-    .small {
-      font-size: 11px;
-    }
+    .screens { display: block; }
+    .screen { display: none; position: relative; padding-top: 4px; }
+    .screen.active { display: block; }
 
     /* Cards */
     .card {
       background: radial-gradient(circle at top left, rgba(30, 64, 175, 0.5), rgba(15, 23, 42, 0.96));
-      border-radius: var(--radius-lg);
-      border: 1px solid var(--border-subtle);
-      padding: 10px 12px 12px;
-      margin-bottom: 10px;
-      box-shadow: var(--shadow-soft);
-      position: relative;
-      overflow: hidden;
+      border-radius: var(--radius-lg); border: 1px solid var(--border-subtle);
+      padding: 10px 12px 12px; margin-bottom: 10px; box-shadow: var(--shadow-soft);
+      position: relative; overflow: hidden;
     }
+    .card-header { margin-bottom: 8px; }
+    .card-body { font-size: 13px; }
 
-    .card-header {
-      margin-bottom: 8px;
-    }
-
-    .card-body {
-      font-size: 13px;
-    }
-
-    /* Car hero */
+    /* Car Hero */
     .car-hero::before {
-      content: "";
-      position: absolute;
-      inset: -30%;
-      background:
-        radial-gradient(circle at 0% 120%, rgba(15, 23, 42, 0.0), rgba(15, 23, 42, 0.9)),
-        radial-gradient(circle at 90% -10%, rgba(56, 189, 248, 0.35), rgba(15, 23, 42, 0.98) 55%);
-      opacity: 0.9;
-      pointer-events: none;
-      z-index: -1;
+      content: ""; position: absolute; inset: -30%;
+      background: radial-gradient(circle at 0% 120%, rgba(15, 23, 42, 0.0), rgba(15, 23, 42, 0.9)), radial-gradient(circle at 90% -10%, rgba(56, 189, 248, 0.35), rgba(15, 23, 42, 0.98) 55%);
+      opacity: 0.9; pointer-events: none; z-index: -1;
     }
-
     .car-photo-frame {
-      position: relative;
-      width: 86%;
-      max-width: 360px;
-      margin: 0 auto 10px;
-      border-radius: 18px;
-      overflow: hidden;
-      border: 1px solid rgba(148, 163, 184, 0.7);
-      background:
-        radial-gradient(circle at 0% 0%, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.8)),
-        linear-gradient(135deg, rgba(30, 64, 175, 0.7), rgba(15, 23, 42, 0.9));
-      height: 0;
-      padding-bottom: 75%;
+      position: relative; width: 86%; max-width: 360px; margin: 0 auto 10px;
+      border-radius: 18px; overflow: hidden; border: 1px solid rgba(148, 163, 184, 0.7);
+      background: radial-gradient(circle at 0% 0%, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.8)), linear-gradient(135deg, rgba(30, 64, 175, 0.7), rgba(15, 23, 42, 0.9));
+      height: 0; padding-bottom: 75%;
     }
+    .car-photo-frame img, .car-photo-frame video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: none; }
+    .car-photo-placeholder { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); background: radial-gradient(circle at 50% 0%, rgba(148, 163, 184, 0.2), rgba(15, 23, 42, 0.95)); }
+    
+    .photo-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 22px; height: 28px; border-radius: 999px; border: 1px solid rgba(148, 163, 184, 0.7); background: rgba(15, 23, 42, 0.8); color: #e5e7eb; font-size: 15px; display: none; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
+    .photo-nav.prev { left: 6px; } .photo-nav.next { right: 6px; }
+    .car-photo-counter { position: absolute; right: 6px; bottom: 4px; font-size: 10px; padding: 2px 6px; border-radius: 999px; background: rgba(15, 23, 42, 0.85); color: var(--text-muted); border: 1px solid rgba(148, 163, 184, 0.7); display: none; }
 
-    .car-photo-frame img,
-    .car-photo-frame video {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      display: none;
-    }
+    .car-hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; padding: 2px 7px; border-radius: 999px; background: rgba(15, 23, 42, 0.9); color: var(--text-muted); border: 1px solid rgba(148, 163, 184, 0.35); }
+    .car-main { margin-top: 3px; font-size: 16px; font-weight: 600; }
+    .status-pill { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px; border: 1px solid rgba(250, 204, 21, 0.9); font-size: 10px; color: #fef9c3; background: radial-gradient(circle at 20% 0, #facc15, #f97316); margin-top: 4px; display: none; }
+    .health { display: flex; flex-direction: column; align-items: flex-end; font-size: 11px; color: var(--text-muted); }
+    .health span:last-child { font-size: 20px; font-weight: 700; color: var(--accent-good); }
 
-    .car-photo-placeholder {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--text-muted);
-      background: radial-gradient(circle at 50% 0%, rgba(148, 163, 184, 0.2), rgba(15, 23, 42, 0.95));
-    }
-
-    .photo-nav {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 22px;
-      height: 28px;
-      border-radius: 999px;
-      border: 1px solid rgba(148, 163, 184, 0.7);
-      background: rgba(15, 23, 42, 0.8);
-      color: #e5e7eb;
-      font-size: 15px;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      padding: 0;
-    }
-
-    .photo-nav.prev {
-      left: 6px;
-    }
-
-    .photo-nav.next {
-      right: 6px;
-    }
-
-    .car-photo-counter {
-      position: absolute;
-      right: 6px;
-      bottom: 4px;
-      font-size: 10px;
-      padding: 2px 6px;
-      border-radius: 999px;
-      background: rgba(15, 23, 42, 0.85);
-      color: var(--text-muted);
-      border: 1px solid rgba(148, 163, 184, 0.7);
-      display: none;
-    }
-
-    .car-hero-top {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 12px;
-    }
-
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      font-size: 11px;
-      padding: 2px 7px;
-      border-radius: 999px;
-      background: rgba(15, 23, 42, 0.9);
-      color: var(--text-muted);
-      border: 1px solid rgba(148, 163, 184, 0.35);
-    }
-
-    .car-main {
-      margin-top: 3px;
-      font-size: 16px;
-      font-weight: 600;
-    }
-
-    .status-pill {
-      display: inline-flex;
-      align-items: center;
-      padding: 2px 8px;
-      border-radius: 999px;
-      border: 1px solid rgba(250, 204, 21, 0.9);
-      font-size: 10px;
-      color: #fef9c3;
-      background: radial-gradient(circle at 20% 0, #facc15, #f97316);
-      margin-top: 4px;
-    }
-
-    .health {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      font-size: 11px;
-      color: var(--text-muted);
-    }
-
-    .health span:last-child {
-      font-size: 20px;
-      font-weight: 700;
-      color: var(--accent-good);
-    }
-
-    /* Stat rows */
-    #car-stats {
-      border-radius: var(--radius-md);
-      background: rgba(15, 23, 42, 0.85);
-      border: 1px dashed rgba(148, 163, 184, 0.4);
-      padding: 6px 8px;
-      margin-top: 8px;
-    }
-
-    .stat-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 12px;
-      padding: 2px 0;
-    }
-
-    .stat-row span:first-child {
-      color: var(--text-muted);
-    }
+    /* Stats */
+    #car-stats { border-radius: var(--radius-md); background: rgba(15, 23, 42, 0.85); border: 1px dashed rgba(148, 163, 184, 0.4); padding: 6px 8px; margin-top: 8px; }
+    .stat-row { display: flex; justify-content: space-between; font-size: 12px; padding: 2px 0; }
+    .stat-row span:first-child { color: var(--text-muted); }
 
     /* Form */
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      margin-bottom: 8px;
-    }
+    .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+    .field label { font-size: 12px; }
+    input, select, textarea { border-radius: 10px; border: 1px solid rgba(148, 163, 184, 0.6); background: rgba(15, 23, 42, 0.9); color: var(--text-main); padding: 7px 9px; font-size: 13px; outline: none; }
+    input:focus, select:focus, textarea:focus { border-color: rgba(96, 165, 250, 0.95); box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.4); }
+    textarea { resize: vertical; }
+    .hint { font-size: 11px; color: var(--text-muted); }
+    .primary-btn { width: 100%; margin-top: 4px; border-radius: 999px; border: none; padding: 9px 12px; font-size: 14px; font-weight: 600; cursor: pointer; background: radial-gradient(circle at 10% 0, #38bdf8, #1d4ed8); color: #e5f2ff; }
 
-    .field label {
-      font-size: 12px;
-    }
+    /* Lists */
+    .garage-list, .list { display: flex; flex-direction: column; gap: 8px; }
+    .garage-card, .rating-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 9px; border-radius: var(--radius-md); background: rgba(15, 23, 42, 0.92); border: 1px solid rgba(148, 163, 184, 0.6); }
+    .garage-card.primary { border-color: rgba(96, 165, 250, 0.9); box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.5); }
+    .garage-card.locked { border-style: dashed; opacity: 0.9; background: rgba(15, 23, 42, 0.7); }
+    .garage-left, .rating-left { display: flex; align-items: center; gap: 8px; }
+    .garage-thumb { width: 56px; height: 36px; border-radius: 10px; overflow: hidden; border: 1px solid rgba(148, 163, 184, 0.7); background: radial-gradient(circle at 0% 0%, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.8)), linear-gradient(135deg, rgba(30, 64, 175, 0.7), rgba(15, 23, 42, 0.9)); flex-shrink: 0; }
+    .garage-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .garage-thumb-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: var(--text-muted); }
+    .garage-main, .rating-main { display: flex; flex-direction: column; gap: 2px; font-size: 12px; }
+    .garage-title, .rating-owner { font-weight: 600; } .garage-meta, .rating-car { color: var(--text-muted); font-size: 11px; }
+    .garage-right, .rating-right { display: flex; flex-direction: column; align-items: flex-end; font-size: 11px; color: var(--text-muted); }
+    .garage-health-value, .rating-health { font-size: 16px; font-weight: 700; color: var(--accent-good); }
+    .garage-pill { display: inline-flex; align-items: center; padding: 2px 7px; border-radius: 999px; border: 1px solid rgba(96, 165, 250, 0.8); color: #bfdbfe; font-size: 10px; margin-top: 2px; margin-right: 4px; }
+    .garage-pill-sale { border-color: rgba(250, 204, 21, 0.9); color: #fef3c7; }
+    
+    .rating-pos { width: 26px; height: 26px; border-radius: 999px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(148, 163, 184, 0.7); }
+    .rating-pos.top-1 { background: radial-gradient(circle at 20% 0, #facc15, #f97316); border-color: rgba(250, 204, 21, 0.9); color: #1e293b; }
+    .rating-mode-switch { display: inline-flex; padding: 3px; border-radius: 999px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(148, 163, 184, 0.4); margin: 0 2px 8px; }
+    .rating-mode-btn { border: none; background: transparent; color: var(--text-muted); font-size: 11px; padding: 4px 9px; border-radius: 999px; cursor: pointer; }
+    .rating-mode-btn.active { background: radial-gradient(circle at 20% 0, #38bdf8, #1d4ed8); color: #e5f2ff; }
 
-    input,
-    select,
-    textarea {
-      border-radius: 10px;
-      border: 1px solid rgba(148, 163, 184, 0.6);
-      background: rgba(15, 23, 42, 0.9);
-      color: var(--text-main);
-      padding: 7px 9px;
-      font-size: 13px;
-      outline: none;
-    }
-
-    input:focus,
-    select:focus,
-    textarea:focus {
-      border-color: rgba(96, 165, 250, 0.95);
-      box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.4);
-    }
-
-    textarea {
-      resize: vertical;
-    }
-
-    .hint {
-      font-size: 11px;
-      color: var(--text-muted);
-    }
-
-    .primary-btn {
-      width: 100%;
-      margin-top: 4px;
-      border-radius: 999px;
-      border: none;
-      padding: 9px 12px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      background: radial-gradient(circle at 10% 0, #38bdf8, #1d4ed8);
-      color: #e5f2ff;
-    }
-
-    /* Гараж */
-    .garage-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .garage-card {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 9px;
-      border-radius: var(--radius-md);
-      background: rgba(15, 23, 42, 0.92);
-      border: 1px solid rgba(148, 163, 184, 0.6);
-    }
-
-    .garage-card.primary {
-      border-color: rgba(96, 165, 250, 0.9);
-      box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.5);
-    }
-
-    .garage-card.locked {
-      border-style: dashed;
-      opacity: 0.9;
-      background: rgba(15, 23, 42, 0.7);
-    }
-
-    .garage-left {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .garage-thumb {
-      width: 56px;
-      height: 36px;
-      border-radius: 10px;
-      overflow: hidden;
-      border: 1px solid rgba(148, 163, 184, 0.7);
-      background:
-        radial-gradient(circle at 0% 0%, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.8)),
-        linear-gradient(135deg, rgba(30, 64, 175, 0.7), rgba(15, 23, 42, 0.9));
-      flex-shrink: 0;
-    }
-
-    .garage-thumb img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-
-    .garage-thumb-placeholder {
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--text-muted);
-    }
-
-    .garage-main {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      font-size: 12px;
-    }
-
-    .garage-title {
-      font-weight: 600;
-    }
-
-    .garage-meta {
-      color: var(--text-muted);
-      font-size: 11px;
-    }
-
-    .garage-right {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      font-size: 11px;
-      color: var(--text-muted);
-    }
-
-    .garage-health-value {
-      font-size: 16px;
-      font-weight: 700;
-      color: var(--accent-good);
-    }
-
-    .garage-pill {
-      display: inline-flex;
-      align-items: center;
-      padding: 2px 7px;
-      border-radius: 999px;
-      border: 1px solid rgba(96, 165, 250, 0.8);
-      color: #bfdbfe;
-      font-size: 10px;
-      margin-top: 2px;
-      margin-right: 4px;
-    }
-
-    .garage-pill-sale {
-      border-color: rgba(250, 204, 21, 0.9);
-      color: #fef3c7;
-    }
-
-    .garage-note {
-      margin-bottom: 4px;
-    }
-
-    /* Rating list */
-    .list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .rating-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 9px;
-      border-radius: var(--radius-md);
-      background: rgba(15, 23, 42, 0.92);
-      border: 1px solid rgba(148, 163, 184, 0.6);
-      cursor: pointer;
-    }
-
-    .rating-left {
-      display: flex;
-      align-items: center;
-      gap: 9px;
-    }
-
-    .rating-pos {
-      width: 26px;
-      height: 26px;
-      border-radius: 999px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 13px;
-      font-weight: 600;
-      background: rgba(15, 23, 42, 0.9);
-      border: 1px solid rgba(148, 163, 184, 0.7);
-    }
-
-    .rating-pos.top-1 {
-      background: radial-gradient(circle at 20% 0, #facc15, #f97316);
-      border-color: rgba(250, 204, 21, 0.9);
-      color: #1e293b;
-    }
-
-    .rating-main {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      font-size: 12px;
-    }
-
-    .rating-owner {
-      font-weight: 600;
-    }
-
-    .rating-car {
-      color: var(--text-muted);
-    }
-
-    .rating-right {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      font-size: 11px;
-      color: var(--text-muted);
-    }
-
-    .rating-health {
-      font-size: 16px;
-      font-weight: 700;
-      color: var(--accent-good);
-    }
-
-    /* Переключатель режимов рейтинга */
-    .rating-mode-switch {
-      display: inline-flex;
-      padding: 3px;
-      border-radius: 999px;
-      background: rgba(15, 23, 42, 0.9);
-      border: 1px solid rgba(148, 163, 184, 0.4);
-      margin: 0 2px 8px;
-    }
-
-    .rating-mode-btn {
-      border: none;
-      background: transparent;
-      color: var(--text-muted);
-      font-size: 11px;
-      padding: 4px 9px;
-      border-radius: 999px;
-      cursor: pointer;
-    }
-
-    .rating-mode-btn.active {
-      background: radial-gradient(circle at 20% 0, #38bdf8, #1d4ed8);
-      color: #e5f2ff;
-    }
-
-    /* Оверлей подробностей по машине */
-    .owner-detail-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(15, 23, 42, 0.85);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 999;
-      padding: 16px;
-    }
-
-    .owner-detail-card {
-      width: 100%;
-      max-width: 420px;
-      background: rgba(15, 23, 42, 0.98);
-      border-radius: var(--radius-lg);
-      border: 1px solid rgba(148, 163, 184, 0.7);
-      box-shadow: var(--shadow-soft);
-      padding: 14px 14px 12px;
-    }
-
-    .owner-detail-header {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 6px;
-    }
-
-    .owner-detail-title {
-      font-size: 16px;
-      font-weight: 600;
-    }
-
-    .owner-detail-owner {
-      font-size: 12px;
-      color: var(--text-muted);
-    }
-
-    .owner-detail-close {
-      border: none;
-      background: rgba(15, 23, 42, 0.9);
-      border-radius: 999px;
-      width: 26px;
-      height: 26px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--text-muted);
-      cursor: pointer;
-      font-size: 16px;
-    }
-
-    .owner-detail-stats {
-      margin-top: 4px;
-      border-radius: var(--radius-md);
-      border: 1px dashed rgba(148, 163, 184, 0.4);
-      padding: 6px 8px;
-      background: rgba(15, 23, 42, 0.9);
-      font-size: 12px;
-    }
-
-    @media (max-width: 400px) {
-      .app-header {
-        padding-inline: 10px;
-      }
-
-      .card {
-        padding-inline: 10px;
-      }
-
-      .app-name {
-        font-size: 16px;
-      }
-    }
+    .owner-detail-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); display: none; align-items: center; justify-content: center; z-index: 999; padding: 16px; }
+    .owner-detail-card { width: 100%; max-width: 420px; background: rgba(15, 23, 42, 0.98); border-radius: var(--radius-lg); border: 1px solid rgba(148, 163, 184, 0.7); box-shadow: var(--shadow-soft); padding: 14px 14px 12px; }
+    .owner-detail-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+    .owner-detail-title { font-size: 16px; font-weight: 600; }
+    .owner-detail-owner { font-size: 12px; color: var(--text-muted); }
+    .owner-detail-close { border: none; background: rgba(15, 23, 42, 0.9); border-radius: 999px; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); cursor: pointer; font-size: 16px; }
+    .owner-detail-stats { margin-top: 4px; border-radius: var(--radius-md); border: 1px dashed rgba(148, 163, 184, 0.4); padding: 6px 8px; background: rgba(15, 23, 42, 0.9); font-size: 12px; }
   </style>
 </head>
 <body>
   <div class="app">
     <header class="app-header">
       <div class="logo-title">
-        <div class="logo-circle">
-          <img src="autoqiyos-logo.png" alt="AutoQiyos" onerror="this.style.display='none'; this.parentElement.textContent='AQ'" />
-        </div>
+        <div class="logo-circle"><img src="autoqiyos-logo.png" alt="AutoQiyos" onerror="this.style.display='none';this.parentElement.innerText='AQ'"></div>
         <div>
           <div class="app-name">AutoQiyos</div>
           <div class="app-subtitle" data-i18n="subtitle"></div>
@@ -779,9 +199,7 @@
           <div class="car-photo-frame">
             <img id="car-photo-main" alt="Фото авто" />
             <video id="car-video-main" playsinline muted></video>
-            <div class="car-photo-placeholder" id="car-photo-placeholder">
-              <span data-i18n="car_photo_placeholder"></span>
-            </div>
+            <div class="car-photo-placeholder" id="car-photo-placeholder"><span data-i18n="car_photo_placeholder"></span></div>
             <button type="button" class="photo-nav prev" id="car-photo-prev">‹</button>
             <button type="button" class="photo-nav next" id="car-photo-next">›</button>
             <div class="car-photo-counter" id="car-photo-counter"></div>
@@ -791,46 +209,27 @@
             <div>
               <div class="badge" data-i18n="your_car"></div>
               <div class="car-main" id="car-title">Chevrolet Cobalt 2021</div>
-              <div class="status-pill" id="car-status-pill" style="display:none;"></div>
+              <div class="status-pill" id="car-status-pill"></div>
             </div>
             <div class="health">
               <span data-i18n="health"></span>
               <span id="health-score">82</span>
             </div>
           </div>
-
           <div class="card-body" id="car-stats"></div>
         </div>
 
         <div class="card">
-          <div class="card-header">
-            <span data-i18n="update_title"></span>
-          </div>
+          <div class="card-header"><span data-i18n="update_title"></span></div>
           <div class="card-body">
             <form id="car-form">
-              <div class="field">
-                <label data-i18n="field_brand"></label>
-                <input type="text" name="brand" required />
-              </div>
-              <div class="field">
-                <label data-i18n="field_model"></label>
-                <input type="text" name="model" required />
-              </div>
-              <div class="field">
-                <label data-i18n="field_year"></label>
-                <input type="number" name="year" min="1990" max="2035" required />
-              </div>
-              <div class="field">
-                <label data-i18n="field_mileage"></label>
-                <input type="number" name="mileage" min="0" step="1" required />
-              </div>
-              <div class="field">
-                <label data-i18n="field_price"></label>
-                <input type="number" name="price" min="0" step="100" />
-              </div>
-
-              <div class="field">
-                <label data-i18n="field_status"></label>
+              <div class="field"><label data-i18n="field_brand"></label><input type="text" name="brand" required /></div>
+              <div class="field"><label data-i18n="field_model"></label><input type="text" name="model" required /></div>
+              <div class="field"><label data-i18n="field_year"></label><input type="number" name="year" required /></div>
+              <div class="field"><label data-i18n="field_mileage"></label><input type="number" name="mileage" required /></div>
+              <div class="field"><label data-i18n="field_price"></label><input type="number" name="price" /></div>
+              
+              <div class="field"><label data-i18n="field_status"></label>
                 <select name="status" id="field-status">
                   <option value="" data-i18n="opt_status_none"></option>
                   <option value="follow" data-i18n="opt_status_follow"></option>
@@ -845,8 +244,7 @@
                 <button type="button" class="primary-btn" id="status-cta-btn" data-i18n="status_cta_btn"></button>
               </div>
 
-              <div class="field">
-                <label data-i18n="field_service"></label>
+              <div class="field"><label data-i18n="field_service"></label>
                 <select name="serviceOnTime" id="field-service">
                   <option value="yes" data-i18n-opt-yes>Да</option>
                   <option value="no" data-i18n-opt-no>Нет</option>
@@ -854,8 +252,7 @@
                 <div class="hint" data-i18n="service_hint"></div>
               </div>
 
-              <div class="field">
-                <label data-i18n="field_engine_type"></label>
+              <div class="field"><label data-i18n="field_engine_type"></label>
                 <select name="engineType">
                   <option value="" data-i18n="opt_engine_none"></option>
                   <option value="petrol" data-i18n="opt_engine_petrol"></option>
@@ -867,8 +264,7 @@
                 </select>
               </div>
 
-              <div class="field">
-                <label data-i18n="field_transmission"></label>
+              <div class="field"><label data-i18n="field_transmission"></label>
                 <select name="transmission">
                   <option value="" data-i18n="opt_trans_none"></option>
                   <option value="manual" data-i18n="opt_trans_manual"></option>
@@ -878,8 +274,7 @@
                 </select>
               </div>
 
-              <div class="field">
-                <label data-i18n="field_body_type"></label>
+              <div class="field"><label data-i18n="field_body_type"></label>
                 <select name="bodyType">
                   <option value="" data-i18n="opt_bodytype_none"></option>
                   <option value="sedan" data-i18n="opt_bodytype_sedan"></option>
@@ -892,8 +287,7 @@
                 </select>
               </div>
 
-              <div class="field">
-                <label data-i18n="field_body_condition"></label>
+              <div class="field"><label data-i18n="field_body_condition"></label>
                 <select name="bodyCondition">
                   <option value="" data-i18n="opt_bodycond_none"></option>
                   <option value="painted" data-i18n="opt_bodycond_painted"></option>
@@ -902,40 +296,18 @@
                 </select>
               </div>
 
-              <div class="field">
-                <label data-i18n="field_color"></label>
-                <input type="text" name="color" />
-              </div>
-
-              <div class="field">
-                <label data-i18n="field_purchase_info"></label>
-                <input type="text" name="purchaseInfo" />
-              </div>
-
-              <div class="field">
-                <label data-i18n="field_oil_mileage"></label>
-                <input type="number" name="oilMileage" min="0" step="100" />
-              </div>
-
-              <div class="field">
-                <label data-i18n="field_daily_mileage"></label>
-                <input type="number" name="dailyMileage" min="0" step="1" />
-              </div>
-
-              <div class="field">
-                <label data-i18n="field_last_service"></label>
-                <input type="text" name="lastService" />
-              </div>
-
-              <div class="field">
-                <label data-i18n="field_tuning"></label>
-                <textarea name="tuning" rows="2"></textarea>
-              </div>
+              <div class="field"><label data-i18n="field_color"></label><input type="text" name="color" /></div>
+              <div class="field"><label data-i18n="field_purchase_info"></label><input type="text" name="purchaseInfo" /></div>
+              <div class="field"><label data-i18n="field_oil_mileage"></label><input type="number" name="oilMileage" /></div>
+              <div class="field"><label data-i18n="field_daily_mileage"></label><input type="number" name="dailyMileage" /></div>
+              <div class="field"><label data-i18n="field_last_service"></label><input type="text" name="lastService" /></div>
+              <div class="field"><label data-i18n="field_tuning"></label><textarea name="tuning" rows="2"></textarea></div>
 
               <div class="field">
                 <label data-i18n="field_photo"></label>
                 <input type="file" id="car-photo-input" accept="image/*,video/*" multiple />
-                <div class="hint" data-i18n="photo_hint" id="upload-status"></div>
+                <div class="hint" data-i18n="photo_hint"></div>
+                <div id="upload-status" style="color:#eab308; font-size:11px; margin-top:5px;"></div>
               </div>
 
               <button type="submit" class="primary-btn" data-i18n="btn_save">Сохранить</button>
@@ -948,43 +320,26 @@
       <section id="screen-garage" class="screen">
         <h2 data-i18n="garage_title"></h2>
         <p class="muted" data-i18n="garage_desc"></p>
-
         <div id="garage-list" class="garage-list"></div>
       </section>
 
       <section id="screen-rating" class="screen">
         <h2 data-i18n="rating_title"></h2>
         <p class="muted" data-i18n="rating_desc"></p>
-
         <div class="rating-mode-switch">
-          <button
-            class="rating-mode-btn active"
-            data-mode="owners"
-            data-i18n="rating_mode_owners"
-          ></button>
-          <button
-            class="rating-mode-btn"
-            data-mode="cars"
-            data-i18n="rating_mode_cars"
-          ></button>
+          <button class="rating-mode-btn active" data-mode="owners" data-i18n="rating_mode_owners"></button>
+          <button class="rating-mode-btn" data-mode="cars" data-i18n="rating_mode_cars"></button>
         </div>
-
         <div id="rating-list" class="list"></div>
       </section>
 
       <section id="screen-market" class="screen">
         <h2 data-i18n="market_title"></h2>
         <p class="muted" data-i18n="market_desc"></p>
-
         <div class="card">
-          <div class="card-header">
-            <span data-i18n="market_demo_title"></span>
-          </div>
-          <div class="card-body">
-            <p data-i18n="market_demo_body"></p>
-          </div>
+          <div class="card-header"><span data-i18n="market_demo_title"></span></div>
+          <div class="card-body"><p data-i18n="market_demo_body"></p></div>
         </div>
-
         <div id="market-user-list"></div>
       </section>
     </main>
@@ -993,11 +348,8 @@
   <div id="owner-detail" class="owner-detail-backdrop">
     <div class="owner-detail-card">
       <div class="owner-detail-header">
-        <div>
-          <div id="owner-detail-title" class="owner-detail-title"></div>
-          <div id="owner-detail-owner" class="owner-detail-owner"></div>
-        </div>
-        <button id="owner-detail-close" class="owner-detail-close">×</button>
+        <div><div id="owner-detail-title"></div><div id="owner-detail-owner"></div></div>
+        <button id="owner-detail-close">×</button>
       </div>
       <div id="owner-detail-stats" class="owner-detail-stats"></div>
     </div>
