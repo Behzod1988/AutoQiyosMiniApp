@@ -18,6 +18,9 @@ let globalRatingCars = [];
 let garage = [];
 let ratingMode = "owners";
 
+const MAX_MEDIA = 5;          // максимум 5 фото/видео
+const MAX_IMAGE_BYTES = 100 * 1024; // 100 KB
+
 // ---------- DEFAULT CAR ----------
 const defaultCar = {
   brand: "Твой бренд (например Chevrolet)",
@@ -27,7 +30,7 @@ const defaultCar = {
   price: 0,
   status: "follow",
   serviceOnTime: true,
-  // важно: НЕ ставим текст по умолчанию в тюнинг
+  // ВАЖНО: тюнинг по умолчанию пустой, без текста-плейсхолдера
   tuning: "",
   color: "",
   bodyCondition: "",
@@ -87,7 +90,7 @@ const TEXTS = {
     btn_save: "Сохранить",
     save_hint: "Всё хранится в Supabase.",
     service_hint: "Отметь, если масло и сервис проходишь вовремя.",
-    photo_hint: "Загрузи фото",
+    photo_hint: "Загрузи до 5 фото (каждое до 100 KB).",
     label_yes: "Да",
     label_no: "Нет",
 
@@ -155,7 +158,7 @@ const TEXTS = {
   },
 
   uz: {
-    subtitle: "Mashinangiz uchun kundalik va halol reyting",
+    subtitle: "Mashinangiz uchun kundalik",
     tab_home: "Mening mashinam",
     tab_garage: "Mening garajim",
     tab_rating: "Reyting",
@@ -190,7 +193,7 @@ const TEXTS = {
     btn_save: "Saqlash",
     save_hint: "Supabase-da saqlanadi.",
     service_hint: "Moy va texnik xizmatni vaqtida qilsangiz belgilang.",
-    photo_hint: "Rasm yuklang.",
+    photo_hint: "5 tagacha rasm (har biri 100 KB gacha).",
     label_yes: "Ha",
     label_no: "Yo‘q",
 
@@ -336,7 +339,6 @@ function getStatusLabel(v, d) {
 // контактное имя/ссылка: username -> phone -> full_name
 function getContactInfo(entry) {
   const username = entry.username;
-  // если в таблице добавишь phone / telegram_phone — сюда подхватится
   const phone =
     entry.phone || entry.telegram_phone || entry.phone_number || null;
   const name = entry.full_name;
@@ -379,6 +381,39 @@ function applyTexts(lang) {
     .forEach((el) => (el.textContent = dict.label_no));
 }
 
+// ---------- ВАЛИДАЦИЯ ФОРМЫ ----------
+function validateFormData(formData) {
+  const errors = [];
+  const nowYear = new Date().getFullYear();
+
+  const yearStr = formData.get("year");
+  const mileageStr = formData.get("mileage");
+  const oilStr = formData.get("oilMileage");
+  const dailyStr = formData.get("dailyMileage");
+
+  const year = Number(yearStr);
+  if (!yearStr || isNaN(year) || year < 1980 || year > nowYear + 1) {
+    errors.push(`Год выпуска должен быть от 1980 до ${nowYear + 1}.`);
+  }
+
+  const mileage = Number(mileageStr || 0);
+  if (mileage < 0 || mileage > 2000000) {
+    errors.push("Пробег указан некорректно (0–2 000 000 км).");
+  }
+
+  const oilMileage = Number(oilStr || 0);
+  if (oilStr && (isNaN(oilMileage) || oilMileage < 0 || oilMileage > 2000000)) {
+    errors.push("Пробег при замене масла указан некорректно.");
+  }
+
+  const daily = Number(dailyStr || 0);
+  if (dailyStr && (isNaN(daily) || daily < 0 || daily > 3000)) {
+    errors.push("Дневной пробег указан некорректно.");
+  }
+
+  return errors;
+}
+
 // ---------- СЖАТИЕ И ЗАГРУЗКА ----------
 function compressImage(file) {
   return new Promise((resolve) => {
@@ -404,13 +439,34 @@ function compressImage(file) {
         canvas.height = height;
         const ctx = canvas.getContext("2d");
         ctx.drawImage(img, 0, 0, width, height);
-        canvas.toBlob(
-          (blob) => {
-            resolve(new File([blob], file.name, { type: "image/jpeg" }));
-          },
-          "image/jpeg",
-          0.7
-        );
+
+        let quality = 0.8;
+
+        function attemptEncode() {
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) {
+                resolve(file);
+                return;
+              }
+              if (blob.size <= MAX_IMAGE_BYTES || quality <= 0.3) {
+                const smallFile = new File(
+                  [blob],
+                  file.name.replace(/\.[^.]+$/, "") + ".jpg",
+                  { type: "image/jpeg" }
+                );
+                resolve(smallFile);
+              } else {
+                quality -= 0.1;
+                attemptEncode();
+              }
+            },
+            "image/jpeg",
+            quality
+          );
+        }
+
+        attemptEncode();
       };
     };
   });
@@ -420,7 +476,8 @@ async function uploadFile(file) {
   const user = getUser();
   const timestamp = Date.now();
   const compressed = await compressImage(file);
-  const ext = file.type.startsWith("video") ? "mp4" : "jpg";
+  const isVideo = file.type.startsWith("video");
+  const ext = isVideo ? "mp4" : "jpg";
   const fileName = `${user.id}/${timestamp}.${ext}`;
 
   const { data, error } = await sb
@@ -435,7 +492,7 @@ async function uploadFile(file) {
 
   const { data: urlData } = sb.storage.from("car-photos").getPublicUrl(fileName);
   return {
-    type: file.type.startsWith("video") ? "video" : "image",
+    type: isVideo ? "video" : "image",
     data: urlData.publicUrl
   };
 }
@@ -568,6 +625,7 @@ function renderCarMedia() {
   const prevBtn = document.getElementById("car-photo-prev");
   const nextBtn = document.getElementById("car-photo-next");
   const counter = document.getElementById("car-photo-counter");
+  const delBtn = document.getElementById("car-photo-delete");
   const media = currentCar.media;
 
   if (!media || !media.length) {
@@ -577,6 +635,7 @@ function renderCarMedia() {
     if (prevBtn) prevBtn.style.display = "none";
     if (nextBtn) nextBtn.style.display = "none";
     if (counter) counter.style.display = "none";
+    if (delBtn) delBtn.style.display = "none";
     return;
   }
 
@@ -591,6 +650,7 @@ function renderCarMedia() {
   }
   if (prevBtn) prevBtn.style.display = media.length > 1 ? "flex" : "none";
   if (nextBtn) nextBtn.style.display = media.length > 1 ? "flex" : "none";
+  if (delBtn) delBtn.style.display = "flex";
 
   if (item.type === "video") {
     if (img) img.style.display = "none";
@@ -649,7 +709,6 @@ function buildStatsRows(car, dict) {
       value: car.color
     });
   }
-  // важное исправление: игнорируем старый плейсхолдер "Какие дополнительные навороты"
   if (
     car.tuning &&
     car.tuning.trim() &&
@@ -701,7 +760,6 @@ function renderCar() {
       .join("");
   }
 
-  // заполнение формы
   const f = document.getElementById("car-form");
   if (f) {
     f.brand.value = currentCar.brand || "";
@@ -809,7 +867,6 @@ function renderRating() {
       })
       .join("");
   } else {
-    // режим "Модели"
     const agg = {};
     globalRatingCars.forEach((c) => {
       const key = `${c.car.brand} ${c.car.model}`;
@@ -964,6 +1021,49 @@ document.addEventListener("DOMContentLoaded", async () => {
   applyTexts(currentLang);
   renderCar(); // дефолт до Supabase
 
+  // Кнопка удаления фото создаётся динамически, без правки HTML
+  const photoFrame = document.querySelector(".car-photo-frame");
+  if (photoFrame && !document.getElementById("car-photo-delete")) {
+    const delBtn = document.createElement("button");
+    delBtn.id = "car-photo-delete";
+    delBtn.type = "button";
+    delBtn.textContent = "✕";
+    delBtn.style.position = "absolute";
+    delBtn.style.top = "6px";
+    delBtn.style.right = "6px";
+    delBtn.style.width = "24px";
+    delBtn.style.height = "24px";
+    delBtn.style.borderRadius = "999px";
+    delBtn.style.border = "1px solid rgba(148,163,184,0.7)";
+    delBtn.style.background = "rgba(15,23,42,0.9)";
+    delBtn.style.color = "#e5e7eb";
+    delBtn.style.fontSize = "14px";
+    delBtn.style.display = "none";
+    delBtn.style.alignItems = "center";
+    delBtn.style.justifyContent = "center";
+    delBtn.style.cursor = "pointer";
+    delBtn.style.padding = "0";
+    delBtn.style.zIndex = "5";
+    photoFrame.appendChild(delBtn);
+
+    delBtn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      if (!currentCar.media || !currentCar.media.length) return;
+      const ok =
+        typeof confirm === "function"
+          ? confirm("Удалить это фото?")
+          : true;
+      if (!ok) return;
+      currentCar.media.splice(currentMediaIndex, 1);
+      if (currentMediaIndex >= currentCar.media.length) {
+        currentMediaIndex = currentCar.media.length - 1;
+      }
+      if (currentMediaIndex < 0) currentMediaIndex = 0;
+      await saveUserCarToSupabase();
+      renderCarMedia();
+    });
+  }
+
   await syncUserCarFromSupabase();
   await loadGlobalRating();
 
@@ -1036,7 +1136,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (prev) prev.onclick = () => { currentMediaIndex--; renderCarMedia(); };
   if (next) next.onclick = () => { currentMediaIndex++; renderCarMedia(); };
 
-  // Upload
+  // Upload (с лимитом 5 фото и авто-сжатием до 100KB)
   const photoInput = document.getElementById("car-photo-input");
   if (photoInput) {
     photoInput.addEventListener("change", async (e) => {
@@ -1046,19 +1146,42 @@ document.addEventListener("DOMContentLoaded", async () => {
       const hint =
         photoInput.parentNode.querySelector(".hint") ||
         document.getElementById("upload-status");
+
+      if (currentCar.media.length >= MAX_MEDIA) {
+        const msg = "Можно загрузить максимум 5 фото.";
+        if (hint) hint.innerText = msg;
+        if (tg && tg.showPopup) tg.showPopup({ message: msg });
+        else alert(msg);
+        return;
+      }
+
       if (hint) hint.innerText = "Сжатие и загрузка... ⏳";
+
+      let success = 0;
+      let fail = 0;
 
       try {
         for (const f of files) {
+          if (currentCar.media.length >= MAX_MEDIA) break;
           const res = await uploadFile(f);
-          if (res) currentCar.media.push(res);
+          if (res) {
+            currentCar.media.push(res);
+            success++;
+          } else {
+            fail++;
+          }
         }
         await saveUserCarToSupabase();
-        if (hint) hint.innerText = "Готово! ✅";
+        if (hint) {
+          if (fail === 0) hint.innerText = "Готово! ✅";
+          else hint.innerText = `Готово: ${success}, ошибок: ${fail}`;
+        }
         renderCar();
       } catch (err) {
         console.error(err);
-        if (hint) hint.innerText = "Ошибка";
+        if (hint) hint.innerText = "Ошибка при загрузке";
+      } finally {
+        photoInput.value = "";
       }
     });
   }
@@ -1100,6 +1223,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       const f = new FormData(form);
+
+      const validationErrors = validateFormData(f);
+      if (validationErrors.length) {
+        const msg = validationErrors.join("\n");
+        if (tg && tg.showPopup) tg.showPopup({ message: msg });
+        else alert(msg);
+        return;
+      }
 
       currentCar.brand = f.get("brand");
       currentCar.model = f.get("model");
@@ -1175,4 +1306,3 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 });
-
