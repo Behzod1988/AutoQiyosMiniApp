@@ -1,4 +1,4 @@
-// ---------- SUPABASE CONFIG ----------
+// ---------- 1. НАСТРОЙКИ SUPABASE ----------
 const SUPABASE_URL = "https://dlefczzippvfudcdtlxz.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRsZWZjenppcHB2ZnVkY2R0bHh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3OTY0OTMsImV4cCI6MjA3OTM3MjQ5M30.jSJYcF3o00yDx41EtbQUye8_tl3AzIaCkrPT9uZ22kY";
 
@@ -8,17 +8,16 @@ const tg = window.Telegram ? window.Telegram.WebApp : null;
 
 if (tg) { tg.ready(); tg.expand(); }
 
-// ---------- STATE ----------
+// ---------- DATA & STATE ----------
 let currentLang = localStorage.getItem("aq_lang") || "ru";
 let currentMediaIndex = 0;
 let globalRatingCars = [];
-let garage = [];
 
 const defaultCar = {
   brand: "Chevrolet Cobalt", model: "1.5 AT", year: 2021, mileage: 45000, price: 12000,
-  status: "follow", serviceOnTime: true, color: "", bodyType: "", bodyCondition: "",
-  engineType: "", transmission: "", purchaseInfo: "", oilMileage: "", dailyMileage: "",
-  lastService: "", tuning: "", media: []
+  serviceOnTime: true, tuning: "Литые диски, камера заднего вида", color: "",
+  bodyCondition: "", bodyType: "", purchaseInfo: "", oilMileage: "", dailyMileage: "",
+  lastService: "", engineType: "", transmission: "", status: "follow", media: []
 };
 
 function normalizeCar(car) {
@@ -28,21 +27,23 @@ function normalizeCar(car) {
 }
 
 let currentCar = normalizeCar({});
+let garage = [currentCar];
 
-// ---------- TEXTS (Original) ----------
+// ---------- TEXTS ----------
 const TEXTS = {
   ru: {
     subtitle: "Дневник и честный рейтинг твоего авто",
     tab_home: "Моя машина", tab_garage: "Мой гараж", tab_rating: "Рейтинг", tab_market: "Объявления",
-    home_title: "", home_desc: "Записывай пробег, сервис, ремонты и цену.",
+    home_title: "", home_desc: "Записывай пробег, сервис, ремонты и цену. AutoQiyos помогает не забывать о машине.",
     your_car: "Твоя машина", health: "Состояние", car_photo_placeholder: "Фото авто",
     update_title: "Обновить данные", field_brand: "Марка", field_model: "Модель", field_year: "Год", field_mileage: "Пробег, км",
     field_price: "Цена моего авто, $", field_status: "Статус", field_color: "Цвет", field_body_type: "Тип кузова",
     field_body_condition: "Состояние кузова", field_engine_type: "Тип двигателя", field_transmission: "Коробка передач",
     field_purchase_info: "Когда покупал", field_oil_mileage: "Пробег при замене масла, км", field_daily_mileage: "Дневной пробег, км",
     field_last_service: "Последнее ТО", field_service: "Обслуживание вовремя", field_tuning: "Особенности / тюнинг",
-    field_photo: "Фото автомобиля", btn_save: "Сохранить", save_hint: "Всё хранится только на твоём устройстве.",
-    service_hint: "Отметь, если масло и сервис проходишь вовремя.", photo_hint: "Загрузи фото", label_yes: "Да", label_no: "Нет",
+    field_photo: "Фото автомобиля", btn_save: "Сохранить", save_hint: "Всё хранится в Supabase.",
+    service_hint: "Отметь, если масло и сервис проходишь вовремя.", photo_hint: "Загрузи фото — без медиа мы не сможем показать тебя в рейтинге.",
+    label_yes: "Да", label_no: "Нет",
     opt_status_none: "— не выбран —", opt_status_follow: "Слежу за машиной", opt_status_prepare_sell: "Готовлюсь продать",
     opt_status_sell: "Хочу продать", opt_status_consider: "Рассматриваю предложения", opt_status_want_buy: "Хочу купить",
     status_cta_btn: "Перейти к объявлениям", status_for_sale: "В продаже",
@@ -50,11 +51,12 @@ const TEXTS = {
     opt_bodycond_none: "— не указано —", opt_bodycond_painted: "Крашенная", opt_bodycond_original: "Родная краска", opt_bodycond_scratches: "Есть царапины",
     opt_bodytype_none: "— не указано —", opt_bodytype_sedan: "Седан", opt_bodytype_hatch: "Хэтчбек", opt_bodytype_crossover: "Кроссовер", opt_bodytype_suv: "SUV / внедорожник", opt_bodytype_wagon: "Универсал", opt_bodytype_minivan: "Минивэн", opt_bodytype_pickup: "Пикап",
     opt_engine_none: "— не указано —", opt_engine_petrol: "Бензин", opt_engine_diesel: "Дизель", opt_engine_lpg: "Пропан / бензин", opt_engine_cng: "Метан / бензин", opt_engine_hybrid: "Гибрид", opt_engine_electric: "Электро",
-    garage_title: "Мой гараж", garage_desc: "Здесь собраны все твои машины.", garage_primary: "Основная машина", garage_health: "Состояние", garage_free_note: "1 машина бесплатно.",
-    garage_premium_title: "Добавить авто", garage_premium_body: "Закрытая ячейка.",
+    garage_title: "Мой гараж", garage_desc: "Здесь собраны все твои машины.", garage_primary: "Основная машина", garage_health: "Состояние", garage_free_note: "Сейчас можно бесплатно добавить и вести одну машину.",
+    garage_premium_title: "Добавить ещё другие автомобили", garage_premium_body: "Закрытая ячейка (Премиум).",
     rating_title: "Рейтинг", rating_desc: "Честный рейтинг владельцев.", rating_mode_owners: "Владельцы", rating_mode_cars: "Модели",
-    rating_badge: "Топ–5", rating_pos: "место", rating_health: "состояние", rating_empty: "Пока пусто.", rating_local_notice: "Данные из Supabase.",
-    market_title: "Объявления", market_desc: "Честные объявления.", market_demo_title: "Пример", market_demo_body: "Chevrolet Cobalt. Оценка: адекватно.", market_user_title: "Ваше объявление"
+    rating_badge: "Топ–5 по модели", rating_pos: "место", rating_health: "состояние", rating_empty: "Пока ещё никто не добавил свою машину.", rating_local_notice: "Данные из Supabase.",
+    market_title: "Объявления AutoQiyos", market_desc: "Здесь будут честные объявления с оценкой цены.", market_demo_title: "Пример объявления", market_demo_body: "Chevrolet Cobalt 2022, 1.5, автомат. Оценка: адекватно.",
+    market_user_title: "Продавец"
   },
   uz: {
     subtitle: "Mashinangiz uchun kundalik", tab_home: "Mening mashinam", tab_garage: "Mening garajim", tab_rating: "Reyting", tab_market: "E'lonlar",
@@ -65,20 +67,21 @@ const TEXTS = {
     field_body_condition: "Kuzov holati", field_engine_type: "Dvigatel turi", field_transmission: "Uzatmalar qutisi",
     field_purchase_info: "Qachon olingan", field_oil_mileage: "Yog' almashtirish, km", field_daily_mileage: "Kunlik yurish, km",
     field_last_service: "Oxirgi tex. xizmat", field_service: "Texnik xizmat o‘z vaqtida", field_tuning: "Tuning",
-    field_photo: "Avtomobil surati", btn_save: "Saqlash", save_hint: "Supabase-da saqlanadi.",
+    field_photo: "Avtomobil surati", btn_save: "Saqlash", save_hint: "Hammasi faqat sizning qurilmangizda saqlanadi.",
     service_hint: "Moy va texnik xizmatni vaqtida qilsangiz belgilang.", photo_hint: "Rasm yuklang.", label_yes: "Ha", label_no: "Yo‘q",
     opt_status_none: "— tanlanmagan —", opt_status_follow: "Kuzataman", opt_status_prepare_sell: "Sotishga tayyorlanyapman",
     opt_status_sell: "Sotmoqchiman", opt_status_consider: "Ko‘rib chiqaman", opt_status_want_buy: "Sotib olmoqchiman",
-    status_cta_btn: "E'lonlarga", status_for_sale: "Sotuvda",
+    status_cta_btn: "E'lonlarga o'tish", status_for_sale: "Sotuvda",
     opt_trans_none: "— ko‘rsatilmagan —", opt_trans_manual: "Mexanik", opt_trans_auto: "Avtomat", opt_trans_robot: "Robot", opt_trans_cvt: "Variator",
     opt_bodycond_none: "— ko‘rsatilmagan —", opt_bodycond_painted: "Bo‘yalgan", opt_bodycond_original: "Toza", opt_bodycond_scratches: "Chizilgan",
     opt_bodytype_none: "— ko‘rsatilmagan —", opt_bodytype_sedan: "Sedan", opt_bodytype_hatch: "Xetchbek", opt_bodytype_crossover: "Krossover", opt_bodytype_suv: "SUV", opt_bodytype_wagon: "Universal", opt_bodytype_minivan: "Miniven", opt_bodytype_pickup: "Pikap",
     opt_engine_none: "— ko‘rsatilmagan —", opt_engine_petrol: "Benzin", opt_engine_diesel: "Dizel", opt_engine_lpg: "Propan", opt_engine_cng: "Metan", opt_engine_hybrid: "Gibrid", opt_engine_electric: "Elektro",
-    garage_title: "Mening garajim", garage_desc: "Barcha mashinalaringiz.", garage_primary: "Asosiy", garage_health: "Holati", garage_free_note: "1 ta bepul.",
-    garage_premium_title: "Yana qo‘shish", garage_premium_body: "Yopiq uyacha.",
+    garage_title: "Mening garajim", garage_desc: "Barcha mashinalaringiz shu yerda.", garage_primary: "Asosiy mashina", garage_health: "Holati", garage_free_note: "1 ta bepul.",
+    garage_premium_title: "Yana boshqa avtomobillar", garage_premium_body: "Yopiq uyacha (Premium).",
     rating_title: "Reyting", rating_desc: "Egalari reytingi.", rating_mode_owners: "Egalari", rating_mode_cars: "Modellar",
-    rating_badge: "Top–5", rating_pos: "o‘rin", rating_health: "holati", rating_empty: "Bo'sh.", rating_local_notice: "Supabase maʼlumotlari.",
-    market_title: "E'lonlar", market_desc: "Adolatli narxlar.", market_demo_title: "Namuna", market_demo_body: "Cobalt 2022. Narx: adekvat.", market_user_title: "Sizning e'loningiz"
+    rating_badge: "Top–5", rating_pos: "o‘rin", rating_health: "holati", rating_empty: "Hozircha bo'sh.", rating_local_notice: "Supabase maʼlumotlari.",
+    market_title: "AutoQiyos e'lonlari", market_desc: "Narxi adolatli baholangan eʼlonlar.", market_demo_title: "Namuna", market_demo_body: "Cobalt 2022. Narx: adekvat.",
+    market_user_title: "Sotuvchi"
   }
 };
 
@@ -168,7 +171,7 @@ async function uploadFile(file) {
 
 async function syncUserCarFromSupabase() {
     const userId = getTelegramUserId();
-    const { data, error } = await sb.from('cars').select('*').eq('telegram_id', String(userId)).single();
+    const { data } = await sb.from('cars').select('*').eq('telegram_id', String(userId)).single();
     if (data) {
         // Map snake_case -> camelCase
         currentCar = normalizeCar({
@@ -264,7 +267,7 @@ function renderStats() {
 
 function renderCarMedia() {
     const img = document.getElementById("car-photo-main");
-    const vid = document.getElementById("car-video-main");
+    const video = document.getElementById("car-video-main");
     const ph = document.getElementById("car-photo-placeholder");
     const cnt = document.getElementById("car-photo-counter");
     const prev = document.getElementById("car-photo-prev");
@@ -286,6 +289,7 @@ function renderCarMedia() {
     if(prev) prev.style.display = media.length > 1 ? 'flex' : 'none';
     if(next) next.style.display = media.length > 1 ? 'flex' : 'none';
 
+    // item.data is the URL
     if(item.type === 'video' && vid) {
         if(img) img.style.display='none';
         vid.style.display='block'; vid.src=item.data;
@@ -311,7 +315,8 @@ function renderGarage() {
 function renderRating() {
     const list = document.getElementById("rating-list");
     if(!list) return;
-    if(!globalRatingCars.length) { list.innerHTML = '<p class="muted small">Loading...</p>'; return; }
+    const dict = TEXTS[currentLang];
+    if(!globalRatingCars.length) { list.innerHTML = `<p class="muted small">${dict.rating_empty}</p>`; return; }
     list.innerHTML = globalRatingCars.map((c, i) => `
         <div class="rating-item">
             <div class="rating-left"><div class="rating-pos ${i===0?'top-1':''}">${i+1}</div><div class="rating-main"><div class="rating-owner">${c.full_name||'User'}</div><div class="rating-car">${c.car.brand} ${c.car.model}</div></div></div>
@@ -323,19 +328,23 @@ function renderRating() {
 function renderMarket() {
     const list = document.getElementById("market-user-list");
     if(!list) return;
+    const dict = TEXTS[currentLang];
     const sellers = globalRatingCars.filter(c => c.car.status === 'sell');
-    list.innerHTML = sellers.length ? sellers.map(c => `<div class="card"><div class="card-header">Seller</div><div class="card-body"><p><strong>${c.car.brand}</strong></p><p>${c.car.price}$</p><p class="muted small">@${c.username}</p></div></div>`).join("") : "";
+    list.innerHTML = sellers.length ? sellers.map(c => `
+        <div class="card">
+            <div class="card-header"><span>${dict.market_user_title}</span></div>
+            <div class="card-body"><p><strong>${c.car.brand}</strong></p><p>${c.car.price}$</p><p class="muted small">@${c.username}</p></div>
+        </div>
+    `).join("") : "";
 }
 
 // ---------- EVENTS ----------
-
 document.addEventListener("DOMContentLoaded", async () => {
     if(tg) tg.ready();
     applyTexts(currentLang);
     renderCar(); renderGarage(); 
     await syncUserCarFromSupabase(); await loadGlobalRating();
 
-    // Tabs
     document.querySelectorAll(".tab-btn").forEach(btn => {
         btn.addEventListener("click", () => {
             document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
@@ -346,7 +355,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     });
 
-    // Lang
     document.querySelectorAll(".lang-btn").forEach(btn => {
         btn.addEventListener("click", () => {
             currentLang = btn.dataset.lang;
@@ -356,20 +364,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     });
 
-    // Media Nav
     const prev = document.getElementById("car-photo-prev");
     const next = document.getElementById("car-photo-next");
     if(prev) prev.onclick = () => { currentMediaIndex--; renderCarMedia(); };
     if(next) next.onclick = () => { currentMediaIndex++; renderCarMedia(); };
 
-    // Upload with Compression
     const photoInput = document.getElementById("car-photo-input");
     if(photoInput) {
         photoInput.addEventListener("change", async (e) => {
             const files = Array.from(e.target.files);
             if(!files.length) return;
             
-            // Feedback (need to add div in html or use existing one)
             let statusDiv = document.querySelector('.hint'); 
             if(statusDiv) statusDiv.innerText = "Сжатие и загрузка... ⏳";
             
@@ -385,7 +390,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
-    // Save
     const form = document.getElementById("car-form");
     if(form) {
         form.addEventListener("submit", async (e) => {
