@@ -12,16 +12,21 @@ if (tg) {
   tg.expand();
 }
 
+// ---------- 2. ГЛОБАЛЬНОЕ СОСТОЯНИЕ ----------
 let currentLang = localStorage.getItem("aq_lang") || "ru";
 let currentMediaIndex = 0;
 let globalRatingCars = [];
 let garage = [];
 let ratingMode = "owners";
 
-const MAX_MEDIA = 5;                 // максимум 5 фото/видео
-const MAX_IMAGE_BYTES = 100 * 1024;  // ~100 KB
+const MAX_MEDIA = 5;
+const MAX_IMAGE_BYTES = 100 * 1024; // 100 KB
 
-// ---------- DEFAULT CAR ----------
+let isViewingForeign = false;   // смотрим чужую машину?
+let viewForeignCar = null;      // данные чужой машины
+let viewForeignOwner = null;    // владелец чужой машины
+
+// ---------- 3. МОДЕЛЬ МАШИНЫ ----------
 const defaultCar = {
   brand: "Твой бренд (например Chevrolet)",
   model: "Модель (например Cobalt)",
@@ -43,15 +48,28 @@ const defaultCar = {
   media: []
 };
 
+function parseMediaField(media) {
+  if (Array.isArray(media)) return media;
+  if (typeof media === "string") {
+    try {
+      const parsed = JSON.parse(media);
+      if (Array.isArray(parsed)) return parsed;
+    } catch (e) {
+      console.warn("Bad media JSON:", e);
+    }
+  }
+  return [];
+}
+
 function normalizeCar(car) {
   const merged = { ...defaultCar, ...car };
-  if (!Array.isArray(merged.media)) merged.media = [];
+  merged.media = parseMediaField(merged.media);
   return merged;
 }
 
 let currentCar = normalizeCar({});
 
-// ---------- ТЕКСТЫ ----------
+// ---------- 4. ТЕКСТЫ ----------
 const TEXTS = {
   ru: {
     subtitle: "Дневник и честный рейтинг твоего авто",
@@ -264,7 +282,7 @@ const TEXTS = {
   }
 };
 
-// ---------- HELPERS ----------
+// ---------- 5. HELPERS ----------
 function getUser() {
   if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
     return tg.initDataUnsafe.user;
@@ -339,7 +357,7 @@ function getStatusLabel(v, d) {
   return m[v] || "";
 }
 
-// контактное имя/ссылка: username -> phone -> full_name
+// контакт: ник -> телефон -> имя
 function getContactInfo(entry) {
   const username = entry.username;
   const phone =
@@ -384,7 +402,6 @@ function applyTexts(lang) {
     .forEach((el) => (el.textContent = dict.label_no));
 }
 
-// описание рейтинга в зависимости от режима
 function updateRatingDescription() {
   const dict = TEXTS[currentLang];
   const el = document.querySelector('[data-i18n="rating_desc"]');
@@ -396,7 +413,6 @@ function updateRatingDescription() {
   }
 }
 
-// ---------- ВАЛИДАЦИЯ ФОРМЫ ----------
 function validateFormData(formData) {
   const errors = [];
   const nowYear = new Date().getFullYear();
@@ -429,27 +445,60 @@ function validateFormData(formData) {
   return errors;
 }
 
-// ---------- СЖАТИЕ И ЗАГРУЗКА ----------
+// активная машина для отображения
+function getActiveCar() {
+  if (isViewingForeign && viewForeignCar) return viewForeignCar;
+  return currentCar;
+}
+
+// путь для удаления файла из storage
+function getStoragePathFromUrl(url) {
+  if (!url) return null;
+  const marker = "/car-photos/";
+  const idx = url.indexOf(marker);
+  if (idx === -1) return null;
+  return url.substring(idx + marker.length); // "userId/fileName.jpg"
+}
+
+// ---------- 6. СЖАТИЕ / ЗАГРУЗКА ----------
 function compressImage(file) {
   return new Promise((resolve) => {
-    if (file.type.startsWith("video")) {
+    // видео и не-картинки не трогаем
+    if (file.type && file.type.startsWith("video")) {
       resolve(file);
       return;
     }
+    if (!file.type || !file.type.startsWith("image")) {
+      resolve(file);
+      return;
+    }
+
     const reader = new FileReader();
-    reader.readAsDataURL(file);
+
+    reader.onerror = () => {
+      console.warn("FileReader error, uploading original file");
+      resolve(file);
+    };
+
     reader.onload = (event) => {
       const img = new Image();
-      img.src = event.target.result;
+
+      img.onerror = () => {
+        console.warn("Image decode error, uploading original file");
+        resolve(file);
+      };
+
       img.onload = () => {
         const canvas = document.createElement("canvas");
         const maxWidth = 1000;
         let width = img.width;
         let height = img.height;
+
         if (width > maxWidth) {
           height = Math.round((height * maxWidth) / width);
           width = maxWidth;
         }
+
         canvas.width = width;
         canvas.height = height;
         const ctx = canvas.getContext("2d");
@@ -461,16 +510,14 @@ function compressImage(file) {
           canvas.toBlob(
             (blob) => {
               if (!blob) {
+                console.warn("toBlob null, uploading original file");
                 resolve(file);
                 return;
               }
+
               if (blob.size <= MAX_IMAGE_BYTES || quality <= 0.3) {
-                const smallFile = new File(
-                  [blob],
-                  file.name.replace(/\.[^.]+$/, "") + ".jpg",
-                  { type: "image/jpeg" }
-                );
-                resolve(smallFile);
+                // возвращаем Blob (Supabase понимает Blob)
+                resolve(blob);
               } else {
                 quality -= 0.1;
                 attemptEncode();
@@ -483,22 +530,26 @@ function compressImage(file) {
 
         attemptEncode();
       };
+
+      img.src = event.target.result;
     };
+
+    reader.readAsDataURL(file);
   });
 }
 
 async function uploadFile(file) {
   const user = getUser();
   const timestamp = Date.now();
-  const compressed = await compressImage(file);
-  const isVideo = file.type.startsWith("video");
+  const isVideo = file.type && file.type.startsWith("video");
   const ext = isVideo ? "mp4" : "jpg";
   const fileName = `${user.id}/${timestamp}.${ext}`;
 
-  const { data, error } = await sb
-    .storage
+  const body = isVideo ? file : await compressImage(file);
+
+  const { error } = await sb.storage
     .from("car-photos")
-    .upload(fileName, compressed, { upsert: false });
+    .upload(fileName, body, { upsert: false });
 
   if (error) {
     console.error("Upload Err", error);
@@ -512,7 +563,7 @@ async function uploadFile(file) {
   };
 }
 
-// ---------- SUPABASE DB ----------
+// ---------- 7. SUPABASE DB ----------
 async function syncUserCarFromSupabase() {
   const user = getUser();
   const { data, error } = await sb
@@ -546,7 +597,7 @@ async function syncUserCarFromSupabase() {
       oilMileage: data.oil_mileage,
       dailyMileage: data.daily_mileage,
       lastService: data.last_service,
-      media: data.media || []
+      media: data.media
     });
     currentCar.isPrimary = true;
     renderCar();
@@ -613,6 +664,7 @@ async function loadGlobalRating() {
         price: row.price,
         status: row.status,
         serviceOnTime: row.service_on_time,
+        tuning: row.tuning,
         color: row.color,
         bodyType: row.body_type,
         bodyCondition: row.body_condition,
@@ -626,14 +678,15 @@ async function loadGlobalRating() {
       })
     }));
 
-    globalRatingCars.sort((a, b) => b.health - a.health);
+    globalRatingCars.sort((a, b) => Number(b.health) - Number(a.health));
     renderRating();
     renderMarket();
   }
 }
 
-// ---------- ОТРИСОВКА ----------
+// ---------- 8. ОТРИСОВКА ----------
 function renderCarMedia() {
+  const car = getActiveCar();
   const img = document.getElementById("car-photo-main");
   const video = document.getElementById("car-video-main");
   const placeholder = document.getElementById("car-photo-placeholder");
@@ -641,7 +694,7 @@ function renderCarMedia() {
   const nextBtn = document.getElementById("car-photo-next");
   const counter = document.getElementById("car-photo-counter");
   const delBtn = document.getElementById("car-photo-delete");
-  const media = currentCar.media;
+  const media = car.media;
 
   if (!media || !media.length) {
     if (img) img.style.display = "none";
@@ -665,7 +718,10 @@ function renderCarMedia() {
   }
   if (prevBtn) prevBtn.style.display = media.length > 1 ? "flex" : "none";
   if (nextBtn) nextBtn.style.display = media.length > 1 ? "flex" : "none";
-  if (delBtn) delBtn.style.display = "flex";
+  if (delBtn) {
+    // удалять можно только свою машину
+    delBtn.style.display = isViewingForeign ? "none" : "flex";
+  }
 
   if (item.type === "video") {
     if (img) img.style.display = "none";
@@ -727,6 +783,7 @@ function buildStatsRows(car, dict) {
   if (
     car.tuning &&
     car.tuning.trim() &&
+    car.tuning.trim() !== "Какие дополнительные новороты" &&
     car.tuning.trim() !== "Какие дополнительные навороты"
   ) {
     rows.push({
@@ -738,74 +795,6 @@ function buildStatsRows(car, dict) {
   return rows;
 }
 
-function renderCar() {
-  const dict = TEXTS[currentLang];
-
-  const titleEl = document.getElementById("car-title");
-  const healthEl = document.getElementById("health-score");
-  const pill = document.getElementById("car-status-pill");
-  const statsEl = document.getElementById("car-stats");
-
-  if (titleEl) {
-    titleEl.textContent = `${currentCar.brand} ${currentCar.model} ${
-      currentCar.year || ""
-    }`.trim();
-  }
-
-  if (healthEl) {
-    healthEl.textContent = calcHealthScore(currentCar);
-  }
-
-  if (pill) {
-    if (currentCar.status === "sell") {
-      pill.style.display = "inline-flex";
-      pill.textContent = dict.status_for_sale;
-    } else {
-      pill.style.display = "none";
-    }
-  }
-
-  if (statsEl) {
-    const rows = buildStatsRows(currentCar, dict);
-    statsEl.innerHTML = rows
-      .map(
-        (r) =>
-          `<div class="stat-row"><span>${r.label}</span><span>${r.value}</span></div>`
-      )
-      .join("");
-  }
-
-  const f = document.getElementById("car-form");
-  if (f) {
-    f.brand.value = currentCar.brand || "";
-    f.model.value = currentCar.model || "";
-    f.year.value = currentCar.year || "";
-    f.mileage.value = currentCar.mileage || "";
-    f.price.value = currentCar.price || "";
-    f.status.value = currentCar.status || "";
-    f.serviceOnTime.value = currentCar.serviceOnTime ? "yes" : "no";
-
-    f.transmission.value = currentCar.transmission || "";
-    f.engineType.value = currentCar.engineType || "";
-    f.bodyType.value = currentCar.bodyType || "";
-    f.bodyCondition.value = currentCar.bodyCondition || "";
-
-    f.color.value = currentCar.color || "";
-    f.tuning.value = currentCar.tuning || "";
-    f.purchaseInfo.value = currentCar.purchaseInfo || "";
-    f.oilMileage.value = currentCar.oilMileage || "";
-    f.dailyMileage.value = currentCar.dailyMileage || "";
-    f.lastService.value = currentCar.lastService || "";
-  }
-
-  garage = [currentCar];
-
-  renderCarMedia();
-  renderGarage();
-  renderMarket();
-}
-
-// для красивого названия модели, чтобы не было "Nexia 3 Nexia 3"
 function buildModelLabel(brand, model) {
   const b = (brand || "").trim();
   const m = (model || "").trim();
@@ -821,6 +810,131 @@ function buildModelLabel(brand, model) {
   if (mLower.includes(bLower)) return m;
 
   return `${b} ${m}`;
+}
+
+function renderCar() {
+  const dict = TEXTS[currentLang];
+  const car = getActiveCar();
+
+  const titleEl = document.getElementById("car-title");
+  const healthEl = document.getElementById("health-score");
+  const pill = document.getElementById("car-status-pill");
+  const statsEl = document.getElementById("car-stats");
+
+  if (titleEl) {
+    titleEl.textContent = `${car.brand} ${car.model} ${car.year || ""}`.trim();
+  }
+
+  if (healthEl) {
+    healthEl.textContent = calcHealthScore(car);
+  }
+
+  if (pill) {
+    if (car.status === "sell") {
+      pill.style.display = "inline-flex";
+      pill.textContent = dict.status_for_sale;
+    } else {
+      pill.style.display = "none";
+    }
+  }
+
+  if (statsEl) {
+    const rows = buildStatsRows(car, dict);
+    statsEl.innerHTML = rows
+      .map(
+        (r) =>
+          `<div class="stat-row"><span>${r.label}</span><span>${r.value}</span></div>`
+      )
+      .join("");
+  }
+
+  // баннер "чужая машина"
+  const screenHome = document.getElementById("screen-home");
+  let banner = document.getElementById("foreign-banner");
+  if (!banner && screenHome) {
+    banner = document.createElement("div");
+    banner.id = "foreign-banner";
+    banner.style.display = "none";
+    banner.style.marginBottom = "6px";
+    banner.style.padding = "6px 10px";
+    banner.style.borderRadius = "999px";
+    banner.style.border = "1px solid rgba(148,163,184,0.6)";
+    banner.style.background = "rgba(15,23,42,0.9)";
+    banner.style.fontSize = "12px";
+    banner.style.display = "none";
+    banner.style.alignItems = "center";
+    banner.style.gap = "8px";
+    banner.style.justifyContent = "space-between";
+    banner.style.color = "#e5e7eb";
+    banner.style.display = "none";
+    banner.style.boxSizing = "border-box";
+    banner.style.display = "none";
+    screenHome.insertBefore(banner, screenHome.firstChild.nextSibling);
+  }
+
+  const form = document.getElementById("car-form");
+  const formCard = form ? form.closest(".card") : null;
+
+  if (isViewingForeign && viewForeignOwner) {
+    if (banner) {
+      const contact = getContactInfo(viewForeignOwner);
+      const contactHtml = contact.url
+        ? `<a href="${contact.url}" style="color:inherit;text-decoration:underline;" onclick="event.stopPropagation();">${contact.label}</a>`
+        : contact.label;
+
+      banner.style.display = "flex";
+      banner.innerHTML = `
+        <div style="flex:1; min-width:0;">
+          <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+            Машина пользователя ${contactHtml}
+          </div>
+        </div>
+        <button type="button" id="foreign-back-btn"
+          style="margin-left:8px;border:none;border-radius:999px;padding:4px 10px;font-size:11px;cursor:pointer;background:rgba(15,23,42,0.9);color:#e5e7eb;">
+          Назад к моей машине
+        </button>
+      `;
+      const backBtn = document.getElementById("foreign-back-btn");
+      if (backBtn) backBtn.onclick = () => exitForeignView();
+    }
+    if (formCard) formCard.style.display = "none";
+  } else {
+    if (banner) {
+      banner.style.display = "none";
+      banner.innerHTML = "";
+    }
+    if (formCard) formCard.style.display = "";
+  }
+
+  // заполнение формы только для своей машины
+  if (!isViewingForeign && form) {
+    form.brand.value = currentCar.brand || "";
+    form.model.value = currentCar.model || "";
+    form.year.value = currentCar.year || "";
+    form.mileage.value = currentCar.mileage || "";
+    form.price.value = currentCar.price || "";
+    form.status.value = currentCar.status || "";
+    form.serviceOnTime.value = currentCar.serviceOnTime ? "yes" : "no";
+
+    form.transmission.value = currentCar.transmission || "";
+    form.engineType.value = currentCar.engineType || "";
+    form.bodyType.value = currentCar.bodyType || "";
+    form.bodyCondition.value = currentCar.bodyCondition || "";
+
+    form.color.value = currentCar.color || "";
+    form.tuning.value = currentCar.tuning || "";
+    form.purchaseInfo.value = currentCar.purchaseInfo || "";
+    form.oilMileage.value = currentCar.oilMileage || "";
+    form.dailyMileage.value = currentCar.dailyMileage || "";
+    form.lastService.value = currentCar.lastService || "";
+  }
+
+  // гараж — только своя машина
+  garage = [currentCar];
+
+  renderCarMedia();
+  renderGarage();
+  renderMarket();
 }
 
 function renderGarage() {
@@ -914,7 +1028,7 @@ function renderRating() {
         };
       }
       agg[key].count += 1;
-      agg[key].healthSum += c.health;
+      agg[key].healthSum += Number(c.health);
     });
 
     const models = Object.values(agg).map((m) => ({
@@ -1002,58 +1116,53 @@ function renderMarket() {
     .join("");
 }
 
-// ---------- OWNER DETAIL MODAL ----------
-function openOwnerDetailById(telegramId) {
+// ---------- 9. ПЕРЕХОД НА "ГЛАВНУЮ СТРАНИЦУ" ДРУГОГО ПОЛЬЗОВАТЕЛЯ ----------
+function openUserMainById(telegramId) {
   const entry = globalRatingCars.find(
     (c) => String(c.telegram_id) === String(telegramId)
   );
   if (!entry) return;
 
-  const dict = TEXTS[currentLang];
-  const modal = document.getElementById("owner-detail");
-  const titleEl = document.getElementById("owner-detail-title");
-  const ownerEl = document.getElementById("owner-detail-owner");
-  const statsEl = document.getElementById("owner-detail-stats");
-
-  if (titleEl) {
-    titleEl.textContent = `${entry.car.brand} ${entry.car.model} ${
-      entry.car.year || ""
-    }`.trim();
+  const me = getUser();
+  if (String(entry.telegram_id) === String(me.id)) {
+    // это я сам — просто показываем мою машину
+    isViewingForeign = false;
+    viewForeignCar = null;
+    viewForeignOwner = null;
+  } else {
+    isViewingForeign = true;
+    viewForeignCar = normalizeCar(entry.car);
+    viewForeignOwner = entry;
+    currentMediaIndex = 0;
   }
 
-  if (ownerEl) {
-    const contact = getContactInfo(entry);
-    if (contact.url) {
-      ownerEl.innerHTML = `<a href="${contact.url}" onclick="event.stopPropagation();" style="color:inherit;text-decoration:underline;">${contact.label}</a>`;
-    } else {
-      ownerEl.textContent = contact.label;
-    }
+  // переключиться на вкладку "Моя машина"
+  const homeTab = document.querySelector('.tab-btn[data-screen="home"]');
+  if (homeTab) {
+    homeTab.click();
+  } else {
+    document
+      .querySelectorAll(".tab-btn")
+      .forEach((btn) => btn.classList.remove("active"));
+    document
+      .querySelectorAll(".screen")
+      .forEach((s) => s.classList.remove("active"));
+    const homeScreen = document.getElementById("screen-home");
+    if (homeScreen) homeScreen.classList.add("active");
   }
 
-  const rows = buildStatsRows(entry.car, dict);
-  const healthRow = {
-    label: dict.health,
-    value: entry.health
-  };
-
-  statsEl.innerHTML =
-    `<div class="stat-row"><span>${healthRow.label}</span><span>${healthRow.value}</span></div>` +
-    rows
-      .map(
-        (r) =>
-          `<div class="stat-row"><span>${r.label}</span><span>${r.value}</span></div>`
-      )
-      .join("");
-
-  if (modal) modal.style.display = "flex";
+  renderCar();
 }
 
-function closeOwnerDetail() {
-  const modal = document.getElementById("owner-detail");
-  if (modal) modal.style.display = "none";
+function exitForeignView() {
+  isViewingForeign = false;
+  viewForeignCar = null;
+  viewForeignOwner = null;
+  currentMediaIndex = 0;
+  renderCar();
 }
 
-// ---------- EVENTS ----------
+// ---------- 10. DOMContentLoaded ----------
 document.addEventListener("DOMContentLoaded", async () => {
   if (tg) tg.ready();
 
@@ -1061,7 +1170,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   updateRatingDescription();
   renderCar(); // дефолт до Supabase
 
-  // Кнопка удаления фото (добавляем поверх HTML)
+  // Кнопка удаления фото поверх frame
   const photoFrame = document.querySelector(".car-photo-frame");
   if (photoFrame && !document.getElementById("car-photo-delete")) {
     const delBtn = document.createElement("button");
@@ -1088,17 +1197,45 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     delBtn.addEventListener("click", async (e) => {
       e.stopPropagation();
-      if (!currentCar.media || !currentCar.media.length) return;
+
+      if (isViewingForeign) {
+        const msg = "Нельзя удалять фото чужой машины.";
+        if (tg && tg.showPopup) tg.showPopup({ message: msg });
+        else alert(msg);
+        return;
+      }
+
+      const media = currentCar.media;
+      if (!media || !media.length) return;
+
       const ok =
         typeof confirm === "function"
           ? confirm("Удалить это фото?")
           : true;
       if (!ok) return;
-      currentCar.media.splice(currentMediaIndex, 1);
-      if (currentMediaIndex >= currentCar.media.length) {
-        currentMediaIndex = currentCar.media.length - 1;
+
+      const item = media[currentMediaIndex];
+      const path = item ? getStoragePathFromUrl(item.data) : null;
+
+      if (path) {
+        try {
+          const { error } = await sb.storage
+            .from("car-photos")
+            .remove([path]);
+          if (error) {
+            console.warn("Ошибка при удалении из storage:", error.message);
+          }
+        } catch (err) {
+          console.warn("Storage remove exception:", err);
+        }
+      }
+
+      media.splice(currentMediaIndex, 1);
+      if (currentMediaIndex >= media.length) {
+        currentMediaIndex = media.length - 1;
       }
       if (currentMediaIndex < 0) currentMediaIndex = 0;
+
       await saveUserCarToSupabase();
       renderCarMedia();
     });
@@ -1177,12 +1314,20 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (prev) prev.onclick = () => { currentMediaIndex--; renderCarMedia(); };
   if (next) next.onclick = () => { currentMediaIndex++; renderCarMedia(); };
 
-  // Upload (лимит 5 фото, авто-сжатие)
+  // Upload
   const photoInput = document.getElementById("car-photo-input");
   if (photoInput) {
     photoInput.addEventListener("change", async (e) => {
       const files = Array.from(e.target.files);
       if (!files.length) return;
+
+      if (isViewingForeign) {
+        const msg = "Нельзя загружать фото для чужой машины.";
+        if (tg && tg.showPopup) tg.showPopup({ message: msg });
+        else alert(msg);
+        photoInput.value = "";
+        return;
+      }
 
       const hint =
         photoInput.parentNode.querySelector(".hint") ||
@@ -1265,8 +1410,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (form) {
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const f = new FormData(form);
 
+      if (isViewingForeign) {
+        const msg = "Нельзя редактировать чужую машину.";
+        if (tg && tg.showPopup) tg.showPopup({ message: msg });
+        else alert(msg);
+        return;
+      }
+
+      const f = new FormData(form);
       const validationErrors = validateFormData(f);
       if (validationErrors.length) {
         const msg = validationErrors.join("\n");
@@ -1315,7 +1467,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // Rating click → detail
+  // Rating click → открываем "главную" пользователя
   const ratingList = document.getElementById("rating-list");
   if (ratingList) {
     ratingList.addEventListener("click", (e) => {
@@ -1323,11 +1475,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (!item) return;
       const tgId = item.getAttribute("data-telegram-id");
       if (!tgId) return;
-      openOwnerDetailById(tgId);
+      openUserMainById(tgId);
     });
   }
 
-  // Market click → detail
+  // Market click → тоже открываем "главную"
   const marketList = document.getElementById("market-user-list");
   if (marketList) {
     marketList.addEventListener("click", (e) => {
@@ -1335,17 +1487,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (!item) return;
       const tgId = item.getAttribute("data-telegram-id");
       if (!tgId) return;
-      openOwnerDetailById(tgId);
-    });
-  }
-
-  // Owner detail close
-  const ownerClose = document.getElementById("owner-detail-close");
-  const ownerBackdrop = document.getElementById("owner-detail");
-  if (ownerClose) ownerClose.addEventListener("click", closeOwnerDetail);
-  if (ownerBackdrop) {
-    ownerBackdrop.addEventListener("click", (e) => {
-      if (e.target === ownerBackdrop) closeOwnerDetail();
+      openUserMainById(tgId);
     });
   }
 });
