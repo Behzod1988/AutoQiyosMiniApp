@@ -19,8 +19,9 @@ let globalRatingCars = [];
 let garage = [];
 let ratingMode = "owners";
 
-const MAX_MEDIA = 5;
-const MAX_IMAGE_BYTES = 100 * 1024; // 100 KB
+// максимум 3 фото на авто, до ~50 KB каждое
+const MAX_MEDIA = 3;
+const MAX_IMAGE_BYTES = 50 * 1024; // 50 KB
 
 let isViewingForeign = false;   // смотрим чужую машину?
 let viewForeignCar = null;      // данные чужой машины
@@ -107,7 +108,7 @@ const TEXTS = {
     btn_save: "Сохранить",
     save_hint: "Всё хранится в Supabase.",
     service_hint: "Отметь, если масло и сервис проходишь вовремя.",
-    photo_hint: "Загрузи до 5 фото (каждое до 100 KB).",
+    photo_hint: "Загрузи до 3 фото (каждое ~до 50 KB).",
     label_yes: "Да",
     label_no: "Нет",
 
@@ -212,7 +213,7 @@ const TEXTS = {
     btn_save: "Saqlash",
     save_hint: "Supabase-da saqlanadi.",
     service_hint: "Moy va texnik xizmatni vaqtida qilsangiz belgilang.",
-    photo_hint: "5 tagacha rasm (har biri 100 KB gacha).",
+    photo_hint: "3 tagacha rasm (har biri ~50 KB gacha).",
     label_yes: "Ha",
     label_no: "Yo‘q",
 
@@ -457,13 +458,19 @@ function getStoragePathFromUrl(url) {
   const marker = "/car-photos/";
   const idx = url.indexOf(marker);
   if (idx === -1) return null;
-  return url.substring(idx + marker.length); // "userId/fileName.jpg"
+
+  let path = url.substring(idx + marker.length); // "userId/fileName.jpg?..."
+  const qIdx = path.indexOf("?");
+  if (qIdx !== -1) {
+    path = path.substring(0, qIdx);
+  }
+  return path; // "userId/fileName.jpg"
 }
 
 // ---------- 6. СЖАТИЕ / ЗАГРУЗКА ----------
 function compressImage(file) {
   return new Promise((resolve) => {
-    // видео и не-картинки не трогаем
+    // видео и не-картинки не трогаем (хотя input сейчас только image/*)
     if (file.type && file.type.startsWith("video")) {
       resolve(file);
       return;
@@ -490,7 +497,8 @@ function compressImage(file) {
 
       img.onload = () => {
         const canvas = document.createElement("canvas");
-        const maxWidth = 1000;
+        // уменьшаем ещё сильнее, чтобы реально были маленькие фотки
+        const maxWidth = 800;
         let width = img.width;
         let height = img.height;
 
@@ -993,9 +1001,8 @@ function renderRating() {
     list.innerHTML = globalRatingCars
       .map((c, i) => {
         const contact = getContactInfo(c);
-        const contactHtml = contact.url
-          ? `<a href="${contact.url}" class="rating-contact" onclick="event.stopPropagation();" style="color:inherit;text-decoration:underline;">${contact.label}</a>`
-          : `<span class="rating-contact">${contact.label}</span>`;
+        // Имя / ник всегда как простой текст, без ссылки
+        const contactHtml = `<span class="rating-contact">${contact.label}</span>`;
 
         return `
       <div class="rating-item" data-telegram-id="${c.telegram_id}">
@@ -1086,9 +1093,8 @@ function renderMarket() {
   list.innerHTML = sellers
     .map((c) => {
       const contact = getContactInfo(c);
-      const contactHtml = contact.url
-        ? `<a href="${contact.url}" onclick="event.stopPropagation();" style="color:inherit;text-decoration:underline;">${contact.label}</a>`
-        : `<span>${contact.label}</span>`;
+      // Имя / ник в объявлениях тоже просто текст, без ссылки
+      const contactHtml = `<span>${contact.label}</span>`;
 
       return `
     <div class="card market-item" data-telegram-id="${c.telegram_id}">
@@ -1334,7 +1340,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         document.getElementById("upload-status");
 
       if (currentCar.media.length >= MAX_MEDIA) {
-        const msg = "Можно загрузить максимум 5 фото.";
+        const msg = `Можно загрузить максимум ${MAX_MEDIA} фото.`;
         if (hint) hint.innerText = msg;
         if (tg && tg.showPopup) tg.showPopup({ message: msg });
         else alert(msg);
