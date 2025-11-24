@@ -26,6 +26,7 @@ const MAX_IMAGE_BYTES = 50 * 1024; // 50 KB
 let isViewingForeign = false;   // смотрим чужую машину?
 let viewForeignCar = null;      // данные чужой машины
 let viewForeignOwner = null;    // владелец чужой машины
+let lastScreenBeforeForeign = "home"; // с какого экрана зашли на чужую машину
 
 // ---------- 3. МОДЕЛЬ МАШИНЫ ----------
 const defaultCar = {
@@ -721,7 +722,7 @@ function renderCarMedia() {
 
   if (placeholder) placeholder.style.display = "none";
   if (counter) {
-    counter.display = "block";
+    counter.style.display = "block";
     counter.textContent = `${currentMediaIndex + 1}/${media.length}`;
   }
   if (prevBtn) prevBtn.style.display = media.length > 1 ? "flex" : "none";
@@ -862,7 +863,6 @@ function renderCar() {
   if (!banner && screenHome) {
     banner = document.createElement("div");
     banner.id = "foreign-banner";
-    banner.style.display = "none";
     banner.style.marginBottom = "6px";
     banner.style.padding = "6px 10px";
     banner.style.borderRadius = "999px";
@@ -874,9 +874,7 @@ function renderCar() {
     banner.style.gap = "8px";
     banner.style.justifyContent = "space-between";
     banner.style.color = "#e5e7eb";
-    banner.style.display = "none";
     banner.style.boxSizing = "border-box";
-    banner.style.display = "none";
     screenHome.insertBefore(banner, screenHome.firstChild.nextSibling);
   }
 
@@ -886,13 +884,17 @@ function renderCar() {
   if (isViewingForeign && viewForeignOwner) {
     if (banner) {
       const contact = getContactInfo(viewForeignOwner);
-      const contactLabel = contact.label || "Пользователь";
+      // показываем просто текст, без ссылки и без @, чтобы не казалось чатом
+      const plainName =
+        viewForeignOwner.full_name ||
+        (viewForeignOwner.username ? viewForeignOwner.username : contact.label) ||
+        "Пользователь";
 
       banner.style.display = "flex";
       banner.innerHTML = `
         <div style="flex:1; min-width:0;">
           <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-            Машина пользователя ${contactLabel}
+            Машина пользователя ${plainName}
           </div>
         </div>
         <button type="button" id="foreign-back-btn"
@@ -901,7 +903,12 @@ function renderCar() {
         </button>
       `;
       const backBtn = document.getElementById("foreign-back-btn");
-      if (backBtn) backBtn.onclick = () => exitForeignView();
+      if (backBtn) {
+        backBtn.onclick = (e) => {
+          e.stopPropagation();
+          exitForeignView();
+        };
+      }
     }
     if (formCard) formCard.style.display = "none";
   } else {
@@ -999,8 +1006,12 @@ function renderRating() {
     list.innerHTML = globalRatingCars
       .map((c, i) => {
         const contact = getContactInfo(c);
-        // Имя / ник всегда как простой текст, без ссылки
-        const contactHtml = `<span class="rating-contact">${contact.label}</span>`;
+        // Имя / ник — просто текст, не ссылка
+        const label =
+          c.full_name ||
+          (c.username ? c.username : contact.label) ||
+          "Пользователь";
+        const contactHtml = `<span class="rating-contact">${label}</span>`;
 
         return `
       <div class="rating-item" data-telegram-id="${c.telegram_id}">
@@ -1091,8 +1102,12 @@ function renderMarket() {
   list.innerHTML = sellers
     .map((c) => {
       const contact = getContactInfo(c);
-      // Имя / ник в объявлениях тоже просто текст, без ссылки
-      const contactHtml = `<span>${contact.label}</span>`;
+      const label =
+        c.full_name ||
+        (c.username ? c.username : contact.label) ||
+        "Пользователь";
+      // Имя в объявлениях тоже просто текст
+      const contactHtml = `<span>${label}</span>`;
 
       return `
     <div class="card market-item" data-telegram-id="${c.telegram_id}">
@@ -1120,16 +1135,24 @@ function renderMarket() {
     .join("");
 }
 
-// ---------- 9. ПЕРЕХОД НА "ГЛАВНУЮ СТРАНИЦУ" ДРУГОГО ПОЛЬЗОВАТЕЛЯ ----------
+// ---------- 9. ПЕРЕХОД НА "СТРАНИЦУ" ДРУГОГО ПОЛЬЗОВАТЕЛЯ ----------
 function openUserMainById(telegramId) {
   const entry = globalRatingCars.find(
     (c) => String(c.telegram_id) === String(telegramId)
   );
   if (!entry) return;
 
+  // запоминаем, с какого экрана зашли (rating / market / garage / home)
+  const activeScreenEl = document.querySelector(".screen.active");
+  if (activeScreenEl && activeScreenEl.id && activeScreenEl.id.startsWith("screen-")) {
+    lastScreenBeforeForeign = activeScreenEl.id.replace("screen-", "");
+  } else {
+    lastScreenBeforeForeign = "home";
+  }
+
   const me = getUser();
   if (String(entry.telegram_id) === String(me.id)) {
-    // это я сам — просто показываем мою машину
+    // это я сам — показываем свою машину, без чужого режима
     isViewingForeign = false;
     viewForeignCar = null;
     viewForeignOwner = null;
@@ -1140,7 +1163,7 @@ function openUserMainById(telegramId) {
     currentMediaIndex = 0;
   }
 
-  // переключиться на вкладку "Моя машина"
+  // показываем всё это на вкладке "Моя машина"
   const homeTab = document.querySelector('.tab-btn[data-screen="home"]');
   if (homeTab) {
     homeTab.click();
@@ -1163,6 +1186,22 @@ function exitForeignView() {
   viewForeignCar = null;
   viewForeignOwner = null;
   currentMediaIndex = 0;
+
+  // ОДНА КНОПКА "НАЗАД" — ОДНО ДЕЙСТВИЕ:
+  // возвращаемся туда, откуда пришли (рейтинги / объявления / др.)
+  const targetScreen = lastScreenBeforeForeign || "home";
+  const targetTab = document.querySelector(
+    `.tab-btn[data-screen="${targetScreen}"]`
+  );
+
+  if (targetTab) {
+    targetTab.click();
+  } else {
+    const homeTab = document.querySelector('.tab-btn[data-screen="home"]');
+    if (homeTab) homeTab.click();
+  }
+
+  // заодно обновим твою машину "в фоне"
   renderCar();
 }
 
@@ -1471,7 +1510,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // Rating click → открываем "главную" пользователя
+  // Rating click → открываем "страницу" пользователя
   const ratingList = document.getElementById("rating-list");
   if (ratingList) {
     ratingList.addEventListener("click", (e) => {
@@ -1483,7 +1522,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // Market click → тоже открываем "главную"
+  // Market click → тоже открываем "страницу"
   const marketList = document.getElementById("market-user-list");
   if (marketList) {
     marketList.addEventListener("click", (e) => {
