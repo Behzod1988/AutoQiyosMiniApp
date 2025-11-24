@@ -307,7 +307,7 @@ function calcHealthScore(car) {
   return Math.max(20, Math.min(100, score));
 }
 
-// внутренний helper
+// базовый contact-info (оставляем на всякий)
 function getContactInfo(entry) {
   const username = entry?.username;
   const phone =
@@ -338,11 +338,11 @@ function getContactInfo(entry) {
   };
 }
 
-// ВАЖНО: что показываем в UI
+// что отображаем в UI:
 // 1) @username
 // 2) телефон
 // 3) имя/фамилия
-// 4) fallback "User"
+// 4) "User"
 function getDisplayNick(entry) {
   if (!entry) return "User";
 
@@ -548,6 +548,7 @@ function compressImage(file) {
                 return;
               }
 
+              // стараемся <= 50KB, но если не вышло даже с quality <= 0.3 — отправляем как есть
               if (blob.size <= MAX_IMAGE_BYTES || quality <= 0.3) {
                 resolve(blob);
               } else {
@@ -575,7 +576,7 @@ async function uploadFile(file) {
   const timestamp = Date.now();
   const isVideo = file.type && file.type.startsWith("video");
   const ext = isVideo ? "mp4" : "jpg";
-  const fileName = `${user.id}/${timestamp}.${ext}`;
+  const fileName = `${user.id}/${timestamp}.${ext}`; // ПУТЬ В БАКЕТЕ
 
   const body = isVideo ? file : await compressImage(file);
 
@@ -591,7 +592,8 @@ async function uploadFile(file) {
   const { data: urlData } = sb.storage.from("car-photos").getPublicUrl(fileName);
   return {
     type: isVideo ? "video" : "image",
-    data: urlData.publicUrl
+    data: urlData.publicUrl,
+    path: fileName       // сохраняем путь в bucket для будущего удаления
   };
 }
 
@@ -1022,7 +1024,7 @@ function renderRating() {
   if (ratingMode === "owners") {
     list.innerHTML = globalRatingCars
       .map((c, i) => {
-        const label = getDisplayNick(c); // приоритет: @ник → телефон → имя
+        const label = getDisplayNick(c); // @ник → телефон → имя
         const contactHtml = `<span class="rating-contact">${label}</span>`;
 
         return `
@@ -1260,7 +1262,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (!ok) return;
 
       const item = media[currentMediaIndex];
-      const path = item ? getStoragePathFromUrl(item.data) : null;
+
+      // 1) сначала берём path, который мы сохраняем при загрузке
+      let path = item && item.path ? item.path : null;
+
+      // 2) если path нет (старые записи) — вырезаем из URL
+      if (!path && item && item.data) {
+        path = getStoragePathFromUrl(item.data);
+      }
 
       if (path) {
         try {
@@ -1273,6 +1282,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         } catch (err) {
           console.warn("Storage remove exception:", err);
         }
+      } else {
+        console.warn("Не удалось вычислить путь файла для удаления");
       }
 
       media.splice(currentMediaIndex, 1);
