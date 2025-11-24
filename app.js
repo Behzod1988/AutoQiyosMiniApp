@@ -721,7 +721,7 @@ function renderCarMedia() {
 
   if (placeholder) placeholder.style.display = "none";
   if (counter) {
-    counter.style.display = "block";
+    counter.display = "block";
     counter.textContent = `${currentMediaIndex + 1}/${media.length}`;
   }
   if (prevBtn) prevBtn.style.display = media.length > 1 ? "flex" : "none";
@@ -886,20 +886,18 @@ function renderCar() {
   if (isViewingForeign && viewForeignOwner) {
     if (banner) {
       const contact = getContactInfo(viewForeignOwner);
-      const contactHtml = contact.url
-        ? `<a href="${contact.url}" style="color:inherit;text-decoration:underline;" onclick="event.stopPropagation();">${contact.label}</a>`
-        : contact.label;
+      const contactLabel = contact.label || "Пользователь";
 
       banner.style.display = "flex";
       banner.innerHTML = `
         <div style="flex:1; min-width:0;">
           <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-            Машина пользователя ${contactHtml}
+            Машина пользователя ${contactLabel}
           </div>
         </div>
         <button type="button" id="foreign-back-btn"
           style="margin-left:8px;border:none;border-radius:999px;padding:4px 10px;font-size:11px;cursor:pointer;background:rgba(15,23,42,0.9);color:#e5e7eb;">
-          Назад к моей машине
+          Назад
         </button>
       `;
       const backBtn = document.getElementById("foreign-back-btn");
