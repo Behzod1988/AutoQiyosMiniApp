@@ -307,6 +307,63 @@ function calcHealthScore(car) {
   return Math.max(20, Math.min(100, score));
 }
 
+// внутренний helper
+function getContactInfo(entry) {
+  const username = entry?.username;
+  const phone =
+    entry?.phone || entry?.telegram_phone || entry?.phone_number || null;
+  const name = entry?.full_name;
+
+  if (username) {
+    return {
+      label: "@" + username,
+      url: `https://t.me/${username}`
+    };
+  }
+  if (phone) {
+    return {
+      label: phone,
+      url: `tel:${phone}`
+    };
+  }
+  if (name) {
+    return {
+      label: name,
+      url: ""
+    };
+  }
+  return {
+    label: "User",
+    url: ""
+  };
+}
+
+// ВАЖНО: что показываем в UI
+// 1) @username
+// 2) телефон
+// 3) имя/фамилия
+// 4) fallback "User"
+function getDisplayNick(entry) {
+  if (!entry) return "User";
+
+  if (entry.username) {
+    return "@" + entry.username;
+  }
+
+  const phone =
+    entry.phone || entry.telegram_phone || entry.phone_number;
+  if (phone) {
+    return phone;
+  }
+
+  if (entry.full_name) {
+    return entry.full_name;
+  }
+
+  const contact = getContactInfo(entry);
+  return contact.label || "User";
+}
+
 // Мэппинги
 function getTransmissionLabel(v, d) {
   const m = {
@@ -357,37 +414,6 @@ function getStatusLabel(v, d) {
     want_buy: d.opt_status_want_buy
   };
   return m[v] || "";
-}
-
-// контакт: ник -> телефон -> имя
-function getContactInfo(entry) {
-  const username = entry.username;
-  const phone =
-    entry.phone || entry.telegram_phone || entry.phone_number || null;
-  const name = entry.full_name;
-
-  if (username) {
-    return {
-      label: "@" + username,
-      url: `https://t.me/${username}`
-    };
-  }
-  if (phone) {
-    return {
-      label: phone,
-      url: `tel:${phone}`
-    };
-  }
-  if (name) {
-    return {
-      label: name,
-      url: ""
-    };
-  }
-  return {
-    label: "User",
-    url: ""
-  };
 }
 
 function applyTexts(lang) {
@@ -471,7 +497,6 @@ function getStoragePathFromUrl(url) {
 // ---------- 6. СЖАТИЕ / ЗАГРУЗКА ----------
 function compressImage(file) {
   return new Promise((resolve) => {
-    // видео и не-картинки не трогаем (хотя input сейчас только image/*)
     if (file.type && file.type.startsWith("video")) {
       resolve(file);
       return;
@@ -498,7 +523,6 @@ function compressImage(file) {
 
       img.onload = () => {
         const canvas = document.createElement("canvas");
-        // уменьшаем ещё сильнее, чтобы реально были маленькие фотки
         const maxWidth = 800;
         let width = img.width;
         let height = img.height;
@@ -525,7 +549,6 @@ function compressImage(file) {
               }
 
               if (blob.size <= MAX_IMAGE_BYTES || quality <= 0.3) {
-                // возвращаем Blob (Supabase понимает Blob)
                 resolve(blob);
               } else {
                 quality -= 0.1;
@@ -728,7 +751,6 @@ function renderCarMedia() {
   if (prevBtn) prevBtn.style.display = media.length > 1 ? "flex" : "none";
   if (nextBtn) nextBtn.style.display = media.length > 1 ? "flex" : "none";
   if (delBtn) {
-    // удалять можно только свою машину
     delBtn.style.display = isViewingForeign ? "none" : "flex";
   }
 
@@ -883,18 +905,13 @@ function renderCar() {
 
   if (isViewingForeign && viewForeignOwner) {
     if (banner) {
-      const contact = getContactInfo(viewForeignOwner);
-      // показываем просто текст, без ссылки и без @, чтобы не казалось чатом
-      const plainName =
-        viewForeignOwner.full_name ||
-        (viewForeignOwner.username ? viewForeignOwner.username : contact.label) ||
-        "Пользователь";
+      const label = getDisplayNick(viewForeignOwner);
 
       banner.style.display = "flex";
       banner.innerHTML = `
         <div style="flex:1; min-width:0;">
           <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-            Машина пользователя ${plainName}
+            Машина пользователя ${label}
           </div>
         </div>
         <button type="button" id="foreign-back-btn"
@@ -1005,12 +1022,7 @@ function renderRating() {
   if (ratingMode === "owners") {
     list.innerHTML = globalRatingCars
       .map((c, i) => {
-        const contact = getContactInfo(c);
-        // Имя / ник — просто текст, не ссылка
-        const label =
-          c.full_name ||
-          (c.username ? c.username : contact.label) ||
-          "Пользователь";
+        const label = getDisplayNick(c); // приоритет: @ник → телефон → имя
         const contactHtml = `<span class="rating-contact">${label}</span>`;
 
         return `
@@ -1101,12 +1113,7 @@ function renderMarket() {
 
   list.innerHTML = sellers
     .map((c) => {
-      const contact = getContactInfo(c);
-      const label =
-        c.full_name ||
-        (c.username ? c.username : contact.label) ||
-        "Пользователь";
-      // Имя в объявлениях тоже просто текст
+      const label = getDisplayNick(c);
       const contactHtml = `<span>${label}</span>`;
 
       return `
@@ -1152,7 +1159,6 @@ function openUserMainById(telegramId) {
 
   const me = getUser();
   if (String(entry.telegram_id) === String(me.id)) {
-    // это я сам — показываем свою машину, без чужого режима
     isViewingForeign = false;
     viewForeignCar = null;
     viewForeignOwner = null;
@@ -1163,7 +1169,6 @@ function openUserMainById(telegramId) {
     currentMediaIndex = 0;
   }
 
-  // показываем всё это на вкладке "Моя машина"
   const homeTab = document.querySelector('.tab-btn[data-screen="home"]');
   if (homeTab) {
     homeTab.click();
@@ -1187,8 +1192,6 @@ function exitForeignView() {
   viewForeignOwner = null;
   currentMediaIndex = 0;
 
-  // ОДНА КНОПКА "НАЗАД" — ОДНО ДЕЙСТВИЕ:
-  // возвращаемся туда, откуда пришли (рейтинги / объявления / др.)
   const targetScreen = lastScreenBeforeForeign || "home";
   const targetTab = document.querySelector(
     `.tab-btn[data-screen="${targetScreen}"]`
@@ -1201,7 +1204,6 @@ function exitForeignView() {
     if (homeTab) homeTab.click();
   }
 
-  // заодно обновим твою машину "в фоне"
   renderCar();
 }
 
