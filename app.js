@@ -1,10 +1,9 @@
-// ---------- 1. SUPABASE CONFIG ----------
+// ---------- 1. CONFIG ----------
 const SUPABASE_URL = "https://dlefczzippvfudcdtlxz.supabase.co";
 const SUPABASE_ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRsZWZjenppcHB2ZnVkY2R0bHh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3OTY0OTMsImV4cCI6MjA3OTM3MjQ5M30.jSJYcF3o00yDx41EtbQUye8_tl3AzIaCkrPT9uZ22kY";
 
-const { createClient } = supabase;
-const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const EDGE_BASE = `${SUPABASE_URL}/functions/v1/save-car`;
 const tg = window.Telegram ? window.Telegram.WebApp : null;
 
 if (tg) {
@@ -12,23 +11,85 @@ if (tg) {
   tg.expand();
 }
 
-// ---------- 2. ГЛОБАЛЬНОЕ СОСТОЯНИЕ ----------
+// ---------- 2. GLOBAL STATE ----------
 let currentLang = localStorage.getItem("aq_lang") || "ru";
 let currentMediaIndex = 0;
 let globalRatingCars = [];
 let garage = [];
 let ratingMode = "owners";
 
-// максимум 3 фото на авто, до ~50 KB каждое
 const MAX_MEDIA = 3;
 const MAX_IMAGE_BYTES = 50 * 1024; // 50 KB
 
-let isViewingForeign = false;   // смотрим чужую машину?
-let viewForeignCar = null;      // данные чужой машины
-let viewForeignOwner = null;    // владелец чужой машины
-let lastScreenBeforeForeign = "home"; // с какого экрана зашли на чужую машину
+let isViewingForeign = false;
+let viewForeignCar = null;
+let viewForeignOwner = null;
+let lastScreenBeforeForeign = "home";
 
-// ---------- 3. МОДЕЛЬ МАШИНЫ ----------
+// media cache: fileId -> objectURL
+const mediaUrlCache = new Map();
+function revokeAllMediaUrls() {
+  for (const url of mediaUrlCache.values()) {
+    try { URL.revokeObjectURL(url); } catch {}
+  }
+  mediaUrlCache.clear();
+}
+
+function getInitData() {
+  const initData = tg?.initData || "";
+  return initData;
+}
+
+async function apiFetch(path, { method = "GET", json = null, formData = null } = {}) {
+  const initData = getInitData();
+  if (!initData) {
+    throw new Error("NO_TELEGRAM_INITDATA");
+  }
+
+  const headers = {
+    apikey: SUPABASE_ANON_KEY,
+    "x-telegram-init-data": initData,
+  };
+
+  let body = undefined;
+  if (json) {
+    headers["Content-Type"] = "application/json";
+    body = JSON.stringify(json);
+  } else if (formData) {
+    body = formData;
+  }
+
+  const res = await fetch(`${EDGE_BASE}${path}`, {
+    method,
+    headers,
+    body,
+  });
+
+  if (res.status === 401) throw new Error("UNAUTHORIZED");
+  if (!res.ok) {
+    const t = await res.text().catch(() => "");
+    throw new Error(`API_${res.status}:${t.slice(0, 200)}`);
+  }
+  return res;
+}
+
+async function apiJson(path, opts) {
+  const r = await apiFetch(path, opts);
+  return await r.json();
+}
+
+async function getMediaObjectUrl(fileId) {
+  if (!fileId) return null;
+  if (mediaUrlCache.has(fileId)) return mediaUrlCache.get(fileId);
+
+  const r = await apiFetch(`/media_bytes?fileId=${encodeURIComponent(fileId)}`);
+  const blob = await r.blob();
+  const url = URL.createObjectURL(blob);
+  mediaUrlCache.set(fileId, url);
+  return url;
+}
+
+// ---------- 3. MODEL ----------
 const defaultCar = {
   brand: "Твой бренд (например Chevrolet)",
   model: "Модель (например Cobalt)",
@@ -47,7 +108,7 @@ const defaultCar = {
   lastService: "",
   engineType: "",
   transmission: "",
-  media: []
+  media: [] // [{fileId,mimeType,createdAt}]
 };
 
 function parseMediaField(media) {
@@ -63,6 +124,32 @@ function parseMediaField(media) {
   return [];
 }
 
+function normalizeCarFromRow(row) {
+  // row = DB row (snake_case)
+  const car = {
+    ...defaultCar,
+    brand: row.brand,
+    model: row.model,
+    year: row.year,
+    mileage: row.mileage,
+    price: row.price,
+    status: row.status,
+    serviceOnTime: row.service_on_time,
+    tuning: row.tuning,
+    color: row.color,
+    bodyType: row.body_type,
+    bodyCondition: row.body_condition,
+    engineType: row.engine_type,
+    transmission: row.transmission,
+    purchaseInfo: row.purchase_info,
+    oilMileage: row.oil_mileage,
+    dailyMileage: row.daily_mileage,
+    lastService: row.last_service,
+    media: parseMediaField(row.media)
+  };
+  return car;
+}
+
 function normalizeCar(car) {
   const merged = { ...defaultCar, ...car };
   merged.media = parseMediaField(merged.media);
@@ -71,7 +158,7 @@ function normalizeCar(car) {
 
 let currentCar = normalizeCar({});
 
-// ---------- 4. ТЕКСТЫ ----------
+// ---------- 4. TEXTS ----------
 const TEXTS = {
   ru: {
     subtitle: "Дневник и честный рейтинг твоего авто",
@@ -107,7 +194,7 @@ const TEXTS = {
     field_photo: "Фото автомобиля",
 
     btn_save: "Сохранить",
-    save_hint: "Всё хранится в Supabase.",
+    save_hint: "Все изменения проходят через Edge Function (безопасно).",
     service_hint: "Отметь, если масло и сервис проходишь вовремя.",
     photo_hint: "Загрузи до 3 фото (каждое ~до 50 KB).",
     label_yes: "Да",
@@ -169,7 +256,7 @@ const TEXTS = {
     rating_pos: "место",
     rating_health: "состояние",
     rating_empty: "Пока пусто.",
-    rating_local_notice: "Данные из Supabase.",
+    rating_local_notice: "Данные через Edge Function.",
 
     market_title: "Объявления AutoQiyos",
     market_desc: "Честные объявления.",
@@ -212,7 +299,7 @@ const TEXTS = {
     field_photo: "Avtomobil surati",
 
     btn_save: "Saqlash",
-    save_hint: "Supabase-da saqlanadi.",
+    save_hint: "Hammasi Edge Function orqali (xavfsiz).",
     service_hint: "Moy va texnik xizmatni vaqtida qilsangiz belgilang.",
     photo_hint: "3 tagacha rasm (har biri ~50 KB gacha).",
     label_yes: "Ha",
@@ -274,7 +361,7 @@ const TEXTS = {
     rating_pos: "o‘rin",
     rating_health: "holati",
     rating_empty: "Bo'sh.",
-    rating_local_notice: "Supabase maʼlumotlari.",
+    rating_local_notice: "Edge Function maʼlumotlari.",
 
     market_title: "E'lonlar",
     market_desc: "Adolatli narxlar.",
@@ -286,10 +373,8 @@ const TEXTS = {
 
 // ---------- 5. HELPERS ----------
 function getUser() {
-  if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
-    return tg.initDataUnsafe.user;
-  }
-  return { id: "test_user_999", first_name: "Browser", username: "test" };
+  if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) return tg.initDataUnsafe.user;
+  return { id: "0", first_name: "Browser", username: "test" };
 }
 
 function calcHealthScore(car) {
@@ -307,113 +392,11 @@ function calcHealthScore(car) {
   return Math.max(20, Math.min(100, score));
 }
 
-// базовый contact-info (оставляем на всякий)
-function getContactInfo(entry) {
-  const username = entry?.username;
-  const phone =
-    entry?.phone || entry?.telegram_phone || entry?.phone_number || null;
-  const name = entry?.full_name;
-
-  if (username) {
-    return {
-      label: "@" + username,
-      url: `https://t.me/${username}`
-    };
-  }
-  if (phone) {
-    return {
-      label: phone,
-      url: `tel:${phone}`
-    };
-  }
-  if (name) {
-    return {
-      label: name,
-      url: ""
-    };
-  }
-  return {
-    label: "User",
-    url: ""
-  };
-}
-
-// что отображаем в UI:
-// 1) @username
-// 2) телефон
-// 3) имя/фамилия
-// 4) "User"
 function getDisplayNick(entry) {
   if (!entry) return "User";
-
-  if (entry.username) {
-    return "@" + entry.username;
-  }
-
-  const phone =
-    entry.phone || entry.telegram_phone || entry.phone_number;
-  if (phone) {
-    return phone;
-  }
-
-  if (entry.full_name) {
-    return entry.full_name;
-  }
-
-  const contact = getContactInfo(entry);
-  return contact.label || "User";
-}
-
-// Мэппинги
-function getTransmissionLabel(v, d) {
-  const m = {
-    manual: d.opt_trans_manual,
-    automatic: d.opt_trans_auto,
-    robot: d.opt_trans_robot,
-    cvt: d.opt_trans_cvt
-  };
-  return m[v] || "";
-}
-function getBodyConditionLabel(v, d) {
-  const m = {
-    painted: d.opt_bodycond_painted,
-    original: d.opt_bodycond_original,
-    scratches: d.opt_bodycond_scratches
-  };
-  return m[v] || "";
-}
-function getBodyTypeLabel(v, d) {
-  const m = {
-    sedan: d.opt_bodytype_sedan,
-    hatchback: d.opt_bodytype_hatch,
-    crossover: d.opt_bodytype_crossover,
-    suv: d.opt_bodytype_suv,
-    wagon: d.opt_bodytype_wagon,
-    minivan: d.opt_bodytype_minivan,
-    pickup: d.opt_bodytype_pickup
-  };
-  return m[v] || "";
-}
-function getEngineTypeLabel(v, d) {
-  const m = {
-    petrol: d.opt_engine_petrol,
-    diesel: d.opt_engine_diesel,
-    lpg: d.opt_engine_lpg,
-    cng: d.opt_engine_cng,
-    hybrid: d.opt_engine_hybrid,
-    electric: d.opt_engine_electric
-  };
-  return m[v] || "";
-}
-function getStatusLabel(v, d) {
-  const m = {
-    follow: d.opt_status_follow,
-    prepare_sell: d.opt_status_prepare_sell,
-    sell: d.opt_status_sell,
-    consider_offers: d.opt_status_consider,
-    want_buy: d.opt_status_want_buy
-  };
-  return m[v] || "";
+  if (entry.username) return "@" + entry.username;
+  if (entry.full_name) return entry.full_name;
+  return "User";
 }
 
 function applyTexts(lang) {
@@ -422,23 +405,15 @@ function applyTexts(lang) {
     const key = el.getAttribute("data-i18n");
     if (dict[key] !== undefined) el.textContent = dict[key];
   });
-  document
-    .querySelectorAll("[data-i18n-opt-yes]")
-    .forEach((el) => (el.textContent = dict.label_yes));
-  document
-    .querySelectorAll("[data-i18n-opt-no]")
-    .forEach((el) => (el.textContent = dict.label_no));
+  document.querySelectorAll("[data-i18n-opt-yes]").forEach((el) => (el.textContent = dict.label_yes));
+  document.querySelectorAll("[data-i18n-opt-no]").forEach((el) => (el.textContent = dict.label_no));
 }
 
 function updateRatingDescription() {
   const dict = TEXTS[currentLang];
   const el = document.querySelector('[data-i18n="rating_desc"]');
   if (!el) return;
-  if (ratingMode === "owners") {
-    el.textContent = dict.rating_desc_owners || dict.rating_desc;
-  } else {
-    el.textContent = dict.rating_desc_models || dict.rating_desc;
-  }
+  el.textContent = ratingMode === "owners" ? (dict.rating_desc_owners || dict.rating_desc) : (dict.rating_desc_models || dict.rating_desc);
 }
 
 function validateFormData(formData) {
@@ -456,70 +431,36 @@ function validateFormData(formData) {
   }
 
   const mileage = Number(mileageStr || 0);
-  if (mileage < 0 || mileage > 2000000) {
-    errors.push("Пробег указан некорректно (0–2 000 000 км).");
-  }
+  if (mileage < 0 || mileage > 2000000) errors.push("Пробег указан некорректно (0–2 000 000 км).");
 
   const oilMileage = Number(oilStr || 0);
-  if (oilStr && (isNaN(oilMileage) || oilMileage < 0 || oilMileage > 2000000)) {
-    errors.push("Пробег при замене масла указан некорректно.");
-  }
+  if (oilStr && (isNaN(oilMileage) || oilMileage < 0 || oilMileage > 2000000)) errors.push("Пробег при замене масла указан некорректно.");
 
   const daily = Number(dailyStr || 0);
-  if (dailyStr && (isNaN(daily) || daily < 0 || daily > 3000)) {
-    errors.push("Дневной пробег указан некорректно.");
-  }
+  if (dailyStr && (isNaN(daily) || daily < 0 || daily > 3000)) errors.push("Дневной пробег указан некорректно.");
 
   return errors;
 }
 
-// активная машина для отображения
 function getActiveCar() {
   if (isViewingForeign && viewForeignCar) return viewForeignCar;
   return currentCar;
 }
 
-// путь для удаления файла из storage
-function getStoragePathFromUrl(url) {
-  if (!url) return null;
-  const marker = "/car-photos/";
-  const idx = url.indexOf(marker);
-  if (idx === -1) return null;
-
-  let path = url.substring(idx + marker.length); // "userId/fileName.jpg?..."
-  const qIdx = path.indexOf("?");
-  if (qIdx !== -1) {
-    path = path.substring(0, qIdx);
-  }
-  return path; // "userId/fileName.jpg"
-}
-
-// ---------- 6. СЖАТИЕ / ЗАГРУЗКА ----------
+// ---------- 6. COMPRESS ----------
 function compressImage(file) {
   return new Promise((resolve) => {
-    if (file.type && file.type.startsWith("video")) {
-      resolve(file);
-      return;
-    }
     if (!file.type || !file.type.startsWith("image")) {
       resolve(file);
       return;
     }
 
     const reader = new FileReader();
-
-    reader.onerror = () => {
-      console.warn("FileReader error, uploading original file");
-      resolve(file);
-    };
+    reader.onerror = () => resolve(file);
 
     reader.onload = (event) => {
       const img = new Image();
-
-      img.onerror = () => {
-        console.warn("Image decode error, uploading original file");
-        resolve(file);
-      };
+      img.onerror = () => resolve(file);
 
       img.onload = () => {
         const canvas = document.createElement("canvas");
@@ -534,6 +475,7 @@ function compressImage(file) {
 
         canvas.width = width;
         canvas.height = height;
+
         const ctx = canvas.getContext("2d");
         ctx.drawImage(img, 0, 0, width, height);
 
@@ -542,19 +484,10 @@ function compressImage(file) {
         function attemptEncode() {
           canvas.toBlob(
             (blob) => {
-              if (!blob) {
-                console.warn("toBlob null, uploading original file");
-                resolve(file);
-                return;
-              }
-
-              // стараемся <= 50KB, но если не вышло даже с quality <= 0.3 — отправляем как есть
-              if (blob.size <= MAX_IMAGE_BYTES || quality <= 0.3) {
-                resolve(blob);
-              } else {
-                quality -= 0.1;
-                attemptEncode();
-              }
+              if (!blob) return resolve(file);
+              if (blob.size <= MAX_IMAGE_BYTES || quality <= 0.3) return resolve(blob);
+              quality -= 0.1;
+              attemptEncode();
             },
             "image/jpeg",
             quality
@@ -571,87 +504,30 @@ function compressImage(file) {
   });
 }
 
-async function uploadFile(file) {
-  const user = getUser();
-  const timestamp = Date.now();
-  const isVideo = file.type && file.type.startsWith("video");
-  const ext = isVideo ? "mp4" : "jpg";
-  const fileName = `${user.id}/${timestamp}.${ext}`; // ПУТЬ В БАКЕТЕ
+// ---------- 7. SERVER SYNC ----------
+async function syncUserCarFromServer() {
+  try {
+    const j = await apiJson("/me");
+    if (!j.ok) return;
 
-  const body = isVideo ? file : await compressImage(file);
-
-  const { error } = await sb.storage
-    .from("car-photos")
-    .upload(fileName, body, { upsert: false });
-
-  if (error) {
-    console.error("Upload Err", error);
-    return null;
-  }
-
-  const { data: urlData } = sb.storage.from("car-photos").getPublicUrl(fileName);
-  return {
-    type: isVideo ? "video" : "image",
-    data: urlData.publicUrl,
-    path: fileName       // сохраняем путь в bucket для будущего удаления
-  };
-}
-
-// ---------- 7. SUPABASE DB ----------
-async function syncUserCarFromSupabase() {
-  const user = getUser();
-  const { data, error } = await sb
-    .from("cars")
-    .select("*")
-    .eq("telegram_id", String(user.id))
-    .single();
-
-  if (error) {
-    console.log("No user car yet / error:", error.message);
-    renderCar();
-    return;
-  }
-
-  if (data) {
-    currentCar = normalizeCar({
-      brand: data.brand,
-      model: data.model,
-      year: data.year,
-      mileage: data.mileage,
-      price: data.price,
-      status: data.status,
-      serviceOnTime: data.service_on_time,
-      tuning: data.tuning,
-      color: data.color,
-      bodyType: data.body_type,
-      bodyCondition: data.body_condition,
-      engineType: data.engine_type,
-      transmission: data.transmission,
-      purchaseInfo: data.purchase_info,
-      oilMileage: data.oil_mileage,
-      dailyMileage: data.daily_mileage,
-      lastService: data.last_service,
-      media: data.media
-    });
+    currentCar = normalizeCar(normalizeCarFromRow(j.car));
     currentCar.isPrimary = true;
     renderCar();
+  } catch (e) {
+    console.warn("syncUserCarFromServer:", e);
+    renderCar();
   }
 }
 
-async function saveUserCarToSupabase() {
-  const user = getUser();
-
+async function saveUserCarToServer() {
   const payload = {
-    telegram_id: String(user.id),
-    username: user.username,
-    full_name: user.first_name,
     brand: currentCar.brand,
     model: currentCar.model,
     year: Number(currentCar.year),
     mileage: Number(currentCar.mileage),
     price: Number(currentCar.price),
     status: currentCar.status,
-    service_on_time: currentCar.serviceOnTime,
+    service_on_time: Boolean(currentCar.serviceOnTime),
     tuning: currentCar.tuning,
     color: currentCar.color,
     body_type: currentCar.bodyType,
@@ -659,66 +535,65 @@ async function saveUserCarToSupabase() {
     engine_type: currentCar.engineType,
     transmission: currentCar.transmission,
     purchase_info: currentCar.purchaseInfo,
-    oil_mileage: currentCar.oilMileage,
-    daily_mileage: currentCar.dailyMileage,
-    last_service: currentCar.lastService,
-    media: currentCar.media,
-    health: calcHealthScore(currentCar),
-    updated_at: new Date().toISOString()
+    oil_mileage: currentCar.oilMileage === "" ? "" : Number(currentCar.oilMileage || 0),
+    daily_mileage: currentCar.dailyMileage === "" ? "" : Number(currentCar.dailyMileage || 0),
+    last_service: currentCar.lastService
   };
 
-  const { error } = await sb.from("cars").upsert(payload);
-  if (error) {
-    console.error("Upsert error", error);
+  const j = await apiJson("/save", { method: "POST", json: payload });
+  if (j.ok && j.car) {
+    currentCar = normalizeCar(normalizeCarFromRow(j.car));
   }
-
   await loadGlobalRating();
 }
 
 async function loadGlobalRating() {
-  const { data, error } = await sb.from("cars").select("*").limit(100);
+  try {
+    const j = await apiJson("/cars?limit=200");
+    if (!j.ok) return;
 
-  if (error) {
-    console.error("loadGlobalRating error", error);
-    return;
-  }
-
-  if (data) {
-    globalRatingCars = data.map((row) => ({
+    globalRatingCars = (j.cars || []).map((row) => ({
       telegram_id: row.telegram_id,
       username: row.username,
       full_name: row.full_name,
-      phone: row.phone || row.telegram_phone || row.phone_number || null,
-      health: row.health ?? calcHealthScore(row),
-      car: normalizeCar({
-        brand: row.brand,
-        model: row.model,
-        year: row.year,
-        mileage: row.mileage,
-        price: row.price,
-        status: row.status,
-        serviceOnTime: row.service_on_time,
-        tuning: row.tuning,
-        color: row.color,
-        bodyType: row.body_type,
-        bodyCondition: row.body_condition,
-        engineType: row.engine_type,
-        transmission: row.transmission,
-        purchaseInfo: row.purchase_info,
-        oilMileage: row.oil_mileage,
-        dailyMileage: row.daily_mileage,
-        lastService: row.last_service,
-        media: row.media
-      })
+      health: row.health ?? calcHealthScore(normalizeCarFromRow(row)),
+      car: normalizeCar(normalizeCarFromRow(row))
     }));
 
     globalRatingCars.sort((a, b) => Number(b.health) - Number(a.health));
     renderRating();
     renderMarket();
+  } catch (e) {
+    console.warn("loadGlobalRating:", e);
   }
 }
 
-// ---------- 8. ОТРИСОВКА ----------
+async function uploadPhotoToDrive(file) {
+  const body = await compressImage(file);
+  const fd = new FormData();
+  fd.append("file", body, "photo.jpg");
+
+  const j = await apiJson("/media_upload", { method: "POST", formData: fd });
+  if (j.ok && Array.isArray(j.media)) {
+    currentCar.media = j.media;
+    revokeAllMediaUrls(); // перегенерим objectURL при отрисовке
+    return true;
+  }
+  return false;
+}
+
+async function deletePhotoFromDrive(fileId) {
+  const j = await apiJson("/media_delete", { method: "POST", json: { fileId } });
+  if (j.ok && Array.isArray(j.media)) {
+    currentCar.media = j.media;
+    revokeAllMediaUrls();
+    return true;
+  }
+  return false;
+}
+
+// ---------- 8. RENDER ----------
+let lastHeroRenderToken = "";
 function renderCarMedia() {
   const car = getActiveCar();
   const img = document.getElementById("car-photo-main");
@@ -728,11 +603,13 @@ function renderCarMedia() {
   const nextBtn = document.getElementById("car-photo-next");
   const counter = document.getElementById("car-photo-counter");
   const delBtn = document.getElementById("car-photo-delete");
-  const media = car.media;
 
-  if (!media || !media.length) {
+  const media = car.media || [];
+
+  if (video) video.style.display = "none"; // видео отключено
+
+  if (!media.length) {
     if (img) img.style.display = "none";
-    if (video) video.style.display = "none";
     if (placeholder) placeholder.style.display = "flex";
     if (prevBtn) prevBtn.style.display = "none";
     if (nextBtn) nextBtn.style.display = "none";
@@ -743,32 +620,37 @@ function renderCarMedia() {
 
   if (currentMediaIndex >= media.length) currentMediaIndex = 0;
   if (currentMediaIndex < 0) currentMediaIndex = media.length - 1;
-  const item = media[currentMediaIndex];
 
-  if (placeholder) placeholder.style.display = "none";
+  const item = media[currentMediaIndex];
+  const fileId = item?.fileId;
+
+  if (placeholder) placeholder.style.display = "flex";
   if (counter) {
     counter.style.display = "block";
     counter.textContent = `${currentMediaIndex + 1}/${media.length}`;
   }
   if (prevBtn) prevBtn.style.display = media.length > 1 ? "flex" : "none";
   if (nextBtn) nextBtn.style.display = media.length > 1 ? "flex" : "none";
-  if (delBtn) {
-    delBtn.style.display = isViewingForeign ? "none" : "flex";
-  }
+  if (delBtn) delBtn.style.display = isViewingForeign ? "none" : "flex";
 
-  if (item.type === "video") {
-    if (img) img.style.display = "none";
-    if (video) {
-      video.src = item.data;
-      video.style.display = "block";
-    }
-  } else {
-    if (video) video.style.display = "none";
-    if (img) {
-      img.src = item.data;
-      img.style.display = "block";
-    }
-  }
+  if (img) img.style.display = "none";
+
+  const token = `${isViewingForeign ? "F" : "M"}:${fileId}:${currentMediaIndex}`;
+  lastHeroRenderToken = token;
+
+  if (!fileId) return;
+
+  getMediaObjectUrl(fileId)
+    .then((url) => {
+      if (lastHeroRenderToken !== token) return;
+      if (!url) return;
+      if (placeholder) placeholder.style.display = "none";
+      if (img) {
+        img.src = url;
+        img.style.display = "block";
+      }
+    })
+    .catch((e) => console.warn("media load err:", e));
 }
 
 function buildStatsRows(car, dict) {
@@ -776,73 +658,17 @@ function buildStatsRows(car, dict) {
   const yes = dict.label_yes;
   const no = dict.label_no;
 
-  rows.push({
-    label: dict.field_price,
-    value: car.price ? `${car.price}$` : "-"
-  });
-  rows.push({
-    label: dict.field_mileage,
-    value: car.mileage ? `${car.mileage} km` : "-"
-  });
-  rows.push({
-    label: dict.field_service,
-    value: car.serviceOnTime ? yes : no
-  });
+  rows.push({ label: dict.field_price, value: car.price ? `${car.price}$` : "-" });
+  rows.push({ label: dict.field_mileage, value: car.mileage ? `${car.mileage} km` : "-" });
+  rows.push({ label: dict.field_service, value: car.serviceOnTime ? yes : no });
 
-  if (car.transmission) {
-    rows.push({
-      label: dict.field_transmission,
-      value: getTransmissionLabel(car.transmission, dict)
-    });
-  }
-  if (car.engineType) {
-    rows.push({
-      label: dict.field_engine_type,
-      value: getEngineTypeLabel(car.engineType, dict)
-    });
-  }
-  if (car.bodyType) {
-    rows.push({
-      label: dict.field_body_type,
-      value: getBodyTypeLabel(car.bodyType, dict)
-    });
-  }
-  if (car.color) {
-    rows.push({
-      label: dict.field_color,
-      value: car.color
-    });
-  }
-  if (
-    car.tuning &&
-    car.tuning.trim() &&
-    car.tuning.trim() !== "Какие дополнительные новороты" &&
-    car.tuning.trim() !== "Какие дополнительные навороты"
-  ) {
-    rows.push({
-      label: dict.field_tuning,
-      value: car.tuning
-    });
-  }
+  if (car.transmission) rows.push({ label: dict.field_transmission, value: car.transmission });
+  if (car.engineType) rows.push({ label: dict.field_engine_type, value: car.engineType });
+  if (car.bodyType) rows.push({ label: dict.field_body_type, value: car.bodyType });
+  if (car.color) rows.push({ label: dict.field_color, value: car.color });
 
+  if (car.tuning && car.tuning.trim()) rows.push({ label: dict.field_tuning, value: car.tuning });
   return rows;
-}
-
-function buildModelLabel(brand, model) {
-  const b = (brand || "").trim();
-  const m = (model || "").trim();
-  if (!b && !m) return "Model";
-  if (!b) return m;
-  if (!m) return b;
-
-  const bLower = b.toLowerCase();
-  const mLower = m.toLowerCase();
-
-  if (bLower === mLower) return m;
-  if (bLower.includes(mLower)) return b;
-  if (mLower.includes(bLower)) return m;
-
-  return `${b} ${m}`;
 }
 
 function renderCar() {
@@ -854,13 +680,8 @@ function renderCar() {
   const pill = document.getElementById("car-status-pill");
   const statsEl = document.getElementById("car-stats");
 
-  if (titleEl) {
-    titleEl.textContent = `${car.brand} ${car.model} ${car.year || ""}`.trim();
-  }
-
-  if (healthEl) {
-    healthEl.textContent = calcHealthScore(car);
-  }
+  if (titleEl) titleEl.textContent = `${car.brand} ${car.model} ${car.year || ""}`.trim();
+  if (healthEl) healthEl.textContent = calcHealthScore(car);
 
   if (pill) {
     if (car.status === "sell") {
@@ -873,15 +694,10 @@ function renderCar() {
 
   if (statsEl) {
     const rows = buildStatsRows(car, dict);
-    statsEl.innerHTML = rows
-      .map(
-        (r) =>
-          `<div class="stat-row"><span>${r.label}</span><span>${r.value}</span></div>`
-      )
-      .join("");
+    statsEl.innerHTML = rows.map((r) => `<div class="stat-row"><span>${r.label}</span><span>${r.value}</span></div>`).join("");
   }
 
-  // баннер "чужая машина"
+  // foreign banner + hide form
   const screenHome = document.getElementById("screen-home");
   let banner = document.getElementById("foreign-banner");
   if (!banner && screenHome) {
@@ -908,7 +724,6 @@ function renderCar() {
   if (isViewingForeign && viewForeignOwner) {
     if (banner) {
       const label = getDisplayNick(viewForeignOwner);
-
       banner.style.display = "flex";
       banner.innerHTML = `
         <div style="flex:1; min-width:0;">
@@ -922,23 +737,15 @@ function renderCar() {
         </button>
       `;
       const backBtn = document.getElementById("foreign-back-btn");
-      if (backBtn) {
-        backBtn.onclick = (e) => {
-          e.stopPropagation();
-          exitForeignView();
-        };
-      }
+      if (backBtn) backBtn.onclick = (e) => { e.stopPropagation(); exitForeignView(); };
     }
     if (formCard) formCard.style.display = "none";
   } else {
-    if (banner) {
-      banner.style.display = "none";
-      banner.innerHTML = "";
-    }
+    if (banner) { banner.style.display = "none"; banner.innerHTML = ""; }
     if (formCard) formCard.style.display = "";
   }
 
-  // заполнение формы только для своей машины
+  // fill form only for own car
   if (!isViewingForeign && form) {
     form.brand.value = currentCar.brand || "";
     form.model.value = currentCar.model || "";
@@ -961,7 +768,6 @@ function renderCar() {
     form.lastService.value = currentCar.lastService || "";
   }
 
-  // гараж — только своя машина
   garage = [currentCar];
 
   renderCarMedia();
@@ -977,16 +783,15 @@ function renderGarage() {
 
   const cards = garage.map((car) => {
     const m = car.media && car.media[0];
-    const thumbHtml = m
-      ? `<img src="${m.data}" alt="">`
-      : `<div class="garage-thumb-placeholder">AQ</div>`;
+    const fileIdAttr = m?.fileId ? `data-file-id="${m.fileId}"` : "";
+    const thumbHtml = m?.fileId
+      ? `<div class="garage-thumb" ${fileIdAttr}><div class="garage-thumb-placeholder">AQ</div></div>`
+      : `<div class="garage-thumb"><div class="garage-thumb-placeholder">AQ</div></div>`;
 
     return `
       <div class="garage-card primary">
         <div class="garage-left">
-          <div class="garage-thumb">
-            ${thumbHtml}
-          </div>
+          ${thumbHtml}
           <div class="garage-main">
             <div class="garage-title">${car.brand} ${car.model}</div>
             <div class="garage-meta">${car.year}</div>
@@ -1008,6 +813,15 @@ function renderGarage() {
   `;
 
   list.innerHTML = cards.join("") + locked;
+
+  // hydrate thumbs
+  list.querySelectorAll(".garage-thumb[data-file-id]").forEach(async (el) => {
+    const fileId = el.getAttribute("data-file-id");
+    try {
+      const url = await getMediaObjectUrl(fileId);
+      if (url) el.innerHTML = `<img src="${url}" alt="">`;
+    } catch {}
+  });
 }
 
 function renderRating() {
@@ -1024,23 +838,21 @@ function renderRating() {
   if (ratingMode === "owners") {
     list.innerHTML = globalRatingCars
       .map((c, i) => {
-        const label = getDisplayNick(c); // @ник → телефон → имя
-        const contactHtml = `<span class="rating-contact">${label}</span>`;
-
+        const label = getDisplayNick(c);
         return `
-      <div class="rating-item" data-telegram-id="${c.telegram_id}">
-        <div class="rating-left">
-          <div class="rating-pos ${i === 0 ? "top-1" : ""}">${i + 1}</div>
-          <div class="rating-main">
-            <div class="rating-owner" style="font-size:12px;">${contactHtml}</div>
-            <div class="rating-car" style="font-size:11px;">${c.car.brand} ${c.car.model}</div>
+        <div class="rating-item" data-telegram-id="${c.telegram_id}">
+          <div class="rating-left">
+            <div class="rating-pos ${i === 0 ? "top-1" : ""}">${i + 1}</div>
+            <div class="rating-main">
+              <div class="rating-owner" style="font-size:12px;">${label}</div>
+              <div class="rating-car" style="font-size:11px;">${c.car.brand} ${c.car.model}</div>
+            </div>
+          </div>
+          <div class="rating-right">
+            <span class="rating-health">${c.health}</span>
           </div>
         </div>
-        <div class="rating-right">
-          <span class="rating-health">${c.health}</span>
-        </div>
-      </div>
-    `;
+      `;
       })
       .join("");
   } else {
@@ -1049,24 +861,15 @@ function renderRating() {
       const b = (c.car.brand || "").trim();
       const m = (c.car.model || "").trim();
       const key = `${b}|${m}`;
-      if (!agg[key]) {
-        agg[key] = {
-          brand: b,
-          model: m,
-          count: 0,
-          healthSum: 0
-        };
-      }
+      if (!agg[key]) agg[key] = { brand: b, model: m, count: 0, healthSum: 0 };
       agg[key].count += 1;
       agg[key].healthSum += Number(c.health);
     });
 
     const models = Object.values(agg).map((m) => ({
-      brand: m.brand,
-      model: m.model,
-      label: buildModelLabel(m.brand, m.model),
+      label: `${m.brand} ${m.model}`.trim() || "Model",
       count: m.count,
-      health: Math.round(m.healthSum / m.count)
+      health: Math.round(m.healthSum / m.count),
     }));
 
     models.sort((a, b) => b.health - a.health);
@@ -1074,19 +877,19 @@ function renderRating() {
     list.innerHTML = models
       .map(
         (m, i) => `
-      <div class="rating-item">
-        <div class="rating-left">
-          <div class="rating-pos ${i === 0 ? "top-1" : ""}">${i + 1}</div>
-          <div class="rating-main">
-            <div class="rating-owner" style="font-size:12px;">${m.label}</div>
-            <div class="rating-car" style="font-size:11px;">×${m.count}</div>
+        <div class="rating-item">
+          <div class="rating-left">
+            <div class="rating-pos ${i === 0 ? "top-1" : ""}">${i + 1}</div>
+            <div class="rating-main">
+              <div class="rating-owner" style="font-size:12px;">${m.label}</div>
+              <div class="rating-car" style="font-size:11px;">×${m.count}</div>
+            </div>
+          </div>
+          <div class="rating-right">
+            <span class="rating-health">${m.health}</span>
           </div>
         </div>
-        <div class="rating-right">
-          <span class="rating-health">${m.health}</span>
-        </div>
-      </div>
-    `
+      `
       )
       .join("");
   }
@@ -1104,10 +907,7 @@ function renderMarket() {
     return;
   }
 
-  const sellers = globalRatingCars.filter(
-    (c) => c.car.status === "sell" || c.car.status === "prepare_sell"
-  );
-
+  const sellers = globalRatingCars.filter((c) => c.car.status === "sell" || c.car.status === "prepare_sell");
   if (!sellers.length) {
     list.innerHTML = "";
     return;
@@ -1116,42 +916,29 @@ function renderMarket() {
   list.innerHTML = sellers
     .map((c) => {
       const label = getDisplayNick(c);
-      const contactHtml = `<span>${label}</span>`;
-
       return `
-    <div class="card market-item" data-telegram-id="${c.telegram_id}">
-      <div class="card-header" style="padding:6px 8px;">
-        <span style="font-size:13px;">🚗 ${c.car.brand} ${c.car.model}</span>
+      <div class="card market-item" data-telegram-id="${c.telegram_id}">
+        <div class="card-header" style="padding:6px 8px;">
+          <span style="font-size:13px;">🚗 ${c.car.brand} ${c.car.model}</span>
+        </div>
+        <div class="card-body" style="font-size:12px; line-height:1.3; padding:8px 9px;">
+          <p style="margin:0 0 2px;"><strong>${c.car.price ? c.car.price + "$" : ""}</strong></p>
+          <p style="margin:0 0 2px;">${dict.rating_health}: ${c.health}</p>
+          ${c.car.mileage ? `<p style="margin:0 0 2px;">${dict.field_mileage}: ${c.car.mileage} km</p>` : ""}
+          ${c.car.color ? `<p style="margin:0 0 2px;">${dict.field_color}: ${c.car.color}</p>` : ""}
+          <p style="margin:4px 0 0;">${label}</p>
+        </div>
       </div>
-      <div class="card-body" style="font-size:12px; line-height:1.3; padding:8px 9px;">
-        <p style="margin:0 0 2px;"><strong>${c.car.price ? c.car.price + "$" : ""}</strong></p>
-        <p style="margin:0 0 2px;">${dict.rating_health}: ${c.health}</p>
-        ${
-          c.car.mileage
-            ? `<p style="margin:0 0 2px;">${dict.field_mileage}: ${c.car.mileage} km</p>`
-            : ""
-        }
-        ${
-          c.car.color
-            ? `<p style="margin:0 0 2px;">${dict.field_color}: ${c.car.color}</p>`
-            : ""
-        }
-        <p style="margin:4px 0 0;">${contactHtml}</p>
-      </div>
-    </div>
-  `;
+    `;
     })
     .join("");
 }
 
-// ---------- 9. ПЕРЕХОД НА "СТРАНИЦУ" ДРУГОГО ПОЛЬЗОВАТЕЛЯ ----------
+// ---------- 9. FOREIGN VIEW ----------
 function openUserMainById(telegramId) {
-  const entry = globalRatingCars.find(
-    (c) => String(c.telegram_id) === String(telegramId)
-  );
+  const entry = globalRatingCars.find((c) => String(c.telegram_id) === String(telegramId));
   if (!entry) return;
 
-  // запоминаем, с какого экрана зашли (rating / market / garage / home)
   const activeScreenEl = document.querySelector(".screen.active");
   if (activeScreenEl && activeScreenEl.id && activeScreenEl.id.startsWith("screen-")) {
     lastScreenBeforeForeign = activeScreenEl.id.replace("screen-", "");
@@ -1172,19 +959,7 @@ function openUserMainById(telegramId) {
   }
 
   const homeTab = document.querySelector('.tab-btn[data-screen="home"]');
-  if (homeTab) {
-    homeTab.click();
-  } else {
-    document
-      .querySelectorAll(".tab-btn")
-      .forEach((btn) => btn.classList.remove("active"));
-    document
-      .querySelectorAll(".screen")
-      .forEach((s) => s.classList.remove("active"));
-    const homeScreen = document.getElementById("screen-home");
-    if (homeScreen) homeScreen.classList.add("active");
-  }
-
+  if (homeTab) homeTab.click();
   renderCar();
 }
 
@@ -1195,29 +970,18 @@ function exitForeignView() {
   currentMediaIndex = 0;
 
   const targetScreen = lastScreenBeforeForeign || "home";
-  const targetTab = document.querySelector(
-    `.tab-btn[data-screen="${targetScreen}"]`
-  );
-
-  if (targetTab) {
-    targetTab.click();
-  } else {
-    const homeTab = document.querySelector('.tab-btn[data-screen="home"]');
-    if (homeTab) homeTab.click();
-  }
-
+  const targetTab = document.querySelector(`.tab-btn[data-screen="${targetScreen}"]`);
+  if (targetTab) targetTab.click();
   renderCar();
 }
 
-// ---------- 10. DOMContentLoaded ----------
+// ---------- 10. DOM READY ----------
 document.addEventListener("DOMContentLoaded", async () => {
-  if (tg) tg.ready();
-
   applyTexts(currentLang);
   updateRatingDescription();
-  renderCar(); // дефолт до Supabase
+  renderCar();
 
-  // Кнопка удаления фото поверх frame
+  // Delete button
   const photoFrame = document.querySelector(".car-photo-frame");
   if (photoFrame && !document.getElementById("car-photo-delete")) {
     const delBtn = document.createElement("button");
@@ -1244,99 +1008,68 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     delBtn.addEventListener("click", async (e) => {
       e.stopPropagation();
-
       if (isViewingForeign) {
         const msg = "Нельзя удалять фото чужой машины.";
         if (tg && tg.showPopup) tg.showPopup({ message: msg });
         else alert(msg);
         return;
       }
-
-      const media = currentCar.media;
-      if (!media || !media.length) return;
-
-      const ok =
-        typeof confirm === "function"
-          ? confirm("Удалить это фото?")
-          : true;
-      if (!ok) return;
+      const media = currentCar.media || [];
+      if (!media.length) return;
 
       const item = media[currentMediaIndex];
+      const fileId = item?.fileId;
+      if (!fileId) return;
 
-      // 1) сначала берём path, который мы сохраняем при загрузке
-      let path = item && item.path ? item.path : null;
+      const ok = typeof confirm === "function" ? confirm("Удалить это фото?") : true;
+      if (!ok) return;
 
-      // 2) если path нет (старые записи) — вырезаем из URL
-      if (!path && item && item.data) {
-        path = getStoragePathFromUrl(item.data);
+      try {
+        await deletePhotoFromDrive(fileId);
+        currentMediaIndex = Math.max(0, Math.min(currentMediaIndex, (currentCar.media.length || 1) - 1));
+        renderCar();
+      } catch (err) {
+        console.warn(err);
+        if (tg && tg.showPopup) tg.showPopup({ message: "Ошибка при удалении фото." });
+        else alert("Ошибка при удалении фото.");
       }
-
-      if (path) {
-        try {
-          const { error } = await sb.storage
-            .from("car-photos")
-            .remove([path]);
-          if (error) {
-            console.warn("Ошибка при удалении из storage:", error.message);
-          }
-        } catch (err) {
-          console.warn("Storage remove exception:", err);
-        }
-      } else {
-        console.warn("Не удалось вычислить путь файла для удаления");
-      }
-
-      media.splice(currentMediaIndex, 1);
-      if (currentMediaIndex >= media.length) {
-        currentMediaIndex = media.length - 1;
-      }
-      if (currentMediaIndex < 0) currentMediaIndex = 0;
-
-      await saveUserCarToSupabase();
-      renderCarMedia();
     });
   }
 
-  await syncUserCarFromSupabase();
-  await loadGlobalRating();
+  // initial load
+  try {
+    await syncUserCarFromServer();
+    await loadGlobalRating();
+  } catch (e) {
+    console.warn(e);
+    if (String(e).includes("NO_TELEGRAM_INITDATA")) {
+      const msg = "Открой MiniApp через Telegram (не через обычный браузер).";
+      if (tg && tg.showPopup) tg.showPopup({ message: msg });
+      else alert(msg);
+    }
+  }
 
   // Tabs
-  const tabButtons = document.querySelectorAll(".tab-btn");
-  tabButtons.forEach((btn) => {
+  document.querySelectorAll(".tab-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       const screen = btn.getAttribute("data-screen");
-      document
-        .querySelectorAll(".tab-btn")
-        .forEach((el) => el.classList.remove("active"));
-      document
-        .querySelectorAll(".screen")
-        .forEach((el) => el.classList.remove("active"));
-
+      document.querySelectorAll(".tab-btn").forEach((el) => el.classList.remove("active"));
+      document.querySelectorAll(".screen").forEach((el) => el.classList.remove("active"));
       btn.classList.add("active");
       const screenEl = document.getElementById(`screen-${screen}`);
       if (screenEl) screenEl.classList.add("active");
-
-      if (screen === "rating") {
-        loadGlobalRating();
-      }
+      if (screen === "rating") loadGlobalRating();
     });
   });
 
-  // Lang switch
+  // Lang
   document.querySelectorAll(".lang-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       currentLang = btn.getAttribute("data-lang");
       localStorage.setItem("aq_lang", currentLang);
-
-      document
-        .querySelectorAll(".lang-btn")
-        .forEach((el) =>
-          el.classList.toggle(
-            "active",
-            el.getAttribute("data-lang") === currentLang
-          )
-        );
-
+      document.querySelectorAll(".lang-btn").forEach((el) =>
+        el.classList.toggle("active", el.getAttribute("data-lang") === currentLang)
+      );
       applyTexts(currentLang);
       updateRatingDescription();
       renderCar();
@@ -1346,20 +1079,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   });
 
-  // Rating mode switch
+  // Rating mode
   document.querySelectorAll(".rating-mode-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       ratingMode = btn.getAttribute("data-mode") || "owners";
-
-      document
-        .querySelectorAll(".rating-mode-btn")
-        .forEach((el) =>
-          el.classList.toggle(
-            "active",
-            el.getAttribute("data-mode") === ratingMode
-          )
-        );
-
+      document.querySelectorAll(".rating-mode-btn").forEach((el) =>
+        el.classList.toggle("active", el.getAttribute("data-mode") === ratingMode)
+      );
       renderRating();
     });
   });
@@ -1374,7 +1100,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const photoInput = document.getElementById("car-photo-input");
   if (photoInput) {
     photoInput.addEventListener("change", async (e) => {
-      const files = Array.from(e.target.files);
+      const files = Array.from(e.target.files || []);
       if (!files.length) return;
 
       if (isViewingForeign) {
@@ -1389,7 +1115,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         photoInput.parentNode.querySelector(".hint") ||
         document.getElementById("upload-status");
 
-      if (currentCar.media.length >= MAX_MEDIA) {
+      if ((currentCar.media || []).length >= MAX_MEDIA) {
         const msg = `Можно загрузить максимум ${MAX_MEDIA} фото.`;
         if (hint) hint.innerText = msg;
         if (tg && tg.showPopup) tg.showPopup({ message: msg });
@@ -1405,32 +1131,25 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       try {
         for (const f of files) {
-          if (currentCar.media.length >= MAX_MEDIA) break;
-          const res = await uploadFile(f);
-          if (res) {
-            currentCar.media.push(res);
-            success++;
-          } else {
-            fail++;
-          }
+          if ((currentCar.media || []).length >= MAX_MEDIA) break;
+          const ok = await uploadPhotoToDrive(f);
+          if (ok) success++;
+          else fail++;
         }
-        await saveUserCarToSupabase();
-        if (hint) {
-          if (fail === 0) hint.innerText = "Готово! ✅";
-          else hint.innerText = `Готово: ${success}, ошибок: ${fail}`;
-        }
+        if (hint) hint.innerText = fail === 0 ? "Готово! ✅" : `Готово: ${success}, ошибок: ${fail}`;
         renderCar();
       } catch (err) {
         console.error(err);
         if (hint) hint.innerText = "Ошибка при загрузке";
         if (tg && tg.showPopup) tg.showPopup({ message: "Ошибка при загрузке фото." });
+        else alert("Ошибка при загрузке фото.");
       } finally {
         photoInput.value = "";
       }
     });
   }
 
-  // Status CTA
+  // Status CTA (как было)
   const statusSelect = document.getElementById("field-status");
   const statusCtaWrap = document.getElementById("status-cta-wrap");
   const statusCtaBtn = document.getElementById("status-cta-btn");
@@ -1438,11 +1157,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   function updateStatusCta() {
     if (!statusSelect || !statusCtaWrap) return;
     const v = statusSelect.value;
-    if (v === "sell" || v === "prepare_sell" || v === "consider_offers") {
-      statusCtaWrap.style.display = "block";
-    } else {
-      statusCtaWrap.style.display = "none";
-    }
+    if (v === "sell" || v === "prepare_sell" || v === "consider_offers") statusCtaWrap.style.display = "block";
+    else statusCtaWrap.style.display = "none";
   }
 
   if (statusSelect) {
@@ -1452,12 +1168,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   if (statusCtaBtn) {
     statusCtaBtn.addEventListener("click", () => {
-      const marketTab = document.querySelector(
-        '.tab-btn[data-screen="market"]'
-      );
-      if (marketTab) {
-        marketTab.click();
-      }
+      const marketTab = document.querySelector('.tab-btn[data-screen="market"]');
+      if (marketTab) marketTab.click();
     });
   }
 
@@ -1504,26 +1216,24 @@ document.addEventListener("DOMContentLoaded", async () => {
       currentCar.lastService = f.get("lastService");
 
       const btn = form.querySelector('button[type="submit"]');
-      if (btn) {
-        btn.textContent = "...";
-        btn.disabled = true;
+      if (btn) { btn.textContent = "..."; btn.disabled = true; }
+
+      try {
+        await saveUserCarToServer();
+        if (tg && tg.showPopup) tg.showPopup({ message: "Сохранено!" });
+        else alert("Сохранено!");
+      } catch (err) {
+        console.warn(err);
+        if (tg && tg.showPopup) tg.showPopup({ message: "Ошибка сохранения." });
+        else alert("Ошибка сохранения.");
+      } finally {
+        if (btn) { btn.textContent = TEXTS[currentLang].btn_save; btn.disabled = false; }
+        renderCar();
       }
-
-      await saveUserCarToSupabase();
-
-      if (btn) {
-        btn.textContent = TEXTS[currentLang].btn_save;
-        btn.disabled = false;
-      }
-
-      if (tg && tg.showPopup) tg.showPopup({ message: "Сохранено!" });
-      else alert("Сохранено!");
-
-      renderCar();
     });
   }
 
-  // Rating click → открываем "страницу" пользователя
+  // Rating click -> open user page
   const ratingList = document.getElementById("rating-list");
   if (ratingList) {
     ratingList.addEventListener("click", (e) => {
@@ -1535,7 +1245,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // Market click → тоже открываем "страницу"
+  // Market click
   const marketList = document.getElementById("market-user-list");
   if (marketList) {
     marketList.addEventListener("click", (e) => {
