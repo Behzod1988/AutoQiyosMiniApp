@@ -1,3 +1,5 @@
+// app.js
+
 // ---------- 1. CONFIG ----------
 const SUPABASE_URL = "https://dlefczzippvfudcdtlxz.supabase.co";
 const SUPABASE_ANON_KEY =
@@ -26,7 +28,7 @@ let viewForeignCar = null;
 let viewForeignOwner = null;
 let lastScreenBeforeForeign = "home";
 
-// media cache: fileId -> objectURL
+// media cache
 const mediaUrlCache = new Map();
 function revokeAllMediaUrls() {
   for (const url of mediaUrlCache.values()) {
@@ -108,24 +110,25 @@ const defaultCar = {
   lastService: "",
   engineType: "",
   transmission: "",
-  media: [] // [{fileId,mimeType,createdAt}]
+  media: []
 };
 
+// Исправленная функция парсинга медиа
 function parseMediaField(media) {
+  if (!media) return [];
   if (Array.isArray(media)) return media;
   if (typeof media === "string") {
     try {
       const parsed = JSON.parse(media);
       if (Array.isArray(parsed)) return parsed;
     } catch (e) {
-      console.warn("Bad media JSON:", e);
+      console.warn("Bad media JSON (safe fallback):", e);
     }
   }
   return [];
 }
 
 function normalizeCarFromRow(row) {
-  // row = DB row (snake_case)
   const car = {
     ...defaultCar,
     brand: row.brand,
@@ -576,7 +579,7 @@ async function uploadPhotoToDrive(file) {
   const j = await apiJson("/media_upload", { method: "POST", formData: fd });
   if (j.ok && Array.isArray(j.media)) {
     currentCar.media = j.media;
-    revokeAllMediaUrls(); // перегенерим objectURL при отрисовке
+    revokeAllMediaUrls();
     return true;
   }
   return false;
@@ -606,7 +609,7 @@ function renderCarMedia() {
 
   const media = car.media || [];
 
-  if (video) video.style.display = "none"; // видео отключено
+  if (video) video.style.display = "none";
 
   if (!media.length) {
     if (img) img.style.display = "none";
@@ -1149,7 +1152,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // Status CTA (как было)
+  // Status CTA
   const statusSelect = document.getElementById("field-status");
   const statusCtaWrap = document.getElementById("status-cta-wrap");
   const statusCtaBtn = document.getElementById("status-cta-btn");
@@ -1233,7 +1236,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // Rating click -> open user page
+  // Rating click
   const ratingList = document.getElementById("rating-list");
   if (ratingList) {
     ratingList.addEventListener("click", (e) => {
