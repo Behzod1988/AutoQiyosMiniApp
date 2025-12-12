@@ -1,11 +1,5 @@
-// app.js
-
 // ---------- 1. CONFIG ----------
-const SUPABASE_URL = "https://dlefczzippvfudcdtlxz.supabase.co";
-const SUPABASE_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRsZWZjenppcHB2ZnVkY2R0bHh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3OTY0OTMsImV4cCI6MjA3OTM3MjQ5M30.jSJYcF3o00yDx41EtbQUye8_tl3AzIaCkrPT9uZ22kY";
-
-const EDGE_BASE = `${SUPABASE_URL}/functions/v1/save-car`;
+const API_BASE_URL = "https://dlefczzippvfudcdtlxz.supabase.co/functions/v1";
 const tg = window.Telegram ? window.Telegram.WebApp : null;
 
 if (tg) {
@@ -21,7 +15,7 @@ let garage = [];
 let ratingMode = "owners";
 
 const MAX_MEDIA = 3;
-const MAX_IMAGE_BYTES = 50 * 1024; // 50 KB
+const MAX_IMAGE_BYTES = 50 * 1024;
 
 let isViewingForeign = false;
 let viewForeignCar = null;
@@ -30,26 +24,39 @@ let lastScreenBeforeForeign = "home";
 
 // media cache
 const mediaUrlCache = new Map();
-function revokeAllMediaUrls() {
-  for (const url of mediaUrlCache.values()) {
-    try { URL.revokeObjectURL(url); } catch {}
+const activeMediaUrls = new Set();
+
+function revokeUnusedMediaUrls() {
+  const usedUrls = new Set();
+  
+  document.querySelectorAll('img[src^="blob:"], video[src^="blob:"]').forEach(el => {
+    if (el.src) usedUrls.add(el.src);
+  });
+  
+  for (const [fileId, url] of mediaUrlCache.entries()) {
+    if (!usedUrls.has(url)) {
+      try { 
+        URL.revokeObjectURL(url); 
+      } catch (e) { 
+        console.warn("Failed to revoke URL:", e);
+      }
+      mediaUrlCache.delete(fileId);
+    }
   }
-  mediaUrlCache.clear();
 }
 
 function getInitData() {
-  const initData = tg?.initData || "";
-  return initData;
+  if (!tg || !tg.initData) {
+    console.error("NO_TELEGRAM_INITDATA: WebApp не инициализирован");
+    throw new Error("NO_TELEGRAM_INITDATA");
+  }
+  return tg.initData;
 }
 
 async function apiFetch(path, { method = "GET", json = null, formData = null } = {}) {
   const initData = getInitData();
-  if (!initData) {
-    throw new Error("NO_TELEGRAM_INITDATA");
-  }
-
+  
   const headers = {
-    apikey: SUPABASE_ANON_KEY,
     "x-telegram-init-data": initData,
   };
 
@@ -61,7 +68,7 @@ async function apiFetch(path, { method = "GET", json = null, formData = null } =
     body = formData;
   }
 
-  const res = await fetch(`${EDGE_BASE}${path}`, {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
     method,
     headers,
     body,
@@ -69,8 +76,8 @@ async function apiFetch(path, { method = "GET", json = null, formData = null } =
 
   if (res.status === 401) throw new Error("UNAUTHORIZED");
   if (!res.ok) {
-    const t = await res.text().catch(() => "");
-    throw new Error(`API_${res.status}:${t.slice(0, 200)}`);
+    const errorText = await res.text().catch(() => `Status: ${res.status}`);
+    throw new Error(`API_ERROR_${res.status}: ${errorText.slice(0, 200)}`);
   }
   return res;
 }
@@ -82,19 +89,30 @@ async function apiJson(path, opts) {
 
 async function getMediaObjectUrl(fileId) {
   if (!fileId) return null;
-  if (mediaUrlCache.has(fileId)) return mediaUrlCache.get(fileId);
+  
+  if (mediaUrlCache.has(fileId)) {
+    return mediaUrlCache.get(fileId);
+  }
 
-  const r = await apiFetch(`/media_bytes?fileId=${encodeURIComponent(fileId)}`);
-  const blob = await r.blob();
-  const url = URL.createObjectURL(blob);
-  mediaUrlCache.set(fileId, url);
-  return url;
+  try {
+    const r = await apiFetch(`/media_bytes?fileId=${encodeURIComponent(fileId)}`);
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    
+    mediaUrlCache.set(fileId, url);
+    activeMediaUrls.add(url);
+    
+    return url;
+  } catch (error) {
+    console.warn("Failed to load media:", error);
+    return null;
+  }
 }
 
 // ---------- 3. MODEL ----------
 const defaultCar = {
-  brand: "Твой бренд (например Chevrolet)",
-  model: "Модель (например Cobalt)",
+  brand: "",
+  model: "",
   year: 0,
   mileage: 0,
   price: 0,
@@ -113,7 +131,6 @@ const defaultCar = {
   media: []
 };
 
-// Исправленная функция парсинга медиа
 function parseMediaField(media) {
   if (!media) return [];
   if (Array.isArray(media)) return media;
@@ -122,7 +139,7 @@ function parseMediaField(media) {
       const parsed = JSON.parse(media);
       if (Array.isArray(parsed)) return parsed;
     } catch (e) {
-      console.warn("Bad media JSON (safe fallback):", e);
+      console.warn("Bad media JSON:", e);
     }
   }
   return [];
@@ -131,23 +148,23 @@ function parseMediaField(media) {
 function normalizeCarFromRow(row) {
   const car = {
     ...defaultCar,
-    brand: row.brand,
-    model: row.model,
-    year: row.year,
-    mileage: row.mileage,
-    price: row.price,
-    status: row.status,
-    serviceOnTime: row.service_on_time,
-    tuning: row.tuning,
-    color: row.color,
-    bodyType: row.body_type,
-    bodyCondition: row.body_condition,
-    engineType: row.engine_type,
-    transmission: row.transmission,
-    purchaseInfo: row.purchase_info,
-    oilMileage: row.oil_mileage,
-    dailyMileage: row.daily_mileage,
-    lastService: row.last_service,
+    brand: row.brand || "",
+    model: row.model || "",
+    year: row.year || 0,
+    mileage: row.mileage || 0,
+    price: row.price || 0,
+    status: row.status || "follow",
+    serviceOnTime: row.service_on_time !== false,
+    tuning: row.tuning || "",
+    color: row.color || "",
+    bodyType: row.body_type || "",
+    bodyCondition: row.body_condition || "",
+    engineType: row.engine_type || "",
+    transmission: row.transmission || "",
+    purchaseInfo: row.purchase_info || "",
+    oilMileage: row.oil_mileage || "",
+    dailyMileage: row.daily_mileage || "",
+    lastService: row.last_service || "",
     media: parseMediaField(row.media)
   };
   return car;
@@ -276,12 +293,12 @@ const TEXTS = {
     tab_market: "E'lonlar",
 
     home_title: "",
-    home_desc: "Yo‘l yurgan masofa, servis, taʼmir va narxni yozib boring.",
+    home_desc: "Yo'l yurgan masofa, servis, taʼmir va narxni yozib boring.",
     your_car: "Sizning mashinangiz",
     health: "Holati",
     car_photo_placeholder: "Avto surati",
 
-    update_title: "Maʼlumotni yangilash",
+    update_title: "Ma'lumotni yangilash",
     field_brand: "Brend",
     field_model: "Model",
     field_year: "Yil",
@@ -297,7 +314,7 @@ const TEXTS = {
     field_oil_mileage: "Yog' almashtirish, km",
     field_daily_mileage: "Kunlik yurish, km",
     field_last_service: "Oxirgi tex. xizmat",
-    field_service: "Texnik xizmat o‘z vaqtida",
+    field_service: "Texnik xizmat o'z vaqtida",
     field_tuning: "Tuning",
     field_photo: "Avtomobil surati",
 
@@ -306,30 +323,30 @@ const TEXTS = {
     service_hint: "Moy va texnik xizmatni vaqtida qilsangiz belgilang.",
     photo_hint: "3 tagacha rasm (har biri ~50 KB gacha).",
     label_yes: "Ha",
-    label_no: "Yo‘q",
+    label_no: "Yo'q",
 
     opt_status_none: "— tanlanmagan —",
     opt_status_follow: "Kuzataman",
     opt_status_prepare_sell: "Sotishga tayyorlanyapman",
     opt_status_sell: "Sotmoqchiman",
-    opt_status_consider: "Ko‘rib chiqaman",
+    opt_status_consider: "Ko'rib chiqaman",
     opt_status_want_buy: "Sotib olmoqchiman",
 
     status_cta_btn: "E'lonlarga",
     status_for_sale: "Sotuvda",
 
-    opt_trans_none: "— ko‘rsatilmagan —",
+    opt_trans_none: "— ko'rsatilmagan —",
     opt_trans_manual: "Mexanik",
     opt_trans_auto: "Avtomat",
     opt_trans_robot: "Robot",
     opt_trans_cvt: "Variator",
 
-    opt_bodycond_none: "— ko‘rsatilmagan —",
-    opt_bodycond_painted: "Bo‘yalgan",
+    opt_bodycond_none: "— ko'rsatilmagan —",
+    opt_bodycond_painted: "Bo'yalgan",
     opt_bodycond_original: "Toza",
     opt_bodycond_scratches: "Chizilgan",
 
-    opt_bodytype_none: "— ko‘rsatilmagan —",
+    opt_bodytype_none: "— ko'rsatilmagan —",
     opt_bodytype_sedan: "Sedan",
     opt_bodytype_hatch: "Xetchbek",
     opt_bodytype_crossover: "Krossover",
@@ -338,7 +355,7 @@ const TEXTS = {
     opt_bodytype_minivan: "Miniven",
     opt_bodytype_pickup: "Pikap",
 
-    opt_engine_none: "— ko‘rsatilmagan —",
+    opt_engine_none: "— ko'rsatilmagan —",
     opt_engine_petrol: "Benzin",
     opt_engine_diesel: "Dizel",
     opt_engine_lpg: "Propan",
@@ -351,7 +368,7 @@ const TEXTS = {
     garage_primary: "Asosiy",
     garage_health: "Holati",
     garage_free_note: "1 ta bepul.",
-    garage_premium_title: "Yana qo‘shish",
+    garage_premium_title: "Yana qo'shish",
     garage_premium_body: "Yopiq uyacha.",
 
     rating_title: "Reyting",
@@ -361,10 +378,10 @@ const TEXTS = {
     rating_mode_owners: "Egalari",
     rating_mode_cars: "Modellar",
     rating_badge: "Top–5",
-    rating_pos: "o‘rin",
+    rating_pos: "o'rin",
     rating_health: "holati",
     rating_empty: "Bo'sh.",
-    rating_local_notice: "Edge Function maʼlumotlari.",
+    rating_local_notice: "Edge Function ma'lumotlari.",
 
     market_title: "E'lonlar",
     market_desc: "Adolatli narxlar.",
@@ -376,7 +393,9 @@ const TEXTS = {
 
 // ---------- 5. HELPERS ----------
 function getUser() {
-  if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) return tg.initDataUnsafe.user;
+  if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+    return tg.initDataUnsafe.user;
+  }
   return { id: "0", first_name: "Browser", username: "test" };
 }
 
@@ -399,6 +418,7 @@ function getDisplayNick(entry) {
   if (!entry) return "User";
   if (entry.username) return "@" + entry.username;
   if (entry.full_name) return entry.full_name;
+  if (entry.first_name) return entry.first_name;
   return "User";
 }
 
@@ -434,13 +454,19 @@ function validateFormData(formData) {
   }
 
   const mileage = Number(mileageStr || 0);
-  if (mileage < 0 || mileage > 2000000) errors.push("Пробег указан некорректно (0–2 000 000 км).");
+  if (mileage < 0 || mileage > 2000000) {
+    errors.push("Пробег указан некорректно (0–2 000 000 км).");
+  }
 
   const oilMileage = Number(oilStr || 0);
-  if (oilStr && (isNaN(oilMileage) || oilMileage < 0 || oilMileage > 2000000)) errors.push("Пробег при замене масла указан некорректно.");
+  if (oilStr && (isNaN(oilMileage) || oilMileage < 0 || oilMileage > 2000000)) {
+    errors.push("Пробег при замене масла указан некорректно.");
+  }
 
   const daily = Number(dailyStr || 0);
-  if (dailyStr && (isNaN(daily) || daily < 0 || daily > 3000)) errors.push("Дневной пробег указан некорректно.");
+  if (dailyStr && (isNaN(daily) || daily < 0 || daily > 3000)) {
+    errors.push("Дневной пробег указан некорректно.");
+  }
 
   return errors;
 }
@@ -511,36 +537,41 @@ function compressImage(file) {
 async function syncUserCarFromServer() {
   try {
     const j = await apiJson("/me");
-    if (!j.ok) return;
-
-    currentCar = normalizeCar(normalizeCarFromRow(j.car));
-    currentCar.isPrimary = true;
+    if (j.ok && j.car) {
+      currentCar = normalizeCar(normalizeCarFromRow(j.car));
+      currentCar.isPrimary = true;
+    }
     renderCar();
   } catch (e) {
-    console.warn("syncUserCarFromServer:", e);
+    console.warn("syncUserCarFromServer error:", e);
+    
+    if (e.message === "NO_TELEGRAM_INITDATA" || String(e).includes("NO_TELEGRAM_INITDATA")) {
+      showMessage("Откройте MiniApp через Telegram (не через обычный браузер).");
+    }
+    
     renderCar();
   }
 }
 
 async function saveUserCarToServer() {
   const payload = {
-    brand: currentCar.brand,
-    model: currentCar.model,
-    year: Number(currentCar.year),
-    mileage: Number(currentCar.mileage),
-    price: Number(currentCar.price),
-    status: currentCar.status,
+    brand: String(currentCar.brand || ""),
+    model: String(currentCar.model || ""),
+    year: Number(currentCar.year) || 0,
+    mileage: Number(currentCar.mileage) || 0,
+    price: Number(currentCar.price) || 0,
+    status: String(currentCar.status || ""),
     service_on_time: Boolean(currentCar.serviceOnTime),
-    tuning: currentCar.tuning,
-    color: currentCar.color,
-    body_type: currentCar.bodyType,
-    body_condition: currentCar.bodyCondition,
-    engine_type: currentCar.engineType,
-    transmission: currentCar.transmission,
-    purchase_info: currentCar.purchaseInfo,
+    tuning: String(currentCar.tuning || ""),
+    color: String(currentCar.color || ""),
+    body_type: String(currentCar.bodyType || ""),
+    body_condition: String(currentCar.bodyCondition || ""),
+    engine_type: String(currentCar.engineType || ""),
+    transmission: String(currentCar.transmission || ""),
+    purchase_info: String(currentCar.purchaseInfo || ""),
     oil_mileage: currentCar.oilMileage === "" ? "" : Number(currentCar.oilMileage || 0),
     daily_mileage: currentCar.dailyMileage === "" ? "" : Number(currentCar.dailyMileage || 0),
-    last_service: currentCar.lastService
+    last_service: String(currentCar.lastService || "")
   };
 
   const j = await apiJson("/save", { method: "POST", json: payload });
@@ -548,26 +579,27 @@ async function saveUserCarToServer() {
     currentCar = normalizeCar(normalizeCarFromRow(j.car));
   }
   await loadGlobalRating();
+  return j;
 }
 
 async function loadGlobalRating() {
   try {
     const j = await apiJson("/cars?limit=200");
-    if (!j.ok) return;
+    if (j.ok) {
+      globalRatingCars = (j.cars || []).map((row) => ({
+        telegram_id: row.telegram_id,
+        username: row.username,
+        full_name: row.full_name,
+        health: row.health ?? calcHealthScore(normalizeCarFromRow(row)),
+        car: normalizeCar(normalizeCarFromRow(row))
+      }));
 
-    globalRatingCars = (j.cars || []).map((row) => ({
-      telegram_id: row.telegram_id,
-      username: row.username,
-      full_name: row.full_name,
-      health: row.health ?? calcHealthScore(normalizeCarFromRow(row)),
-      car: normalizeCar(normalizeCarFromRow(row))
-    }));
-
-    globalRatingCars.sort((a, b) => Number(b.health) - Number(a.health));
+      globalRatingCars.sort((a, b) => Number(b.health) - Number(a.health));
+    }
     renderRating();
     renderMarket();
   } catch (e) {
-    console.warn("loadGlobalRating:", e);
+    console.warn("loadGlobalRating error:", e);
   }
 }
 
@@ -579,7 +611,7 @@ async function uploadPhotoToDrive(file) {
   const j = await apiJson("/media_upload", { method: "POST", formData: fd });
   if (j.ok && Array.isArray(j.media)) {
     currentCar.media = j.media;
-    revokeAllMediaUrls();
+    revokeUnusedMediaUrls();
     return true;
   }
   return false;
@@ -589,7 +621,7 @@ async function deletePhotoFromDrive(fileId) {
   const j = await apiJson("/media_delete", { method: "POST", json: { fileId } });
   if (j.ok && Array.isArray(j.media)) {
     currentCar.media = j.media;
-    revokeAllMediaUrls();
+    revokeUnusedMediaUrls();
     return true;
   }
   return false;
@@ -600,7 +632,6 @@ let lastHeroRenderToken = "";
 function renderCarMedia() {
   const car = getActiveCar();
   const img = document.getElementById("car-photo-main");
-  const video = document.getElementById("car-video-main");
   const placeholder = document.getElementById("car-photo-placeholder");
   const prevBtn = document.getElementById("car-photo-prev");
   const nextBtn = document.getElementById("car-photo-next");
@@ -608,8 +639,6 @@ function renderCarMedia() {
   const delBtn = document.getElementById("car-photo-delete");
 
   const media = car.media || [];
-
-  if (video) video.style.display = "none";
 
   if (!media.length) {
     if (img) img.style.display = "none";
@@ -627,7 +656,7 @@ function renderCarMedia() {
   const item = media[currentMediaIndex];
   const fileId = item?.fileId;
 
-  if (placeholder) placeholder.style.display = "flex";
+  if (placeholder) placeholder.style.display = "none";
   if (counter) {
     counter.style.display = "block";
     counter.textContent = `${currentMediaIndex + 1}/${media.length}`;
@@ -641,19 +670,46 @@ function renderCarMedia() {
   const token = `${isViewingForeign ? "F" : "M"}:${fileId}:${currentMediaIndex}`;
   lastHeroRenderToken = token;
 
-  if (!fileId) return;
+  if (!fileId) {
+    if (placeholder) placeholder.style.display = "flex";
+    return;
+  }
 
   getMediaObjectUrl(fileId)
     .then((url) => {
       if (lastHeroRenderToken !== token) return;
-      if (!url) return;
+      if (!url) {
+        if (placeholder) placeholder.style.display = "flex";
+        return;
+      }
+      
       if (placeholder) placeholder.style.display = "none";
       if (img) {
         img.src = url;
         img.style.display = "block";
+        img.onerror = () => {
+          if (placeholder) placeholder.style.display = "flex";
+          img.style.display = "none";
+        };
       }
     })
-    .catch((e) => console.warn("media load err:", e));
+    .catch((e) => {
+      console.warn("media load error:", e);
+      if (placeholder) placeholder.style.display = "flex";
+      if (img) img.style.display = "none";
+    });
+}
+
+function preloadNextMedia(car) {
+  const media = car.media || [];
+  if (media.length <= 1) return;
+  
+  const nextIndex = (currentMediaIndex + 1) % media.length;
+  const nextItem = media[nextIndex];
+  
+  if (nextItem?.fileId && !mediaUrlCache.has(nextItem.fileId)) {
+    getMediaObjectUrl(nextItem.fileId).catch(() => {});
+  }
 }
 
 function buildStatsRows(car, dict) {
@@ -661,8 +717,8 @@ function buildStatsRows(car, dict) {
   const yes = dict.label_yes;
   const no = dict.label_no;
 
-  rows.push({ label: dict.field_price, value: car.price ? `${car.price}$` : "-" });
-  rows.push({ label: dict.field_mileage, value: car.mileage ? `${car.mileage} km` : "-" });
+  if (car.price) rows.push({ label: dict.field_price, value: `${car.price}$` });
+  if (car.mileage) rows.push({ label: dict.field_mileage, value: `${car.mileage} km` });
   rows.push({ label: dict.field_service, value: car.serviceOnTime ? yes : no });
 
   if (car.transmission) rows.push({ label: dict.field_transmission, value: car.transmission });
@@ -671,7 +727,8 @@ function buildStatsRows(car, dict) {
   if (car.color) rows.push({ label: dict.field_color, value: car.color });
 
   if (car.tuning && car.tuning.trim()) rows.push({ label: dict.field_tuning, value: car.tuning });
-  return rows;
+  
+  return rows.length > 0 ? rows : [{ label: "Нет данных", value: "—" }];
 }
 
 function renderCar() {
@@ -683,7 +740,10 @@ function renderCar() {
   const pill = document.getElementById("car-status-pill");
   const statsEl = document.getElementById("car-stats");
 
-  if (titleEl) titleEl.textContent = `${car.brand} ${car.model} ${car.year || ""}`.trim();
+  if (titleEl) {
+    titleEl.textContent = `${car.brand || ""} ${car.model || ""} ${car.year || ""}`.trim() || "Моя машина";
+  }
+  
   if (healthEl) healthEl.textContent = calcHealthScore(car);
 
   if (pill) {
@@ -697,30 +757,13 @@ function renderCar() {
 
   if (statsEl) {
     const rows = buildStatsRows(car, dict);
-    statsEl.innerHTML = rows.map((r) => `<div class="stat-row"><span>${r.label}</span><span>${r.value}</span></div>`).join("");
+    statsEl.innerHTML = rows.map((r) => 
+      `<div class="stat-row"><span>${r.label}</span><span>${r.value}</span></div>`
+    ).join("");
   }
 
-  // foreign banner + hide form
-  const screenHome = document.getElementById("screen-home");
-  let banner = document.getElementById("foreign-banner");
-  if (!banner && screenHome) {
-    banner = document.createElement("div");
-    banner.id = "foreign-banner";
-    banner.style.marginBottom = "6px";
-    banner.style.padding = "6px 10px";
-    banner.style.borderRadius = "999px";
-    banner.style.border = "1px solid rgba(148,163,184,0.6)";
-    banner.style.background = "rgba(15,23,42,0.9)";
-    banner.style.fontSize = "12px";
-    banner.style.display = "none";
-    banner.style.alignItems = "center";
-    banner.style.gap = "8px";
-    banner.style.justifyContent = "space-between";
-    banner.style.color = "#e5e7eb";
-    banner.style.boxSizing = "border-box";
-    screenHome.insertBefore(banner, screenHome.firstChild.nextSibling);
-  }
-
+  // foreign banner
+  const banner = document.getElementById("foreign-banner");
   const form = document.getElementById("car-form");
   const formCard = form ? form.closest(".card") : null;
 
@@ -740,11 +783,19 @@ function renderCar() {
         </button>
       `;
       const backBtn = document.getElementById("foreign-back-btn");
-      if (backBtn) backBtn.onclick = (e) => { e.stopPropagation(); exitForeignView(); };
+      if (backBtn) {
+        backBtn.onclick = (e) => { 
+          e.stopPropagation(); 
+          exitForeignView(); 
+        };
+      }
     }
     if (formCard) formCard.style.display = "none";
   } else {
-    if (banner) { banner.style.display = "none"; banner.innerHTML = ""; }
+    if (banner) { 
+      banner.style.display = "none"; 
+      banner.innerHTML = ""; 
+    }
     if (formCard) formCard.style.display = "";
   }
 
@@ -774,6 +825,7 @@ function renderCar() {
   garage = [currentCar];
 
   renderCarMedia();
+  preloadNextMedia(car);
   renderGarage();
   renderMarket();
 }
@@ -796,8 +848,8 @@ function renderGarage() {
         <div class="garage-left">
           ${thumbHtml}
           <div class="garage-main">
-            <div class="garage-title">${car.brand} ${car.model}</div>
-            <div class="garage-meta">${car.year}</div>
+            <div class="garage-title">${car.brand || ""} ${car.model || ""}</div>
+            <div class="garage-meta">${car.year || ""}</div>
           </div>
         </div>
         <div class="garage-right">
@@ -822,8 +874,19 @@ function renderGarage() {
     const fileId = el.getAttribute("data-file-id");
     try {
       const url = await getMediaObjectUrl(fileId);
-      if (url) el.innerHTML = `<img src="${url}" alt="">`;
-    } catch {}
+      if (url) {
+        const img = document.createElement("img");
+        img.src = url;
+        img.alt = "";
+        img.onerror = () => {
+          el.innerHTML = '<div class="garage-thumb-placeholder">AQ</div>';
+        };
+        el.innerHTML = "";
+        el.appendChild(img);
+      }
+    } catch (e) {
+      console.warn("Failed to load thumb:", e);
+    }
   });
 }
 
@@ -834,12 +897,13 @@ function renderRating() {
   const dict = TEXTS[currentLang];
 
   if (!globalRatingCars.length) {
-    list.innerHTML = dict.rating_empty;
+    list.innerHTML = `<div class="muted">${dict.rating_empty}</div>`;
     return;
   }
 
   if (ratingMode === "owners") {
     list.innerHTML = globalRatingCars
+      .slice(0, 50)
       .map((c, i) => {
         const label = getDisplayNick(c);
         return `
@@ -864,20 +928,25 @@ function renderRating() {
       const b = (c.car.brand || "").trim();
       const m = (c.car.model || "").trim();
       const key = `${b}|${m}`;
+      if (!b || !m) return;
+      
       if (!agg[key]) agg[key] = { brand: b, model: m, count: 0, healthSum: 0 };
       agg[key].count += 1;
       agg[key].healthSum += Number(c.health);
     });
 
-    const models = Object.values(agg).map((m) => ({
-      label: `${m.brand} ${m.model}`.trim() || "Model",
-      count: m.count,
-      health: Math.round(m.healthSum / m.count),
-    }));
+    const models = Object.values(agg)
+      .filter(m => m.count > 0)
+      .map((m) => ({
+        label: `${m.brand} ${m.model}`.trim(),
+        count: m.count,
+        health: Math.round(m.healthSum / m.count),
+      }));
 
     models.sort((a, b) => b.health - a.health);
 
     list.innerHTML = models
+      .slice(0, 50)
       .map(
         (m, i) => `
         <div class="rating-item">
@@ -910,7 +979,10 @@ function renderMarket() {
     return;
   }
 
-  const sellers = globalRatingCars.filter((c) => c.car.status === "sell" || c.car.status === "prepare_sell");
+  const sellers = globalRatingCars.filter((c) => 
+    c.car.status === "sell" || c.car.status === "prepare_sell"
+  );
+  
   if (!sellers.length) {
     list.innerHTML = "";
     return;
@@ -925,7 +997,7 @@ function renderMarket() {
           <span style="font-size:13px;">🚗 ${c.car.brand} ${c.car.model}</span>
         </div>
         <div class="card-body" style="font-size:12px; line-height:1.3; padding:8px 9px;">
-          <p style="margin:0 0 2px;"><strong>${c.car.price ? c.car.price + "$" : ""}</strong></p>
+          <p style="margin:0 0 2px;"><strong>${c.car.price ? c.car.price + "$" : "Цена не указана"}</strong></p>
           <p style="margin:0 0 2px;">${dict.rating_health}: ${c.health}</p>
           ${c.car.mileage ? `<p style="margin:0 0 2px;">${dict.field_mileage}: ${c.car.mileage} km</p>` : ""}
           ${c.car.color ? `<p style="margin:0 0 2px;">${dict.field_color}: ${c.car.color}</p>` : ""}
@@ -937,7 +1009,19 @@ function renderMarket() {
     .join("");
 }
 
-// ---------- 9. FOREIGN VIEW ----------
+// ---------- 9. UTILS ----------
+function showMessage(message) {
+  if (tg && tg.showPopup) {
+    tg.showPopup({ 
+      message: message,
+      title: "AutoQiyos"
+    });
+  } else if (typeof alert === "function") {
+    alert(message);
+  }
+}
+
+// ---------- 10. FOREIGN VIEW ----------
 function openUserMainById(telegramId) {
   const entry = globalRatingCars.find((c) => String(c.telegram_id) === String(telegramId));
   if (!entry) return;
@@ -978,7 +1062,7 @@ function exitForeignView() {
   renderCar();
 }
 
-// ---------- 10. DOM READY ----------
+// ---------- 11. DOM READY ----------
 document.addEventListener("DOMContentLoaded", async () => {
   applyTexts(currentLang);
   updateRatingDescription();
@@ -1012,9 +1096,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     delBtn.addEventListener("click", async (e) => {
       e.stopPropagation();
       if (isViewingForeign) {
-        const msg = "Нельзя удалять фото чужой машины.";
-        if (tg && tg.showPopup) tg.showPopup({ message: msg });
-        else alert(msg);
+        showMessage("Нельзя удалять фото чужой машины.");
         return;
       }
       const media = currentCar.media || [];
@@ -1024,17 +1106,17 @@ document.addEventListener("DOMContentLoaded", async () => {
       const fileId = item?.fileId;
       if (!fileId) return;
 
-      const ok = typeof confirm === "function" ? confirm("Удалить это фото?") : true;
+      const ok = confirm("Удалить это фото?");
       if (!ok) return;
 
       try {
         await deletePhotoFromDrive(fileId);
         currentMediaIndex = Math.max(0, Math.min(currentMediaIndex, (currentCar.media.length || 1) - 1));
         renderCar();
+        showMessage("Фото удалено");
       } catch (err) {
         console.warn(err);
-        if (tg && tg.showPopup) tg.showPopup({ message: "Ошибка при удалении фото." });
-        else alert("Ошибка при удалении фото.");
+        showMessage("Ошибка при удалении фото.");
       }
     });
   }
@@ -1044,12 +1126,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     await syncUserCarFromServer();
     await loadGlobalRating();
   } catch (e) {
-    console.warn(e);
-    if (String(e).includes("NO_TELEGRAM_INITDATA")) {
-      const msg = "Открой MiniApp через Telegram (не через обычный браузер).";
-      if (tg && tg.showPopup) tg.showPopup({ message: msg });
-      else alert(msg);
-    }
+    console.error("Initial load error:", e);
   }
 
   // Tabs
@@ -1096,8 +1173,20 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Photo Nav
   const prev = document.getElementById("car-photo-prev");
   const next = document.getElementById("car-photo-next");
-  if (prev) prev.onclick = () => { currentMediaIndex--; renderCarMedia(); };
-  if (next) next.onclick = () => { currentMediaIndex++; renderCarMedia(); };
+  if (prev) {
+    prev.onclick = () => { 
+      currentMediaIndex--; 
+      renderCarMedia(); 
+      preloadNextMedia(getActiveCar());
+    };
+  }
+  if (next) {
+    next.onclick = () => { 
+      currentMediaIndex++; 
+      renderCarMedia(); 
+      preloadNextMedia(getActiveCar());
+    };
+  }
 
   // Upload
   const photoInput = document.getElementById("car-photo-input");
@@ -1107,22 +1196,15 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (!files.length) return;
 
       if (isViewingForeign) {
-        const msg = "Нельзя загружать фото для чужой машины.";
-        if (tg && tg.showPopup) tg.showPopup({ message: msg });
-        else alert(msg);
+        showMessage("Нельзя загружать фото для чужой машины.");
         photoInput.value = "";
         return;
       }
 
-      const hint =
-        photoInput.parentNode.querySelector(".hint") ||
-        document.getElementById("upload-status");
+      const hint = document.getElementById("upload-status");
 
       if ((currentCar.media || []).length >= MAX_MEDIA) {
-        const msg = `Можно загрузить максимум ${MAX_MEDIA} фото.`;
-        if (hint) hint.innerText = msg;
-        if (tg && tg.showPopup) tg.showPopup({ message: msg });
-        else alert(msg);
+        showMessage(`Можно загрузить максимум ${MAX_MEDIA} фото.`);
         photoInput.value = "";
         return;
       }
@@ -1139,13 +1221,31 @@ document.addEventListener("DOMContentLoaded", async () => {
           if (ok) success++;
           else fail++;
         }
-        if (hint) hint.innerText = fail === 0 ? "Готово! ✅" : `Готово: ${success}, ошибок: ${fail}`;
+        
+        if (hint) {
+          if (fail === 0 && success > 0) {
+            hint.innerText = "Готово! ✅";
+            hint.style.color = "#10b981";
+          } else if (success > 0) {
+            hint.innerText = `Готово: ${success}, ошибок: ${fail}`;
+            hint.style.color = "#eab308";
+          } else {
+            hint.innerText = "Ошибка при загрузке";
+            hint.style.color = "#f97373";
+          }
+        }
+        
         renderCar();
+        if (success > 0) {
+          showMessage(`Загружено ${success} фото`);
+        }
       } catch (err) {
-        console.error(err);
-        if (hint) hint.innerText = "Ошибка при загрузке";
-        if (tg && tg.showPopup) tg.showPopup({ message: "Ошибка при загрузке фото." });
-        else alert("Ошибка при загрузке фото.");
+        console.error("Upload error:", err);
+        if (hint) {
+          hint.innerText = "Ошибка при загрузке";
+          hint.style.color = "#f97373";
+        }
+        showMessage("Ошибка при загрузке фото.");
       } finally {
         photoInput.value = "";
       }
@@ -1160,8 +1260,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   function updateStatusCta() {
     if (!statusSelect || !statusCtaWrap) return;
     const v = statusSelect.value;
-    if (v === "sell" || v === "prepare_sell" || v === "consider_offers") statusCtaWrap.style.display = "block";
-    else statusCtaWrap.style.display = "none";
+    if (v === "sell" || v === "prepare_sell" || v === "consider_offers") {
+      statusCtaWrap.style.display = "block";
+    } else {
+      statusCtaWrap.style.display = "none";
+    }
   }
 
   if (statusSelect) {
@@ -1183,54 +1286,59 @@ document.addEventListener("DOMContentLoaded", async () => {
       e.preventDefault();
 
       if (isViewingForeign) {
-        const msg = "Нельзя редактировать чужую машину.";
-        if (tg && tg.showPopup) tg.showPopup({ message: msg });
-        else alert(msg);
+        showMessage("Нельзя редактировать чужую машину.");
         return;
       }
 
       const f = new FormData(form);
       const validationErrors = validateFormData(f);
       if (validationErrors.length) {
-        const msg = validationErrors.join("\n");
-        if (tg && tg.showPopup) tg.showPopup({ message: msg });
-        else alert(msg);
+        showMessage(validationErrors.join("\n"));
         return;
       }
 
-      currentCar.brand = f.get("brand");
-      currentCar.model = f.get("model");
-      currentCar.year = f.get("year");
-      currentCar.mileage = f.get("mileage");
-      currentCar.price = f.get("price");
-      currentCar.status = f.get("status");
+      currentCar.brand = f.get("brand") || "";
+      currentCar.model = f.get("model") || "";
+      currentCar.year = f.get("year") || 0;
+      currentCar.mileage = f.get("mileage") || 0;
+      currentCar.price = f.get("price") || 0;
+      currentCar.status = f.get("status") || "";
 
       currentCar.serviceOnTime = f.get("serviceOnTime") === "yes";
-      currentCar.transmission = f.get("transmission");
-      currentCar.engineType = f.get("engineType");
-      currentCar.bodyType = f.get("bodyType");
-      currentCar.bodyCondition = f.get("bodyCondition");
+      currentCar.transmission = f.get("transmission") || "";
+      currentCar.engineType = f.get("engineType") || "";
+      currentCar.bodyType = f.get("bodyType") || "";
+      currentCar.bodyCondition = f.get("bodyCondition") || "";
 
-      currentCar.color = f.get("color");
-      currentCar.tuning = f.get("tuning");
-      currentCar.purchaseInfo = f.get("purchaseInfo");
-      currentCar.oilMileage = f.get("oilMileage");
-      currentCar.dailyMileage = f.get("dailyMileage");
-      currentCar.lastService = f.get("lastService");
+      currentCar.color = f.get("color") || "";
+      currentCar.tuning = f.get("tuning") || "";
+      currentCar.purchaseInfo = f.get("purchaseInfo") || "";
+      currentCar.oilMileage = f.get("oilMileage") || "";
+      currentCar.dailyMileage = f.get("dailyMileage") || "";
+      currentCar.lastService = f.get("lastService") || "";
 
       const btn = form.querySelector('button[type="submit"]');
-      if (btn) { btn.textContent = "..."; btn.disabled = true; }
+      const originalText = btn ? btn.textContent : "";
+      if (btn) { 
+        btn.textContent = "Сохранение..."; 
+        btn.disabled = true; 
+      }
 
       try {
-        await saveUserCarToServer();
-        if (tg && tg.showPopup) tg.showPopup({ message: "Сохранено!" });
-        else alert("Сохранено!");
+        const result = await saveUserCarToServer();
+        if (result.ok) {
+          showMessage("Данные сохранены!");
+        } else {
+          showMessage(`Ошибка: ${result.error || "Неизвестная ошибка"}`);
+        }
       } catch (err) {
-        console.warn(err);
-        if (tg && tg.showPopup) tg.showPopup({ message: "Ошибка сохранения." });
-        else alert("Ошибка сохранения.");
+        console.error("Save error:", err);
+        showMessage("Ошибка при сохранении данных.");
       } finally {
-        if (btn) { btn.textContent = TEXTS[currentLang].btn_save; btn.disabled = false; }
+        if (btn) { 
+          btn.textContent = originalText || TEXTS[currentLang].btn_save; 
+          btn.disabled = false; 
+        }
         renderCar();
       }
     });
@@ -1259,4 +1367,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       openUserMainById(tgId);
     });
   }
+});
+
+// Clean up on unload
+window.addEventListener("beforeunload", () => {
+  revokeUnusedMediaUrls();
 });
