@@ -1,7 +1,6 @@
 // ---------- 1. SUPABASE CONFIG ----------
-const SUPABASE_URL = "https://dlefczzippvfudcdtlxz.supabase.co";
-const SUPABASE_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRsZWZjenppcHB2ZnVkY2R0bHh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3OTY0OTMsImV4cCI6MjA3OTM3MjQ5M30.jSJYcF3o00yDx41EtbQUye8_tl3AzIaCkrPT9uZ22kY";
+const SUPABASE_URL = "ВСТАВЬ_СВОЙ_URL_ИЗ_SUPABASE";
+const SUPABASE_ANON_KEY = "ВСТАВЬ_СВОЙ_ANON_KEY_ИЗ_SUPABASE";
 
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -339,10 +338,6 @@ function getContactInfo(entry) {
 }
 
 // что отображаем в UI:
-// 1) @username
-// 2) телефон
-// 3) имя/фамилия
-// 4) "User"
 function getDisplayNick(entry) {
   if (!entry) return "User";
 
@@ -593,7 +588,7 @@ async function uploadFile(file) {
   return {
     type: isVideo ? "video" : "image",
     data: urlData.publicUrl,
-    path: fileName       // сохраняем путь в bucket для будущего удаления
+    path: fileName        // сохраняем путь в bucket для будущего удаления
   };
 }
 
