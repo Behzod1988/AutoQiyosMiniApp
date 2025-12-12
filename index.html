@@ -6,7 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -25,6 +24,7 @@
       --border-subtle: rgba(148, 163, 184, 0.35);
       --text-main: #f9fafb;
       --text-muted: #9ca3af;
+      --text-muted-soft: rgba(156, 163, 175, 0.7);
       --accent-good: #10b981;
       --accent-bad: #f97373;
       --radius-lg: 20px;
@@ -39,9 +39,8 @@
       font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: radial-gradient(circle at top, #020617 0%, #020617 35%, #020617 70%, #020617 100%);
       color: var(--text-main);
+      min-height: 100vh;
     }
-
-    body { min-height: 100vh; }
 
     .app { max-width: 640px; margin: 0 auto; padding: 10px 12px 18px; }
 
@@ -65,6 +64,10 @@
     .logo-circle img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .app-name { font-size: 18px; font-weight: 700; letter-spacing: 0.04em; }
     .app-subtitle { font-size: 11px; color: var(--text-muted); }
+
+    /* Текстовые стили */
+    .muted { color: var(--text-muted); opacity: 0.85; }
+    .small { font-size: 11px; line-height: 1.3; }
 
     /* Языки */
     .lang-switch { display: inline-flex; padding: 3px; border-radius: 999px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(148, 163, 184, 0.4); }
@@ -92,7 +95,7 @@
       padding: 10px 12px 12px; margin-bottom: 10px; box-shadow: var(--shadow-soft);
       position: relative; overflow: hidden;
     }
-    .card-header { margin-bottom: 8px; }
+    .card-header { margin-bottom: 8px; font-weight: 600; font-size: 14px; }
     .card-body { font-size: 13px; }
 
     /* Car Hero */
@@ -191,13 +194,14 @@
 
     <main class="screens">
       <section id="screen-home" class="screen active">
+        <div class="foreign-banner" id="foreign-banner" style="display: none;"></div>
+        
         <h2 data-i18n="home_title"></h2>
         <p class="muted" data-i18n="home_desc"></p>
 
         <div class="card car-hero">
           <div class="car-photo-frame">
             <img id="car-photo-main" alt="Фото авто" />
-            <video id="car-video-main" playsinline muted></video>
             <div class="car-photo-placeholder" id="car-photo-placeholder"><span data-i18n="car_photo_placeholder"></span></div>
             <button type="button" class="photo-nav prev" id="car-photo-prev">‹</button>
             <button type="button" class="photo-nav next" id="car-photo-next">›</button>
