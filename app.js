@@ -1,6 +1,6 @@
 // ---------- 1. SUPABASE CONFIG ----------
-const SUPABASE_URL = "ВСТАВЬ_СВОЙ_URL_ИЗ_SUPABASE";
-const SUPABASE_ANON_KEY = "ВСТАВЬ_СВОЙ_ANON_KEY_ИЗ_SUPABASE";
+const SUPABASE_URL = "https://dlefczzippvfudcdtlxz.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRsZWZjenppcHB2ZnVkY2R0bHh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3OTY0OTMsImV4cCI6MjA3OTM3MjQ5M30.jSJYcF3o00yDx41EtbQUye8_tl3AzIaCkrPT9uZ22kY";
 
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -143,12 +143,12 @@ const TEXTS = {
     opt_bodytype_pickup: "Пикап",
 
     opt_engine_none: "— не указано —",
-    opt_engine_petrol: "Бензин",
-    opt_engine_diesel: "Дизель",
-    opt_engine_lpg: "Пропан / бензин",
-    opt_engine_cng: "Метан / бензин",
-    opt_engine_hybrid: "Гибрид",
-    opt_engine_electric: "Электро",
+    opt_engine_petrol: "Benzin",
+    opt_engine_diesel: "Dizel",
+    opt_engine_lpg: "Propan / benzin",
+    opt_engine_cng: "Metan / benzin",
+    opt_engine_hybrid: "Gibrid",
+    opt_engine_electric: "Elektro",
 
     garage_title: "Мой гараж",
     garage_desc: "Здесь собраны все твои машины.",
