@@ -18,15 +18,12 @@
   <style>
     :root {
       --primary: #1b6cf0;
-      --primary-soft: rgba(27, 108, 240, 0.12);
       --bg: #050b18;
       --bg-card: rgba(15, 23, 42, 0.98);
-      --bg-card-soft: rgba(15, 23, 42, 0.8);
       --border-subtle: rgba(148, 163, 184, 0.35);
       --text-main: #f9fafb;
       --text-muted: #9ca3af;
       --accent-good: #10b981;
-      --accent-bad: #f97373;
       --radius-lg: 20px;
       --radius-md: 14px;
       --shadow-soft: 0 18px 45px rgba(15, 23, 42, 0.9);
@@ -36,141 +33,135 @@
 
     html, body {
       margin: 0; padding: 0;
-      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: radial-gradient(circle at top, #020617 0%, #020617 35%, #020617 70%, #020617 100%);
+      font-family: "Inter", sans-serif;
+      background: radial-gradient(circle at top, #020617 0%, #020617 35%, #050b18 100%);
       color: var(--text-main);
+      min-height: 100vh;
     }
 
-    body { min-height: 100vh; }
+    .app { max-width: 640px; margin: 0 auto; padding: 10px 12px 24px; }
 
-    .app { max-width: 640px; margin: 0 auto; padding: 10px 12px 18px; }
-
-    /* Шапка */
+    /* Header */
     .app-header {
       display: flex; align-items: center; justify-content: space-between;
       padding: 10px 12px; border-radius: 999px;
-      background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.92));
-      box-shadow: 0 16px 40px rgba(15, 23, 42, 0.9);
-      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.95));
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      border: 1px solid var(--border-subtle);
       margin-bottom: 12px;
     }
-
     .logo-title { display: flex; align-items: center; gap: 10px; }
     .logo-circle {
-      width: 40px; height: 40px; border-radius: 50%; background: #020617;
-      border: 2px solid rgba(148, 163, 184, 0.8); display: flex; align-items: center;
-      justify-content: center; overflow: hidden; box-shadow: 0 16px 40px rgba(15, 23, 42, 0.9);
-      flex-shrink: 0;
+      width: 40px; height: 40px; border-radius: 50%; background: #0f172a;
+      border: 2px solid rgba(148, 163, 184, 0.5); display: flex; align-items: center;
+      justify-content: center; overflow: hidden; font-weight: 700; font-size: 14px;
     }
-    .logo-circle img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .app-name { font-size: 18px; font-weight: 700; letter-spacing: 0.04em; }
+    .logo-circle img { width: 100%; height: 100%; object-fit: cover; }
+    .app-name { font-size: 18px; font-weight: 700; }
     .app-subtitle { font-size: 11px; color: var(--text-muted); }
 
-    /* Языки */
-    .lang-switch { display: inline-flex; padding: 3px; border-radius: 999px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(148, 163, 184, 0.4); }
-    .lang-btn { border: none; background: transparent; color: var(--text-muted); font-size: 11px; padding: 4px 9px; border-radius: 999px; cursor: pointer; }
-    .lang-btn.active { background: linear-gradient(135deg, rgba(37, 99, 235, 0.95), rgba(59, 130, 246, 0.95)); color: #e5f2ff; }
+    .lang-switch { display: inline-flex; padding: 3px; border-radius: 999px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); }
+    .lang-btn { border: none; background: transparent; color: var(--text-muted); font-size: 11px; padding: 4px 9px; border-radius: 999px; cursor: pointer; transition: 0.2s; }
+    .lang-btn.active { background: #2563eb; color: #fff; }
 
     /* Tabs */
-    .tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+    .tabs { display: flex; gap: 6px; margin-bottom: 12px; }
     .tab-btn {
-      flex: 1; border-radius: 999px; border: 1px solid rgba(148, 163, 184, 0.4);
-      background: rgba(15, 23, 42, 0.94); color: var(--text-muted); font-size: 13px;
-      padding: 8px 4px; cursor: pointer;
+      flex: 1; border-radius: 999px; border: 1px solid rgba(255,255,255,0.05);
+      background: rgba(15, 23, 42, 0.8); color: var(--text-muted); font-size: 13px;
+      padding: 8px 4px; cursor: pointer; text-align: center;
     }
-    .tab-btn.active { background: radial-gradient(circle at 20% 0, #38bdf8, #1d4ed8); color: #e5f2ff; border-color: rgba(96, 165, 250, 0.9); }
+    .tab-btn.active { background: radial-gradient(circle at 50% 0, #38bdf8, #1d4ed8); color: #fff; border-color: rgba(96, 165, 250, 0.5); font-weight: 500; }
 
     /* Screens */
-    .screens { display: block; }
-    .screen { display: none; position: relative; padding-top: 4px; }
-    .screen.active { display: block; }
+    .screen { display: none; padding-top: 4px; }
+    .screen.active { display: block; animation: fadein 0.3s; }
+    @keyframes fadein { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
     /* Cards */
     .card {
-      background: radial-gradient(circle at top left, rgba(30, 64, 175, 0.5), rgba(15, 23, 42, 0.96));
-      border-radius: var(--radius-lg); border: 1px solid var(--border-subtle);
-      padding: 10px 12px 12px; margin-bottom: 10px; box-shadow: var(--shadow-soft);
+      background: var(--bg-card); border-radius: var(--radius-lg);
+      border: 1px solid var(--border-subtle); padding: 12px;
+      margin-bottom: 12px; box-shadow: var(--shadow-soft);
       position: relative; overflow: hidden;
     }
-    .card-header { margin-bottom: 8px; }
-    .card-body { font-size: 13px; }
-
+    .card-header { margin-bottom: 10px; font-weight: 600; color: #cbd5e1; }
+    
     /* Car Hero */
-    .car-hero::before {
-      content: ""; position: absolute; inset: -30%;
-      background: radial-gradient(circle at 0% 120%, rgba(15, 23, 42, 0.0), rgba(15, 23, 42, 0.9)), radial-gradient(circle at 90% -10%, rgba(56, 189, 248, 0.35), rgba(15, 23, 42, 0.98) 55%);
-      opacity: 0.9; pointer-events: none; z-index: -1;
-    }
     .car-photo-frame {
-      position: relative; width: 86%; max-width: 360px; margin: 0 auto 10px;
-      border-radius: 18px; overflow: hidden; border: 1px solid rgba(148, 163, 184, 0.7);
-      background: radial-gradient(circle at 0% 0%, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.8)), linear-gradient(135deg, rgba(30, 64, 175, 0.7), rgba(15, 23, 42, 0.9));
-      height: 0; padding-bottom: 75%;
+      position: relative; width: 100%; border-radius: 16px; overflow: hidden;
+      background: #0f172a; height: 0; padding-bottom: 65%;
+      border: 1px solid rgba(255,255,255,0.1); margin-bottom: 12px;
     }
     .car-photo-frame img, .car-photo-frame video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: none; }
-    .car-photo-placeholder { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); background: radial-gradient(circle at 50% 0%, rgba(148, 163, 184, 0.2), rgba(15, 23, 42, 0.95)); }
-    
-    .photo-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 22px; height: 28px; border-radius: 999px; border: 1px solid rgba(148, 163, 184, 0.7); background: rgba(15, 23, 42, 0.8); color: #e5e7eb; font-size: 15px; display: none; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
-    .photo-nav.prev { left: 6px; } .photo-nav.next { right: 6px; }
-    .car-photo-counter { position: absolute; right: 6px; bottom: 4px; font-size: 10px; padding: 2px 6px; border-radius: 999px; background: rgba(15, 23, 42, 0.85); color: var(--text-muted); border: 1px solid rgba(148, 163, 184, 0.7); display: none; }
+    .car-photo-placeholder { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 12px; letter-spacing: 1px; }
 
-    .car-hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-    .badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; padding: 2px 7px; border-radius: 999px; background: rgba(15, 23, 42, 0.9); color: var(--text-muted); border: 1px solid rgba(148, 163, 184, 0.35); }
-    .car-main { margin-top: 3px; font-size: 16px; font-weight: 600; }
-    .status-pill { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px; border: 1px solid rgba(250, 204, 21, 0.9); font-size: 10px; color: #fef9c3; background: radial-gradient(circle at 20% 0, #facc15, #f97316); margin-top: 4px; display: none; }
-    .health { display: flex; flex-direction: column; align-items: flex-end; font-size: 11px; color: var(--text-muted); }
-    .health span:last-child { font-size: 20px; font-weight: 700; color: var(--accent-good); }
+    .photo-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; border-radius: 50%; background: rgba(0,0,0,0.6); color: #fff; border: none; display: none; align-items: center; justify-content: center; cursor: pointer; z-index: 2; }
+    .photo-nav.prev { left: 8px; } .photo-nav.next { right: 8px; }
 
-    /* Stats */
-    #car-stats { border-radius: var(--radius-md); background: rgba(15, 23, 42, 0.85); border: 1px dashed rgba(148, 163, 184, 0.4); padding: 6px 8px; margin-top: 8px; }
-    .stat-row { display: flex; justify-content: space-between; font-size: 12px; padding: 2px 0; }
+    .car-hero-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .car-main { font-size: 18px; font-weight: 700; color: #fff; margin-top: 4px; }
+    .health-val { font-size: 24px; font-weight: 800; color: var(--accent-good); line-height: 1; }
+    .status-pill { display: inline-flex; padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: 600; text-transform: uppercase; background: #f59e0b; color: #000; margin-top: 4px; display: none; }
+
+    /* Stats Grid */
+    #car-stats { display: grid; gap: 6px; background: rgba(255,255,255,0.03); padding: 8px; border-radius: 12px; }
+    .stat-row { display: flex; justify-content: space-between; font-size: 13px; padding: 2px 0; border-bottom: 1px dashed rgba(255,255,255,0.05); }
+    .stat-row:last-child { border-bottom: none; }
     .stat-row span:first-child { color: var(--text-muted); }
 
-    /* Form */
-    .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
-    .field label { font-size: 12px; }
-    input, select, textarea { border-radius: 10px; border: 1px solid rgba(148, 163, 184, 0.6); background: rgba(15, 23, 42, 0.9); color: var(--text-main); padding: 7px 9px; font-size: 13px; outline: none; }
-    input:focus, select:focus, textarea:focus { border-color: rgba(96, 165, 250, 0.95); box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.4); }
-    textarea { resize: vertical; }
-    .hint { font-size: 11px; color: var(--text-muted); }
-    .primary-btn { width: 100%; margin-top: 4px; border-radius: 999px; border: none; padding: 9px 12px; font-size: 14px; font-weight: 600; cursor: pointer; background: radial-gradient(circle at 10% 0, #38bdf8, #1d4ed8); color: #e5f2ff; }
+    /* Forms */
+    .field { margin-bottom: 10px; }
+    .field label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
+    input, select {
+      width: 100%; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(148,163,184,0.3);
+      color: #fff; padding: 10px; border-radius: 10px; font-size: 14px; outline: none;
+      transition: 0.2s;
+    }
+    input:focus, select:focus { border-color: #3b82f6; background: rgba(15, 23, 42, 0.9); }
+    
+    .primary-btn {
+      width: 100%; padding: 12px; background: radial-gradient(circle at 50% 0, #3b82f6, #2563eb);
+      border: none; border-radius: 12px; color: white; font-weight: 600; font-size: 14px;
+      cursor: pointer; margin-top: 8px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+    }
+    .primary-btn:active { transform: scale(0.98); }
+
+    /* Tuning Grid */
+    .tuning-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .check-btn {
+      display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+      background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 8px; cursor: pointer; font-size: 12px; transition: 0.2s;
+    }
+    .check-btn:has(input:checked) { background: rgba(59, 130, 246, 0.2); border-color: #3b82f6; color: #fff; }
+    .check-btn input { width: 16px; height: 16px; margin: 0; accent-color: #3b82f6; cursor: pointer; }
 
     /* Lists */
-    .garage-list, .list { display: flex; flex-direction: column; gap: 8px; }
-    .garage-card, .rating-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 9px; border-radius: var(--radius-md); background: rgba(15, 23, 42, 0.92); border: 1px solid rgba(148, 163, 184, 0.6); }
-    .garage-card.primary { border-color: rgba(96, 165, 250, 0.9); box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.5); }
-    .garage-card.locked { border-style: dashed; opacity: 0.9; background: rgba(15, 23, 42, 0.7); }
-    .garage-left, .rating-left { display: flex; align-items: center; gap: 8px; }
-    .garage-thumb { width: 56px; height: 36px; border-radius: 10px; overflow: hidden; border: 1px solid rgba(148, 163, 184, 0.7); background: radial-gradient(circle at 0% 0%, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.8)), linear-gradient(135deg, rgba(30, 64, 175, 0.7), rgba(15, 23, 42, 0.9)); flex-shrink: 0; }
-    .garage-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .garage-thumb-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: var(--text-muted); }
-    .garage-main, .rating-main { display: flex; flex-direction: column; gap: 2px; font-size: 12px; }
-    .garage-title, .rating-owner { font-weight: 600; } .garage-meta, .rating-car { color: var(--text-muted); font-size: 11px; }
-    .garage-right, .rating-right { display: flex; flex-direction: column; align-items: flex-end; font-size: 11px; color: var(--text-muted); }
-    .garage-health-value, .rating-health { font-size: 16px; font-weight: 700; color: var(--accent-good); }
-    .garage-pill { display: inline-flex; align-items: center; padding: 2px 7px; border-radius: 999px; border: 1px solid rgba(96, 165, 250, 0.8); color: #bfdbfe; font-size: 10px; margin-top: 2px; margin-right: 4px; }
-    .garage-pill-sale { border-color: rgba(250, 204, 21, 0.9); color: #fef3c7; }
+    .garage-card, .rating-item, .market-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px; background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 12px; margin-bottom: 8px; transition: 0.2s;
+    }
+    .garage-card.primary { border-color: rgba(59, 130, 246, 0.5); background: rgba(59, 130, 246, 0.05); }
+    .rating-pos { width: 24px; height: 24px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; margin-right: 10px; }
+    .rating-pos.top-1 { background: #f59e0b; color: #000; }
     
-    .rating-pos { width: 26px; height: 26px; border-radius: 999px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(148, 163, 184, 0.7); }
-    .rating-pos.top-1 { background: radial-gradient(circle at 20% 0, #facc15, #f97316); border-color: rgba(250, 204, 21, 0.9); color: #1e293b; }
-    .rating-mode-switch { display: inline-flex; padding: 3px; border-radius: 999px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(148, 163, 184, 0.4); margin: 0 2px 8px; }
-    .rating-mode-btn { border: none; background: transparent; color: var(--text-muted); font-size: 11px; padding: 4px 9px; border-radius: 999px; cursor: pointer; }
-    .rating-mode-btn.active { background: radial-gradient(circle at 20% 0, #38bdf8, #1d4ed8); color: #e5f2ff; }
+    .market-item { flex-direction: column; align-items: stretch; }
+    .market-header { display: flex; justify-content: space-between; margin-bottom: 6px; font-weight: 600; font-size: 14px; }
+    .market-body { font-size: 12px; color: #cbd5e1; line-height: 1.5; }
+    .region-tag { font-size: 10px; padding: 2px 6px; background: rgba(255,255,255,0.1); border-radius: 4px; color: #94a3b8; }
 
-    .owner-detail-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); display: none; align-items: center; justify-content: center; z-index: 999; padding: 16px; }
-    .owner-detail-card { width: 100%; max-width: 420px; background: rgba(15, 23, 42, 0.98); border-radius: var(--radius-lg); border: 1px solid rgba(148, 163, 184, 0.7); box-shadow: var(--shadow-soft); padding: 14px 14px 12px; }
-    .owner-detail-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
-    .owner-detail-title { font-size: 16px; font-weight: 600; }
-    .owner-detail-owner { font-size: 12px; color: var(--text-muted); }
-    .owner-detail-close { border: none; background: rgba(15, 23, 42, 0.9); border-radius: 999px; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); cursor: pointer; font-size: 16px; }
-    .owner-detail-stats { margin-top: 4px; border-radius: var(--radius-md); border: 1px dashed rgba(148, 163, 184, 0.4); padding: 6px 8px; background: rgba(15, 23, 42, 0.9); font-size: 12px; }
+    /* Modals */
+    .backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; display: none; align-items: center; justify-content: center; padding: 20px; }
+    .modal { background: #1e293b; width: 100%; max-width: 400px; border-radius: 20px; padding: 16px; border: 1px solid rgba(255,255,255,0.1); }
   </style>
 </head>
 <body>
   <div class="app">
     <header class="app-header">
       <div class="logo-title">
-        <div class="logo-circle"><img src="autoqiyos-logo.png" alt="AutoQiyos" onerror="this.style.display='none';this.parentElement.innerText='AQ'"></div>
+        <div class="logo-circle"><img src="autoqiyos-logo.png" onerror="this.style.display='none';this.parentElement.innerText='AQ'"></div>
         <div>
           <div class="app-name">AutoQiyos</div>
           <div class="app-subtitle" data-i18n="subtitle"></div>
@@ -190,168 +181,197 @@
     </nav>
 
     <main class="screens">
+      
       <section id="screen-home" class="screen active">
-        <h2 data-i18n="home_title"></h2>
-        <p class="muted" data-i18n="home_desc"></p>
+        <h2 data-i18n="home_title" style="margin:0 0 4px; font-size:16px;"></h2>
+        <p class="muted" data-i18n="home_desc" style="font-size:12px; margin-bottom:12px;"></p>
+
+        <div id="foreign-banner" style="display:none; margin-bottom:10px; padding:8px 12px; background:#334155; border-radius:10px; align-items:center; justify-content:space-between; font-size:12px;">
+          <span id="foreign-user-name"></span>
+          <button id="foreign-back-btn" style="background:#475569; border:none; color:#fff; padding:4px 10px; border-radius:6px;">Exit</button>
+        </div>
 
         <div class="card car-hero">
           <div class="car-photo-frame">
-            <img id="car-photo-main" alt="Фото авто" />
+            <img id="car-photo-main" alt="Car" />
             <video id="car-video-main" playsinline muted></video>
             <div class="car-photo-placeholder" id="car-photo-placeholder"><span data-i18n="car_photo_placeholder"></span></div>
-            <button type="button" class="photo-nav prev" id="car-photo-prev">‹</button>
-            <button type="button" class="photo-nav next" id="car-photo-next">›</button>
-            <div class="car-photo-counter" id="car-photo-counter"></div>
+            <button class="photo-nav prev" id="car-photo-prev">‹</button>
+            <button class="photo-nav next" id="car-photo-next">›</button>
+            <button id="car-photo-delete" style="position:absolute; top:8px; right:8px; width:24px; height:24px; border-radius:50%; background:rgba(0,0,0,0.6); color:#fff; border:none; display:none;">×</button>
+            <div id="car-photo-counter" style="position:absolute; bottom:8px; right:8px; font-size:10px; padding:2px 6px; background:rgba(0,0,0,0.6); border-radius:4px;"></div>
           </div>
 
           <div class="car-hero-top">
             <div>
-              <div class="badge" data-i18n="your_car"></div>
-              <div class="car-main" id="car-title">Chevrolet Cobalt 2021</div>
+              <div class="badge" data-i18n="your_car" style="font-size:10px; color:#94a3b8; text-transform:uppercase;"></div>
+              <div class="car-main" id="car-title">Chevrolet Cobalt</div>
               <div class="status-pill" id="car-status-pill"></div>
             </div>
-            <div class="health">
-              <span data-i18n="health"></span>
-              <span id="health-score">82</span>
+            <div style="text-align:right;">
+              <div style="font-size:10px; color:#94a3b8;" data-i18n="health"></div>
+              <div class="health-val" id="health-score">0.0</div>
             </div>
           </div>
-          <div class="card-body" id="car-stats"></div>
+          <div id="car-stats"></div>
         </div>
 
-        <div class="card">
+        <div class="card" id="form-card">
           <div class="card-header"><span data-i18n="update_title"></span></div>
-          <div class="card-body">
-            <form id="car-form">
+          
+          <form id="car-form">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
               <div class="field"><label data-i18n="field_brand"></label><input type="text" name="brand" required /></div>
               <div class="field"><label data-i18n="field_model"></label><input type="text" name="model" required /></div>
+            </div>
+            
+            <div class="field"><label data-i18n="field_region"></label>
+              <select name="region" id="field-region">
+                <option value="" data-i18n="opt_region_none">—</option>
+                <option value="tashkent_city" data-i18n="opt_r_tashkent_city">Toshkent</option>
+                <option value="tashkent_reg" data-i18n="opt_r_tashkent_reg">Toshkent vil.</option>
+                <option value="andijan" data-i18n="opt_r_andijan">Andijon</option>
+                <option value="bukhara" data-i18n="opt_r_bukhara">Buxoro</option>
+                <option value="fergana" data-i18n="opt_r_fergana">Fargʻona</option>
+                <option value="jizzakh" data-i18n="opt_r_jizzakh">Jizzax</option>
+                <option value="namangan" data-i18n="opt_r_namangan">Namangan</option>
+                <option value="navoiy" data-i18n="opt_r_navoiy">Navoiy</option>
+                <option value="qashqadaryo" data-i18n="opt_r_qashqadaryo">Qashqadaryo</option>
+                <option value="samarkand" data-i18n="opt_r_samarkand">Samarqand</option>
+                <option value="sirdaryo" data-i18n="opt_r_sirdaryo">Sirdaryo</option>
+                <option value="surxondaryo" data-i18n="opt_r_surxondaryo">Surxondaryo</option>
+                <option value="xorazm" data-i18n="opt_r_xorazm">Xorazm</option>
+                <option value="karakalpakstan" data-i18n="opt_r_karakalpakstan">Qoraqalpogʻiston</option>
+              </select>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px;">
               <div class="field"><label data-i18n="field_year"></label><input type="number" name="year" required /></div>
               <div class="field"><label data-i18n="field_mileage"></label><input type="number" name="mileage" required /></div>
               <div class="field"><label data-i18n="field_price"></label><input type="number" name="price" /></div>
-              
-              <div class="field"><label data-i18n="field_status"></label>
-                <select name="status" id="field-status">
-                  <option value="" data-i18n="opt_status_none"></option>
-                  <option value="follow" data-i18n="opt_status_follow"></option>
-                  <option value="prepare_sell" data-i18n="opt_status_prepare_sell"></option>
-                  <option value="sell" data-i18n="opt_status_sell"></option>
-                  <option value="consider_offers" data-i18n="opt_status_consider"></option>
-                  <option value="want_buy" data-i18n="opt_status_want_buy"></option>
-                </select>
-              </div>
+            </div>
 
-              <div class="field" id="status-cta-wrap" style="display:none;">
-                <button type="button" class="primary-btn" id="status-cta-btn" data-i18n="status_cta_btn"></button>
-              </div>
+            <div class="field"><label data-i18n="field_status"></label>
+              <select name="status" id="field-status">
+                <option value="follow" data-i18n="opt_status_follow"></option>
+                <option value="prepare_sell" data-i18n="opt_status_prepare_sell"></option>
+                <option value="sell" data-i18n="opt_status_sell"></option>
+                <option value="consider_offers" data-i18n="opt_status_consider"></option>
+                <option value="want_buy" data-i18n="opt_status_want_buy"></option>
+              </select>
+            </div>
+            
+            <div class="field" id="status-cta-wrap" style="display:none;">
+              <button type="button" class="primary-btn" id="status-cta-btn" style="background:#10b981;" data-i18n="status_cta_btn"></button>
+            </div>
 
-              <div class="field"><label data-i18n="field_service"></label>
-                <select name="serviceOnTime" id="field-service">
-                  <option value="yes" data-i18n-opt-yes>Да</option>
-                  <option value="no" data-i18n-opt-no>Нет</option>
-                </select>
-                <div class="hint" data-i18n="service_hint"></div>
-              </div>
-
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
               <div class="field"><label data-i18n="field_engine_type"></label>
                 <select name="engineType">
-                  <option value="" data-i18n="opt_engine_none"></option>
-                  <option value="petrol" data-i18n="opt_engine_petrol"></option>
-                  <option value="diesel" data-i18n="opt_engine_diesel"></option>
-                  <option value="lpg" data-i18n="opt_engine_lpg"></option>
-                  <option value="cng" data-i18n="opt_engine_cng"></option>
-                  <option value="hybrid" data-i18n="opt_engine_hybrid"></option>
-                  <option value="electric" data-i18n="opt_engine_electric"></option>
+                  <option value="" data-i18n="opt_engine_none">—</option>
+                  <option value="lpg" data-i18n="opt_engine_lpg">Propane</option>
+                  <option value="cng" data-i18n="opt_engine_cng">Methane</option>
+                  <option value="petrol" data-i18n="opt_engine_petrol">Petrol</option>
+                  <option value="diesel" data-i18n="opt_engine_diesel">Diesel</option>
+                  <option value="hybrid" data-i18n="opt_engine_hybrid">Hybrid</option>
+                  <option value="electric" data-i18n="opt_engine_electric">Electric</option>
                 </select>
               </div>
-
               <div class="field"><label data-i18n="field_transmission"></label>
                 <select name="transmission">
-                  <option value="" data-i18n="opt_trans_none"></option>
-                  <option value="manual" data-i18n="opt_trans_manual"></option>
-                  <option value="automatic" data-i18n="opt_trans_auto"></option>
-                  <option value="robot" data-i18n="opt_trans_robot"></option>
-                  <option value="cvt" data-i18n="opt_trans_cvt"></option>
+                  <option value="" data-i18n="opt_trans_none">—</option>
+                  <option value="automatic" data-i18n="opt_trans_auto">Automatic</option>
+                  <option value="manual" data-i18n="opt_trans_manual">Manual</option>
+                  <option value="robot" data-i18n="opt_trans_robot">Robot</option>
+                  <option value="cvt" data-i18n="opt_trans_cvt">CVT</option>
                 </select>
               </div>
+            </div>
 
-              <div class="field"><label data-i18n="field_body_type"></label>
-                <select name="bodyType">
-                  <option value="" data-i18n="opt_bodytype_none"></option>
-                  <option value="sedan" data-i18n="opt_bodytype_sedan"></option>
-                  <option value="hatchback" data-i18n="opt_bodytype_hatch"></option>
-                  <option value="crossover" data-i18n="opt_bodytype_crossover"></option>
-                  <option value="suv" data-i18n="opt_bodytype_suv"></option>
-                  <option value="wagon" data-i18n="opt_bodytype_wagon"></option>
-                  <option value="minivan" data-i18n="opt_bodytype_minivan"></option>
-                  <option value="pickup" data-i18n="opt_bodytype_pickup"></option>
-                </select>
+            <div class="field"><label data-i18n="field_body_condition"></label>
+              <select name="bodyCondition">
+                <option value="" data-i18n="opt_bodycond_none">—</option>
+                <option value="original" data-i18n="opt_bodycond_original">Original</option>
+                <option value="painted" data-i18n="opt_bodycond_painted">Painted</option>
+                <option value="scratches" data-i18n="opt_bodycond_scratches">Scratches</option>
+              </select>
+            </div>
+
+            <div class="field"><label data-i18n="field_body_type"></label>
+               <select name="bodyType">
+                 <option value="sedan" data-i18n="opt_bodytype_sedan"></option>
+                 <option value="hatchback" data-i18n="opt_bodytype_hatch"></option>
+                 <option value="crossover" data-i18n="opt_bodytype_crossover"></option>
+                 <option value="suv" data-i18n="opt_bodytype_suv"></option>
+                 <option value="wagon" data-i18n="opt_bodytype_wagon"></option>
+                 <option value="minivan" data-i18n="opt_bodytype_minivan"></option>
+                 <option value="pickup" data-i18n="opt_bodytype_pickup"></option>
+               </select>
+            </div>
+
+            <div class="field"><label data-i18n="field_color"></label><input type="text" name="color" /></div>
+            
+            <div class="field"><label data-i18n="field_service"></label>
+              <select name="serviceOnTime">
+                <option value="yes" data-i18n-opt-yes>Yes</option>
+                <option value="no" data-i18n-opt-no>No</option>
+              </select>
+              <div class="hint" data-i18n="service_hint"></div>
+            </div>
+
+            <div class="field">
+              <label style="font-weight:600; margin-bottom:8px;" data-i18n="field_tuning">Tuning</label>
+              <div class="tuning-grid" id="tuning-options">
+                <label class="check-btn"><input type="checkbox" value="new_tires"><span data-i18n="tun_new_tires"></span></label>
+                <label class="check-btn"><input type="checkbox" value="rims"><span data-i18n="tun_rims"></span></label>
+                <label class="check-btn"><input type="checkbox" value="noise_isolation"><span data-i18n="tun_noise_isolation"></span></label>
+                <label class="check-btn"><input type="checkbox" value="remote_control"><span data-i18n="tun_remote_control"></span></label>
+                <label class="check-btn"><input type="checkbox" value="camera"><span data-i18n="tun_camera"></span></label>
+                <label class="check-btn"><input type="checkbox" value="dvr"><span data-i18n="tun_dvr"></span></label>
+                <label class="check-btn"><input type="checkbox" value="monitor"><span data-i18n="tun_monitor"></span></label>
+                <label class="check-btn"><input type="checkbox" value="polishing"><span data-i18n="tun_polishing"></span></label>
+                <label class="check-btn"><input type="checkbox" value="ceramics"><span data-i18n="tun_ceramics"></span></label>
+                <label class="check-btn"><input type="checkbox" value="ppf"><span data-i18n="tun_ppf"></span></label>
+                <label class="check-btn"><input type="checkbox" value="tinting"><span data-i18n="tun_tinting"></span></label>
+                <label class="check-btn"><input type="checkbox" value="abs"><span data-i18n="tun_abs"></span></label>
+                <label class="check-btn"><input type="checkbox" value="seat_covers"><span data-i18n="tun_seat_covers"></span></label>
+                <label class="check-btn"><input type="checkbox" value="mats"><span data-i18n="tun_mats"></span></label>
+                <label class="check-btn"><input type="checkbox" value="armrest"><span data-i18n="tun_armrest"></span></label>
               </div>
+            </div>
 
-              <div class="field"><label data-i18n="field_body_condition"></label>
-                <select name="bodyCondition">
-                  <option value="" data-i18n="opt_bodycond_none"></option>
-                  <option value="painted" data-i18n="opt_bodycond_painted"></option>
-                  <option value="original" data-i18n="opt_bodycond_original"></option>
-                  <option value="scratches" data-i18n="opt_bodycond_scratches"></option>
-                </select>
-              </div>
+            <div class="field">
+              <label data-i18n="field_photo"></label>
+              <input type="file" id="car-photo-input" accept="image/*,video/*" multiple />
+              <div class="hint" data-i18n="photo_hint"></div>
+            </div>
 
-              <div class="field"><label data-i18n="field_color"></label><input type="text" name="color" /></div>
-              <div class="field"><label data-i18n="field_purchase_info"></label><input type="text" name="purchaseInfo" /></div>
-              <div class="field"><label data-i18n="field_oil_mileage"></label><input type="number" name="oilMileage" /></div>
-              <div class="field"><label data-i18n="field_daily_mileage"></label><input type="number" name="dailyMileage" /></div>
-              <div class="field"><label data-i18n="field_last_service"></label><input type="text" name="lastService" /></div>
-              <div class="field"><label data-i18n="field_tuning"></label><textarea name="tuning" rows="2"></textarea></div>
-
-              <div class="field">
-                <label data-i18n="field_photo"></label>
-                <input type="file" id="car-photo-input" accept="image/*,video/*" multiple />
-                <div class="hint" data-i18n="photo_hint"></div>
-                <div id="upload-status" style="color:#eab308; font-size:11px; margin-top:5px;"></div>
-              </div>
-
-              <button type="submit" class="primary-btn" data-i18n="btn_save">Сохранить</button>
-            </form>
-            <p class="muted small" data-i18n="save_hint"></p>
-          </div>
+            <button type="submit" class="primary-btn" data-i18n="btn_save">Save</button>
+          </form>
         </div>
       </section>
 
       <section id="screen-garage" class="screen">
         <h2 data-i18n="garage_title"></h2>
-        <p class="muted" data-i18n="garage_desc"></p>
-        <div id="garage-list" class="garage-list"></div>
+        <div id="garage-list" style="margin-top:10px;"></div>
       </section>
 
       <section id="screen-rating" class="screen">
         <h2 data-i18n="rating_title"></h2>
-        <p class="muted" data-i18n="rating_desc"></p>
-        <div class="rating-mode-switch">
-          <button class="rating-mode-btn active" data-mode="owners" data-i18n="rating_mode_owners"></button>
-          <button class="rating-mode-btn" data-mode="cars" data-i18n="rating_mode_cars"></button>
+        <div style="margin-bottom:12px;">
+           <button class="tab-btn active rating-mode-btn" data-mode="owners" data-i18n="rating_mode_owners">Owners</button>
+           <button class="tab-btn rating-mode-btn" data-mode="cars" data-i18n="rating_mode_cars">Models</button>
         </div>
-        <div id="rating-list" class="list"></div>
+        <div id="rating-list"></div>
       </section>
 
       <section id="screen-market" class="screen">
         <h2 data-i18n="market_title"></h2>
         <p class="muted" data-i18n="market_desc"></p>
-        <div class="card">
-          <div class="card-header"><span data-i18n="market_demo_title"></span></div>
-          <div class="card-body"><p data-i18n="market_demo_body"></p></div>
-        </div>
         <div id="market-user-list"></div>
       </section>
-    </main>
-  </div>
 
-  <div id="owner-detail" class="owner-detail-backdrop">
-    <div class="owner-detail-card">
-      <div class="owner-detail-header">
-        <div><div id="owner-detail-title"></div><div id="owner-detail-owner"></div></div>
-        <button id="owner-detail-close">×</button>
-      </div>
-      <div id="owner-detail-stats" class="owner-detail-stats"></div>
-    </div>
+    </main>
   </div>
 
   <script src="app.js"></script>
