@@ -28,69 +28,16 @@ let viewForeignCar = null;      // данные чужой машины
 let viewForeignOwner = null;    // владелец чужой машины
 let lastScreenBeforeForeign = "home"; // с какого экрана зашли на чужую машину
 
-// Списки брендов и моделей
-const CAR_BRANDS = [
-  "Chevrolet", "Kia", "Hyundai", "BYD", "Chery", "Haval", 
-  "Toyota", "Nissan", "Mitsubishi", "Mercedes-Benz", "BMW", 
-  "Audi", "Volkswagen", "Skoda", "Renault", "Daewoo", "Ravon", 
-  "JAC", "Changan", "Geely", "Другое"
-];
-
-const CAR_MODELS = {
-  "Chevrolet": ["Cobalt", "Spark", "Tracker", "Onix", "Nexia", "Matiz", "Captiva", "Tahoe", "Malibu", "Equinox", "Другое"],
-  "Kia": ["K5", "K7", "Rio", "Cerato", "Optima", "Sorento", "Sportage", "Mohave", "Picanto", "Stinger", "Другое"],
-  "Hyundai": ["Elantra", "Sonata", "Tucson", "Santa Fe", "Creta", "Accent", "Genesis", "i30", "i40", "Palisade", "Другое"],
-  "BYD": ["Song Plus", "Han", "Tang", "Yuan", "Dolphin", "Seal", "Qin", "Yuan Pro", "Другое"],
-  "Chery": ["Tiggo 7 Pro", "Tiggo 8 Pro", "Arrizo 6", "Arrizo 8", "Tiggo 4", "Tiggo 5", "Другое"],
-  "Haval": ["Jolion", "F7", "H6", "H9", "M6", "F5", "Другое"],
-  "Toyota": ["Camry", "Corolla", "RAV4", "Land Cruiser", "Prado", "Hilux", "Fortuner", "C-HR", "Другое"],
-  "Nissan": ["X-Trail", "Qashqai", "Patrol", "Almera", "Sunny", "Teana", "Juke", "Другое"],
-  "Mitsubishi": ["Outlander", "Pajero", "L200", "Lancer", "ASX", "Eclipse Cross", "Другое"],
-  "Mercedes-Benz": ["C-Class", "E-Class", "S-Class", "GLE", "GLC", "GLA", "G-Class", "Другое"],
-  "BMW": ["3 Series", "5 Series", "7 Series", "X5", "X6", "X3", "X1", "Другое"],
-  "Audi": ["A4", "A6", "A8", "Q5", "Q7", "Q3", "A3", "Другое"],
-  "Volkswagen": ["Polo", "Jetta", "Passat", "Tiguan", "Touareg", "Golf", "Другое"],
-  "Skoda": ["Octavia", "Superb", "Kodiaq", "Karoq", "Rapid", "Другое"],
-  "Renault": ["Logan", "Sandero", "Duster", "Kaptur", "Arkana", "Megane", "Другое"],
-  "Daewoo": ["Matiz", "Nexia", "Gentra", "Lacetti", "Другое"],
-  "Ravon": ["Nexia", "Gentra", "Matiz", "Другое"],
-  "JAC": ["J7", "S5", "S3", "J4", "Другое"],
-  "Changan": ["CS75", "CS55", "CS35", "Alsvin", "Другое"],
-  "Geely": ["Coolray", "Atlas", "Emgrand", "Tugella", "Другое"],
-  "Другое": ["Другая модель"]
-};
-
 // ---------- 3. МОДЕЛЬ МАШИНЫ ----------
 const defaultCar = {
-  brand: "",
-  model: "",
-  customBrand: "",
-  customModel: "",
+  brand: "Твой бренд (например Chevrolet)",
+  model: "Модель (например Cobalt)",
   year: 0,
   mileage: 0,
   price: 0,
-  region: "Ташкент",
   status: "follow",
   serviceOnTime: true,
   tuning: "",
-  
-  // Новые поля для оценки
-  isPainted: false,
-  hasNewTyres: false,
-  hasNewWheels: false,
-  hasLPG: false,
-  hasMethane: false,
-  hasPPF: false,
-  hasCeramic: false,
-  hasAudioSystem: false,
-  hasParkingSensors: false,
-  hasCamera: false,
-  hasClimateControl: false,
-  hasHeatedSeats: false,
-  hasPanoramicRoof: false,
-  hasKeylessEntry: false,
-  hasAutoParking: false,
-  
   color: "",
   bodyCondition: "",
   bodyType: "",
@@ -119,25 +66,6 @@ function parseMediaField(media) {
 function normalizeCar(car) {
   const merged = { ...defaultCar, ...car };
   merged.media = parseMediaField(merged.media);
-  
-  // Обеспечиваем наличие новых полей
-  merged.region = merged.region || "Ташкент";
-  merged.isPainted = merged.isPainted || false;
-  merged.hasNewTyres = merged.hasNewTyres || false;
-  merged.hasNewWheels = merged.hasNewWheels || false;
-  merged.hasLPG = merged.hasLPG || false;
-  merged.hasMethane = merged.hasMethane || false;
-  merged.hasPPF = merged.hasPPF || false;
-  merged.hasCeramic = merged.hasCeramic || false;
-  merged.hasAudioSystem = merged.hasAudioSystem || false;
-  merged.hasParkingSensors = merged.hasParkingSensors || false;
-  merged.hasCamera = merged.hasCamera || false;
-  merged.hasClimateControl = merged.hasClimateControl || false;
-  merged.hasHeatedSeats = merged.hasHeatedSeats || false;
-  merged.hasPanoramicRoof = merged.hasPanoramicRoof || false;
-  merged.hasKeylessEntry = merged.hasKeylessEntry || false;
-  merged.hasAutoParking = merged.hasAutoParking || false;
-  
   return merged;
 }
 
@@ -161,12 +89,9 @@ const TEXTS = {
     update_title: "Обновить данные",
     field_brand: "Марка",
     field_model: "Модель",
-    field_custom_brand: "Другая марка",
-    field_custom_model: "Другая модель",
     field_year: "Год",
     field_mileage: "Пробег, км",
     field_price: "Цена моего авто, $",
-    field_region: "Область",
     field_status: "Статус",
     field_color: "Цвет",
     field_body_type: "Тип кузова",
@@ -180,24 +105,6 @@ const TEXTS = {
     field_service: "Обслуживание вовремя",
     field_tuning: "Особенности / тюнинг",
     field_photo: "Фото автомобиля",
-    
-    // Новые поля
-    field_is_painted: "Крашенная машина",
-    field_tuning_options: "Дополнительные опции",
-    tuning_new_tyres: "Новые шины",
-    tuning_new_wheels: "Новые диски",
-    tuning_lpg: "ГБО (пропан)",
-    tuning_methane: "Метан",
-    tuning_ppf: "Бронепленка",
-    tuning_ceramic: "Керамическое покрытие",
-    tuning_audio: "Усилитель и сабвуфер",
-    tuning_parking_sensors: "Парктроники",
-    tuning_camera: "Камера заднего вида",
-    tuning_climate: "Климат-контроль",
-    tuning_heated_seats: "Подогрев сидений",
-    tuning_panoramic: "Панорамная крыша",
-    tuning_keyless: "Бесключевой доступ",
-    tuning_auto_parking: "Автопарковка",
 
     btn_save: "Сохранить",
     save_hint: "Всё хранится в Supabase.",
@@ -205,23 +112,6 @@ const TEXTS = {
     photo_hint: "Загрузи до 3 фото (каждое ~до 50 KB).",
     label_yes: "Да",
     label_no: "Нет",
-
-    // Области Узбекистана
-    region_tashkent: "Ташкент",
-    region_tashkent_oblast: "Ташкентская область",
-    region_samarkand: "Самарканд",
-    region_bukhara: "Бухара",
-    region_navoi: "Навои",
-    region_andijan: "Андижан",
-    region_fergana: "Фергана",
-    region_namangan: "Наманган",
-    region_khorezm: "Хорезм",
-    region_karakalpakstan: "Каракалпакстан",
-    region_surkhandarya: "Сурхандарья",
-    region_kashkadarya: "Кашкадарья",
-    region_jizzakh: "Джизак",
-    region_syrdarya: "Сырдарья",
-    region_other: "Другая",
 
     opt_status_none: "— не выбран —",
     opt_status_follow: "Слежу за машиной",
@@ -273,10 +163,8 @@ const TEXTS = {
     rating_desc: "Честный рейтинг владельцев.",
     rating_desc_owners: "Честный рейтинг владельцев.",
     rating_desc_models: "Рейтинг моделей.",
-    rating_desc_regions: "Рейтинг по регионам.",
     rating_mode_owners: "Владельцы",
     rating_mode_cars: "Модели",
-    rating_mode_regions: "Регионы",
     rating_badge: "Топ–5 по модели",
     rating_pos: "место",
     rating_health: "состояние",
@@ -298,20 +186,17 @@ const TEXTS = {
     tab_market: "E'lonlar",
 
     home_title: "",
-    home_desc: "Yo'l yurgan masofa, servis, ta'mir va narxni yozib boring.",
+    home_desc: "Yo‘l yurgan masofa, servis, taʼmir va narxni yozib boring.",
     your_car: "Sizning mashinangiz",
     health: "Holati",
     car_photo_placeholder: "Avto surati",
 
-    update_title: "Ma'lumotni yangilash",
+    update_title: "Maʼlumotni yangilash",
     field_brand: "Brend",
     field_model: "Model",
-    field_custom_brand: "Boshqa brend",
-    field_custom_model: "Boshqa model",
     field_year: "Yil",
     field_mileage: "Yurish, km",
     field_price: "Mashinam narxi, $",
-    field_region: "Viloyat",
     field_status: "Status",
     field_color: "Rangi",
     field_body_type: "Kuzov turi",
@@ -322,74 +207,39 @@ const TEXTS = {
     field_oil_mileage: "Yog' almashtirish, km",
     field_daily_mileage: "Kunlik yurish, km",
     field_last_service: "Oxirgi tex. xizmat",
-    field_service: "Texnik xizmat o'z vaqtida",
+    field_service: "Texnik xizmat o‘z vaqtida",
     field_tuning: "Tuning",
     field_photo: "Avtomobil surati",
-    
-    // Новые поля на узбекском
-    field_is_painted: "Bo'yalgan mashina",
-    field_tuning_options: "Qo'shimcha imkoniyatlar",
-    tuning_new_tyres: "Yangi shinalar",
-    tuning_new_wheels: "Yangi g'ildiraklar",
-    tuning_lpg: "GBO (propan)",
-    tuning_methane: "Metan",
-    tuning_ppf: "Broneplyonka",
-    tuning_ceramic: "Keramika qoplama",
-    tuning_audio: "Kuchaytirgich va subvufer",
-    tuning_parking_sensors: "Parktronik",
-    tuning_camera: "Orqa ko'rinish kamera",
-    tuning_climate: "Klimat-nazorat",
-    tuning_heated_seats: "O'rindiqlarni isitish",
-    tuning_panoramic: "Panoramali tom",
-    tuning_keyless: "Kalitsiz kirish",
-    tuning_auto_parking: "Avtoparkovka",
 
     btn_save: "Saqlash",
     save_hint: "Supabase-da saqlanadi.",
     service_hint: "Moy va texnik xizmatni vaqtida qilsangiz belgilang.",
     photo_hint: "3 tagacha rasm (har biri ~50 KB gacha).",
     label_yes: "Ha",
-    label_no: "Yo'q",
-
-    // Области на узбекском
-    region_tashkent: "Toshkent",
-    region_tashkent_oblast: "Toshkent viloyati",
-    region_samarkand: "Samarqand",
-    region_bukhara: "Buxoro",
-    region_navoi: "Navoiy",
-    region_andijan: "Andijon",
-    region_fergana: "Farg'ona",
-    region_namangan: "Namangan",
-    region_khorezm: "Xorazm",
-    region_karakalpakstan: "Qoraqalpog'iston",
-    region_surkhandarya: "Surxondaryo",
-    region_kashkadarya: "Qashqadaryo",
-    region_jizzakh: "Jizzax",
-    region_syrdarya: "Sirdaryo",
-    region_other: "Boshqa",
+    label_no: "Yo‘q",
 
     opt_status_none: "— tanlanmagan —",
     opt_status_follow: "Kuzataman",
     opt_status_prepare_sell: "Sotishga tayyorlanyapman",
     opt_status_sell: "Sotmoqchiman",
-    opt_status_consider: "Ko'rib chiqaman",
+    opt_status_consider: "Ko‘rib chiqaman",
     opt_status_want_buy: "Sotib olmoqchiman",
 
     status_cta_btn: "E'lonlarga",
     status_for_sale: "Sotuvda",
 
-    opt_trans_none: "— ko'rsatilmagan —",
+    opt_trans_none: "— ko‘rsatilmagan —",
     opt_trans_manual: "Mexanik",
     opt_trans_auto: "Avtomat",
     opt_trans_robot: "Robot",
     opt_trans_cvt: "Variator",
 
-    opt_bodycond_none: "— ko'rsatilmagan —",
-    opt_bodycond_painted: "Bo'yalgan",
+    opt_bodycond_none: "— ko‘rsatilmagan —",
+    opt_bodycond_painted: "Bo‘yalgan",
     opt_bodycond_original: "Toza",
     opt_bodycond_scratches: "Chizilgan",
 
-    opt_bodytype_none: "— ko'rsatilmagan —",
+    opt_bodytype_none: "— ko‘rsatilmagan —",
     opt_bodytype_sedan: "Sedan",
     opt_bodytype_hatch: "Xetchbek",
     opt_bodytype_crossover: "Krossover",
@@ -398,7 +248,7 @@ const TEXTS = {
     opt_bodytype_minivan: "Miniven",
     opt_bodytype_pickup: "Pikap",
 
-    opt_engine_none: "— ko'rsatilmagan —",
+    opt_engine_none: "— ko‘rsatilmagan —",
     opt_engine_petrol: "Benzin",
     opt_engine_diesel: "Dizel",
     opt_engine_lpg: "Propan",
@@ -411,22 +261,20 @@ const TEXTS = {
     garage_primary: "Asosiy",
     garage_health: "Holati",
     garage_free_note: "1 ta bepul.",
-    garage_premium_title: "Yana qo'shish",
+    garage_premium_title: "Yana qo‘shish",
     garage_premium_body: "Yopiq uyacha.",
 
     rating_title: "Reyting",
     rating_desc: "Egalari reytingi.",
     rating_desc_owners: "Avtomobil egalari reytingi.",
     rating_desc_models: "Mashina modellarining reytingi.",
-    rating_desc_regions: "Viloyatlar bo'yicha reyting.",
     rating_mode_owners: "Egalari",
     rating_mode_cars: "Modellar",
-    rating_mode_regions: "Viloyatlar",
     rating_badge: "Top–5",
-    rating_pos: "o'rin",
+    rating_pos: "o‘rin",
     rating_health: "holati",
     rating_empty: "Bo'sh.",
-    rating_local_notice: "Supabase ma'lumotlari.",
+    rating_local_notice: "Supabase maʼlumotlari.",
 
     market_title: "E'lonlar",
     market_desc: "Adolatli narxlar.",
@@ -444,57 +292,22 @@ function getUser() {
   return { id: "test_user_999", first_name: "Browser", username: "test" };
 }
 
-// НОВАЯ ФУНКЦИЯ ОЦЕНКИ ПО 100 БАЛЛАМ
 function calcHealthScore(car) {
-  let score = 100.00;
-  
-  // 1. Пробег (максимум -30 баллов)
+  let score = 100;
   const mileage = Number(car.mileage) || 0;
-  if (mileage > 0) {
-    const mileagePenalty = Math.min(30, (mileage / 50000) * 10);
-    score -= mileagePenalty;
-  }
-  
-  // 2. Год производства (максимум -25 баллов)
-  const year = Number(car.year) || new Date().getFullYear();
-  const currentYear = new Date().getFullYear();
-  const age = currentYear - year;
-  if (age > 0) {
-    const agePenalty = Math.min(25, age * 2.5);
-    score -= agePenalty;
-  }
-  
-  // 3. Крашенная машина (-15 баллов)
-  if (car.isPainted) {
-    score -= 15;
-  }
-  
-  // 4. Бонусы за тюнинг и дополнения
-  if (car.hasNewTyres) score += 8;
-  if (car.hasNewWheels) score += 7;
-  if (car.hasLPG) score += 6;
-  if (car.hasMethane) score += 5;
-  if (car.hasPPF) score += 10;
-  if (car.hasCeramic) score += 12;
-  if (car.hasAudioSystem) score += 5;
-  if (car.hasParkingSensors) score += 4;
-  if (car.hasCamera) score += 3;
-  if (car.hasClimateControl) score += 6;
-  if (car.hasHeatedSeats) score += 5;
-  if (car.hasPanoramicRoof) score += 8;
-  if (car.hasKeylessEntry) score += 4;
-  if (car.hasAutoParking) score += 10;
-  
-  // 5. Бонус за своевременное обслуживание
-  if (car.serviceOnTime) score += 8;
-  
-  // 6. Бонус за оригинальную краску
-  if (car.bodyCondition === "original") score += 5;
-  
-  // Ограничиваем от 0 до 100
-  return Math.max(0, Math.min(100, parseFloat(score.toFixed(2))));
+  score -= Math.min(40, Math.floor(mileage / 20000) * 8);
+
+  const year = Number(car.year) || 2010;
+  const age = new Date().getFullYear() - year;
+  if (age > 8) score -= Math.min(20, (age - 8) * 3);
+
+  if (car.serviceOnTime) score += 10;
+  else score -= 10;
+
+  return Math.max(20, Math.min(100, score));
 }
 
+// базовый contact-info (оставляем на всякий)
 function getContactInfo(entry) {
   const username = entry?.username;
   const phone =
@@ -525,6 +338,11 @@ function getContactInfo(entry) {
   };
 }
 
+// что отображаем в UI:
+// 1) @username
+// 2) телефон
+// 3) имя/фамилия
+// 4) "User"
 function getDisplayNick(entry) {
   if (!entry) return "User";
 
@@ -546,27 +364,7 @@ function getDisplayNick(entry) {
   return contact.label || "User";
 }
 
-function getRegionLabel(region, dict) {
-  const mapping = {
-    "Ташкент": dict.region_tashkent,
-    "Ташкентская область": dict.region_tashkent_oblast,
-    "Самарканд": dict.region_samarkand,
-    "Бухара": dict.region_bukhara,
-    "Навои": dict.region_navoi,
-    "Андижан": dict.region_andijan,
-    "Фергана": dict.region_fergana,
-    "Наманган": dict.region_namangan,
-    "Хорезм": dict.region_khorezm,
-    "Каракалпакстан": dict.region_karakalpakstan,
-    "Сурхандарья": dict.region_surkhandarya,
-    "Кашкадарья": dict.region_kashkadarya,
-    "Джизак": dict.region_jizzakh,
-    "Сырдарья": dict.region_syrdarya,
-    "Другая": dict.region_other
-  };
-  return mapping[region] || region;
-}
-
+// Мэппинги
 function getTransmissionLabel(v, d) {
   const m = {
     manual: d.opt_trans_manual,
@@ -638,10 +436,8 @@ function updateRatingDescription() {
   if (!el) return;
   if (ratingMode === "owners") {
     el.textContent = dict.rating_desc_owners || dict.rating_desc;
-  } else if (ratingMode === "cars") {
+  } else {
     el.textContent = dict.rating_desc_models || dict.rating_desc;
-  } else if (ratingMode === "regions") {
-    el.textContent = dict.rating_desc_regions || dict.rating_desc;
   }
 }
 
@@ -677,23 +473,25 @@ function validateFormData(formData) {
   return errors;
 }
 
+// активная машина для отображения
 function getActiveCar() {
   if (isViewingForeign && viewForeignCar) return viewForeignCar;
   return currentCar;
 }
 
+// путь для удаления файла из storage
 function getStoragePathFromUrl(url) {
   if (!url) return null;
   const marker = "/car-photos/";
   const idx = url.indexOf(marker);
   if (idx === -1) return null;
 
-  let path = url.substring(idx + marker.length);
+  let path = url.substring(idx + marker.length); // "userId/fileName.jpg?..."
   const qIdx = path.indexOf("?");
   if (qIdx !== -1) {
     path = path.substring(0, qIdx);
   }
-  return path;
+  return path; // "userId/fileName.jpg"
 }
 
 // ---------- 6. СЖАТИЕ / ЗАГРУЗКА ----------
@@ -750,6 +548,7 @@ function compressImage(file) {
                 return;
               }
 
+              // стараемся <= 50KB, но если не вышло даже с quality <= 0.3 — отправляем как есть
               if (blob.size <= MAX_IMAGE_BYTES || quality <= 0.3) {
                 resolve(blob);
               } else {
@@ -777,7 +576,7 @@ async function uploadFile(file) {
   const timestamp = Date.now();
   const isVideo = file.type && file.type.startsWith("video");
   const ext = isVideo ? "mp4" : "jpg";
-  const fileName = `${user.id}/${timestamp}.${ext}`;
+  const fileName = `${user.id}/${timestamp}.${ext}`; // ПУТЬ В БАКЕТЕ
 
   const body = isVideo ? file : await compressImage(file);
 
@@ -794,7 +593,7 @@ async function uploadFile(file) {
   return {
     type: isVideo ? "video" : "image",
     data: urlData.publicUrl,
-    path: fileName
+    path: fileName       // сохраняем путь в bucket для будущего удаления
   };
 }
 
@@ -817,12 +616,9 @@ async function syncUserCarFromSupabase() {
     currentCar = normalizeCar({
       brand: data.brand,
       model: data.model,
-      customBrand: data.custom_brand,
-      customModel: data.custom_model,
       year: data.year,
       mileage: data.mileage,
       price: data.price,
-      region: data.region,
       status: data.status,
       serviceOnTime: data.service_on_time,
       tuning: data.tuning,
@@ -835,23 +631,7 @@ async function syncUserCarFromSupabase() {
       oilMileage: data.oil_mileage,
       dailyMileage: data.daily_mileage,
       lastService: data.last_service,
-      media: data.media,
-      // Новые поля
-      isPainted: data.is_painted,
-      hasNewTyres: data.has_new_tyres,
-      hasNewWheels: data.has_new_wheels,
-      hasLPG: data.has_lpg,
-      hasMethane: data.has_methane,
-      hasPPF: data.has_ppf,
-      hasCeramic: data.has_ceramic,
-      hasAudioSystem: data.has_audio_system,
-      hasParkingSensors: data.has_parking_sensors,
-      hasCamera: data.has_camera,
-      hasClimateControl: data.has_climate_control,
-      hasHeatedSeats: data.has_heated_seats,
-      hasPanoramicRoof: data.has_panoramic_roof,
-      hasKeylessEntry: data.has_keyless_entry,
-      hasAutoParking: data.has_auto_parking
+      media: data.media
     });
     currentCar.isPrimary = true;
     renderCar();
@@ -865,14 +645,11 @@ async function saveUserCarToSupabase() {
     telegram_id: String(user.id),
     username: user.username,
     full_name: user.first_name,
-    brand: currentCar.brand === "Другое" ? currentCar.customBrand : currentCar.brand,
-    model: currentCar.model === "Другое" || currentCar.model === "Другая модель" ? currentCar.customModel : currentCar.model,
-    custom_brand: currentCar.customBrand,
-    custom_model: currentCar.customModel,
+    brand: currentCar.brand,
+    model: currentCar.model,
     year: Number(currentCar.year),
     mileage: Number(currentCar.mileage),
     price: Number(currentCar.price),
-    region: currentCar.region,
     status: currentCar.status,
     service_on_time: currentCar.serviceOnTime,
     tuning: currentCar.tuning,
@@ -887,23 +664,7 @@ async function saveUserCarToSupabase() {
     last_service: currentCar.lastService,
     media: currentCar.media,
     health: calcHealthScore(currentCar),
-    updated_at: new Date().toISOString(),
-    // Новые поля
-    is_painted: currentCar.isPainted,
-    has_new_tyres: currentCar.hasNewTyres,
-    has_new_wheels: currentCar.hasNewWheels,
-    has_lpg: currentCar.hasLPG,
-    has_methane: currentCar.hasMethane,
-    has_ppf: currentCar.hasPPF,
-    has_ceramic: currentCar.hasCeramic,
-    has_audio_system: currentCar.hasAudioSystem,
-    has_parking_sensors: currentCar.hasParkingSensors,
-    has_camera: currentCar.hasCamera,
-    has_climate_control: currentCar.hasClimateControl,
-    has_heated_seats: currentCar.hasHeatedSeats,
-    has_panoramic_roof: currentCar.hasPanoramicRoof,
-    has_keyless_entry: currentCar.hasKeylessEntry,
-    has_auto_parking: currentCar.hasAutoParking
+    updated_at: new Date().toISOString()
   };
 
   const { error } = await sb.from("cars").upsert(payload);
@@ -929,16 +690,12 @@ async function loadGlobalRating() {
       full_name: row.full_name,
       phone: row.phone || row.telegram_phone || row.phone_number || null,
       health: row.health ?? calcHealthScore(row),
-      region: row.region || "Ташкент",
       car: normalizeCar({
         brand: row.brand,
         model: row.model,
-        customBrand: row.custom_brand,
-        customModel: row.custom_model,
         year: row.year,
         mileage: row.mileage,
         price: row.price,
-        region: row.region,
         status: row.status,
         serviceOnTime: row.service_on_time,
         tuning: row.tuning,
@@ -951,22 +708,7 @@ async function loadGlobalRating() {
         oilMileage: row.oil_mileage,
         dailyMileage: row.daily_mileage,
         lastService: row.last_service,
-        media: row.media,
-        isPainted: row.is_painted,
-        hasNewTyres: row.has_new_tyres,
-        hasNewWheels: row.has_new_wheels,
-        hasLPG: row.has_lpg,
-        hasMethane: row.has_methane,
-        hasPPF: row.has_ppf,
-        hasCeramic: row.has_ceramic,
-        hasAudioSystem: row.has_audio_system,
-        hasParkingSensors: row.has_parking_sensors,
-        hasCamera: row.has_camera,
-        hasClimateControl: row.has_climate_control,
-        hasHeatedSeats: row.has_heated_seats,
-        hasPanoramicRoof: row.has_panoramic_roof,
-        hasKeylessEntry: row.has_keyless_entry,
-        hasAutoParking: row.has_auto_parking
+        media: row.media
       })
     }));
 
@@ -1034,22 +776,6 @@ function buildStatsRows(car, dict) {
   const yes = dict.label_yes;
   const no = dict.label_no;
 
-  // Определяем отображаемый бренд и модель
-  const displayBrand = car.brand === "Другое" ? car.customBrand : car.brand;
-  const displayModel = car.model === "Другое" || car.model === "Другая модель" ? car.customModel : car.model;
-
-  rows.push({
-    label: "Марка",
-    value: displayBrand || "-"
-  });
-  rows.push({
-    label: "Модель",
-    value: displayModel || "-"
-  });
-  rows.push({
-    label: dict.field_region,
-    value: getRegionLabel(car.region, dict)
-  });
   rows.push({
     label: dict.field_price,
     value: car.price ? `${car.price}$` : "-"
@@ -1061,10 +787,6 @@ function buildStatsRows(car, dict) {
   rows.push({
     label: dict.field_service,
     value: car.serviceOnTime ? yes : no
-  });
-  rows.push({
-    label: dict.field_is_painted,
-    value: car.isPainted ? yes : no
   });
 
   if (car.transmission) {
@@ -1091,33 +813,6 @@ function buildStatsRows(car, dict) {
       value: car.color
     });
   }
-
-  // Подсчитываем количество опций тюнинга
-  const tuningOptions = [
-    car.hasNewTyres,
-    car.hasNewWheels,
-    car.hasLPG,
-    car.hasMethane,
-    car.hasPPF,
-    car.hasCeramic,
-    car.hasAudioSystem,
-    car.hasParkingSensors,
-    car.hasCamera,
-    car.hasClimateControl,
-    car.hasHeatedSeats,
-    car.hasPanoramicRoof,
-    car.hasKeylessEntry,
-    car.hasAutoParking
-  ];
-  
-  const activeTuningCount = tuningOptions.filter(Boolean).length;
-  if (activeTuningCount > 0) {
-    rows.push({
-      label: "Доп. опции",
-      value: `${activeTuningCount} шт.`
-    });
-  }
-
   if (
     car.tuning &&
     car.tuning.trim() &&
@@ -1133,6 +828,23 @@ function buildStatsRows(car, dict) {
   return rows;
 }
 
+function buildModelLabel(brand, model) {
+  const b = (brand || "").trim();
+  const m = (model || "").trim();
+  if (!b && !m) return "Model";
+  if (!b) return m;
+  if (!m) return b;
+
+  const bLower = b.toLowerCase();
+  const mLower = m.toLowerCase();
+
+  if (bLower === mLower) return m;
+  if (bLower.includes(mLower)) return b;
+  if (mLower.includes(bLower)) return m;
+
+  return `${b} ${m}`;
+}
+
 function renderCar() {
   const dict = TEXTS[currentLang];
   const car = getActiveCar();
@@ -1142,16 +854,12 @@ function renderCar() {
   const pill = document.getElementById("car-status-pill");
   const statsEl = document.getElementById("car-stats");
 
-  // Определяем отображаемый бренд и модель
-  const displayBrand = car.brand === "Другое" ? car.customBrand : car.brand;
-  const displayModel = car.model === "Другое" || car.model === "Другая модель" ? car.customModel : car.model;
-
   if (titleEl) {
-    titleEl.textContent = `${displayBrand} ${displayModel} ${car.year || ""}`.trim();
+    titleEl.textContent = `${car.brand} ${car.model} ${car.year || ""}`.trim();
   }
 
   if (healthEl) {
-    healthEl.textContent = calcHealthScore(car).toFixed(2);
+    healthEl.textContent = calcHealthScore(car);
   }
 
   if (pill) {
@@ -1232,64 +940,11 @@ function renderCar() {
 
   // заполнение формы только для своей машины
   if (!isViewingForeign && form) {
-    // Бренд и модель
-    const brandSelect = document.getElementById("car-brand-select");
-    const modelSelect = document.getElementById("car-model-select");
-    const customBrandInput = document.getElementById("car-brand-custom");
-    const customModelInput = document.getElementById("car-model-custom");
-    
-    if (brandSelect) {
-      if (currentCar.brand && CAR_BRANDS.includes(currentCar.brand)) {
-        brandSelect.value = currentCar.brand;
-        customBrandInput.style.display = "none";
-      } else if (currentCar.customBrand) {
-        brandSelect.value = "Другое";
-        customBrandInput.style.display = "block";
-        customBrandInput.value = currentCar.customBrand;
-      } else {
-        brandSelect.value = "";
-      }
-      
-      // Заполняем модели при загрузке
-      if (brandSelect.value && brandSelect.value !== "Другое") {
-        modelSelect.innerHTML = '<option value="">Выберите модель</option>';
-        CAR_MODELS[brandSelect.value]?.forEach(model => {
-          const option = document.createElement("option");
-          option.value = model;
-          option.textContent = model;
-          modelSelect.appendChild(option);
-        });
-        
-        if (currentCar.model && CAR_MODELS[brandSelect.value]?.includes(currentCar.model)) {
-          modelSelect.value = currentCar.model;
-          customModelInput.style.display = "none";
-        } else if (currentCar.customModel) {
-          modelSelect.value = "Другое";
-          customModelInput.style.display = "block";
-          customModelInput.value = currentCar.customModel;
-        }
-      } else if (brandSelect.value === "Другое") {
-        modelSelect.innerHTML = '<option value="">Выберите модель</option>';
-        CAR_MODELS["Другое"]?.forEach(model => {
-          const option = document.createElement("option");
-          option.value = model;
-          option.textContent = model;
-          modelSelect.appendChild(option);
-        });
-        
-        if (currentCar.customModel) {
-          modelSelect.value = "Другая модель";
-          customModelInput.style.display = "block";
-          customModelInput.value = currentCar.customModel;
-        }
-      }
-    }
-
-    // Остальные поля
+    form.brand.value = currentCar.brand || "";
+    form.model.value = currentCar.model || "";
     form.year.value = currentCar.year || "";
     form.mileage.value = currentCar.mileage || "";
     form.price.value = currentCar.price || "";
-    form.region.value = currentCar.region || "Ташкент";
     form.status.value = currentCar.status || "";
     form.serviceOnTime.value = currentCar.serviceOnTime ? "yes" : "no";
 
@@ -1304,25 +959,9 @@ function renderCar() {
     form.oilMileage.value = currentCar.oilMileage || "";
     form.dailyMileage.value = currentCar.dailyMileage || "";
     form.lastService.value = currentCar.lastService || "";
-    
-    // Новые чекбоксы
-    form.isPainted.checked = currentCar.isPainted || false;
-    form.hasNewTyres.checked = currentCar.hasNewTyres || false;
-    form.hasNewWheels.checked = currentCar.hasNewWheels || false;
-    form.hasLPG.checked = currentCar.hasLPG || false;
-    form.hasMethane.checked = currentCar.hasMethane || false;
-    form.hasPPF.checked = currentCar.hasPPF || false;
-    form.hasCeramic.checked = currentCar.hasCeramic || false;
-    form.hasAudioSystem.checked = currentCar.hasAudioSystem || false;
-    form.hasParkingSensors.checked = currentCar.hasParkingSensors || false;
-    form.hasCamera.checked = currentCar.hasCamera || false;
-    form.hasClimateControl.checked = currentCar.hasClimateControl || false;
-    form.hasHeatedSeats.checked = currentCar.hasHeatedSeats || false;
-    form.hasPanoramicRoof.checked = currentCar.hasPanoramicRoof || false;
-    form.hasKeylessEntry.checked = currentCar.hasKeylessEntry || false;
-    form.hasAutoParking.checked = currentCar.hasAutoParking || false;
   }
 
+  // гараж — только своя машина
   garage = [currentCar];
 
   renderCarMedia();
@@ -1349,12 +988,12 @@ function renderGarage() {
             ${thumbHtml}
           </div>
           <div class="garage-main">
-            <div class="garage-title">${car.brand === "Другое" ? car.customBrand : car.brand} ${car.model === "Другое" || car.model === "Другая модель" ? car.customModel : car.model}</div>
-            <div class="garage-meta">${car.year} | ${getRegionLabel(car.region, dict)}</div>
+            <div class="garage-title">${car.brand} ${car.model}</div>
+            <div class="garage-meta">${car.year}</div>
           </div>
         </div>
         <div class="garage-right">
-          <div class="garage-health-value">${calcHealthScore(car).toFixed(2)}</div>
+          <div class="garage-health-value">${calcHealthScore(car)}</div>
         </div>
       </div>
     `;
@@ -1385,11 +1024,8 @@ function renderRating() {
   if (ratingMode === "owners") {
     list.innerHTML = globalRatingCars
       .map((c, i) => {
-        const label = getDisplayNick(c);
+        const label = getDisplayNick(c); // @ник → телефон → имя
         const contactHtml = `<span class="rating-contact">${label}</span>`;
-        
-        const displayBrand = c.car.brand === "Другое" ? c.car.customBrand : c.car.brand;
-        const displayModel = c.car.model === "Другое" || c.car.model === "Другая модель" ? c.car.customModel : c.car.model;
 
         return `
       <div class="rating-item" data-telegram-id="${c.telegram_id}">
@@ -1397,26 +1033,26 @@ function renderRating() {
           <div class="rating-pos ${i === 0 ? "top-1" : ""}">${i + 1}</div>
           <div class="rating-main">
             <div class="rating-owner" style="font-size:12px;">${contactHtml}</div>
-            <div class="rating-car" style="font-size:11px;">${displayBrand} ${displayModel} | ${getRegionLabel(c.region, dict)}</div>
+            <div class="rating-car" style="font-size:11px;">${c.car.brand} ${c.car.model}</div>
           </div>
         </div>
         <div class="rating-right">
-          <span class="rating-health">${c.health.toFixed(2)}</span>
+          <span class="rating-health">${c.health}</span>
         </div>
       </div>
     `;
       })
       .join("");
-  } else if (ratingMode === "cars") {
+  } else {
     const agg = {};
     globalRatingCars.forEach((c) => {
-      const displayBrand = c.car.brand === "Другое" ? c.car.customBrand : c.car.brand;
-      const displayModel = c.car.model === "Другое" || c.car.model === "Другая модель" ? c.car.customModel : c.car.model;
-      const key = `${displayBrand}|${displayModel}`;
+      const b = (c.car.brand || "").trim();
+      const m = (c.car.model || "").trim();
+      const key = `${b}|${m}`;
       if (!agg[key]) {
         agg[key] = {
-          brand: displayBrand,
-          model: displayModel,
+          brand: b,
+          model: m,
           count: 0,
           healthSum: 0
         };
@@ -1428,9 +1064,9 @@ function renderRating() {
     const models = Object.values(agg).map((m) => ({
       brand: m.brand,
       model: m.model,
-      label: `${m.brand} ${m.model}`,
+      label: buildModelLabel(m.brand, m.model),
       count: m.count,
-      health: parseFloat((m.healthSum / m.count).toFixed(2))
+      health: Math.round(m.healthSum / m.count)
     }));
 
     models.sort((a, b) => b.health - a.health);
@@ -1448,47 +1084,6 @@ function renderRating() {
         </div>
         <div class="rating-right">
           <span class="rating-health">${m.health}</span>
-        </div>
-      </div>
-    `
-      )
-      .join("");
-  } else if (ratingMode === "regions") {
-    const agg = {};
-    globalRatingCars.forEach((c) => {
-      const region = c.region || "Ташкент";
-      if (!agg[region]) {
-        agg[region] = {
-          region: region,
-          count: 0,
-          healthSum: 0
-        };
-      }
-      agg[region].count += 1;
-      agg[region].healthSum += Number(c.health);
-    });
-
-    const regions = Object.values(agg).map((r) => ({
-      region: r.region,
-      count: r.count,
-      health: parseFloat((r.healthSum / r.count).toFixed(2))
-    }));
-
-    regions.sort((a, b) => b.health - a.health);
-
-    list.innerHTML = regions
-      .map(
-        (r, i) => `
-      <div class="rating-item">
-        <div class="rating-left">
-          <div class="rating-pos ${i === 0 ? "top-1" : ""}">${i + 1}</div>
-          <div class="rating-main">
-            <div class="rating-owner" style="font-size:12px;">${getRegionLabel(r.region, dict)}</div>
-            <div class="rating-car" style="font-size:11px;">×${r.count}</div>
-          </div>
-        </div>
-        <div class="rating-right">
-          <span class="rating-health">${r.health}</span>
         </div>
       </div>
     `
@@ -1522,18 +1117,15 @@ function renderMarket() {
     .map((c) => {
       const label = getDisplayNick(c);
       const contactHtml = `<span>${label}</span>`;
-      const displayBrand = c.car.brand === "Другое" ? c.car.customBrand : c.car.brand;
-      const displayModel = c.car.model === "Другое" || c.car.model === "Другая модель" ? c.car.customModel : c.car.model;
 
       return `
     <div class="card market-item" data-telegram-id="${c.telegram_id}">
       <div class="card-header" style="padding:6px 8px;">
-        <span style="font-size:13px;">🚗 ${displayBrand} ${displayModel}</span>
+        <span style="font-size:13px;">🚗 ${c.car.brand} ${c.car.model}</span>
       </div>
       <div class="card-body" style="font-size:12px; line-height:1.3; padding:8px 9px;">
         <p style="margin:0 0 2px;"><strong>${c.car.price ? c.car.price + "$" : ""}</strong></p>
-        <p style="margin:0 0 2px;">${dict.rating_health}: ${c.health.toFixed(2)}</p>
-        <p style="margin:0 0 2px;">${dict.field_region}: ${getRegionLabel(c.region, dict)}</p>
+        <p style="margin:0 0 2px;">${dict.rating_health}: ${c.health}</p>
         ${
           c.car.mileage
             ? `<p style="margin:0 0 2px;">${dict.field_mileage}: ${c.car.mileage} km</p>`
@@ -1559,6 +1151,7 @@ function openUserMainById(telegramId) {
   );
   if (!entry) return;
 
+  // запоминаем, с какого экрана зашли (rating / market / garage / home)
   const activeScreenEl = document.querySelector(".screen.active");
   if (activeScreenEl && activeScreenEl.id && activeScreenEl.id.startsWith("screen-")) {
     lastScreenBeforeForeign = activeScreenEl.id.replace("screen-", "");
@@ -1670,8 +1263,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       const item = media[currentMediaIndex];
 
+      // 1) сначала берём path, который мы сохраняем при загрузке
       let path = item && item.path ? item.path : null;
 
+      // 2) если path нет (старые записи) — вырезаем из URL
       if (!path && item && item.data) {
         path = getStoragePathFromUrl(item.data);
       }
@@ -1699,71 +1294,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       await saveUserCarToSupabase();
       renderCarMedia();
-    });
-  }
-
-  // Инициализация выпадающих списков брендов и моделей
-  const brandSelect = document.getElementById("car-brand-select");
-  const modelSelect = document.getElementById("car-model-select");
-  const customBrandInput = document.getElementById("car-brand-custom");
-  const customModelInput = document.getElementById("car-model-custom");
-
-  if (brandSelect) {
-    // Заполняем список брендов
-    CAR_BRANDS.forEach(brand => {
-      const option = document.createElement("option");
-      option.value = brand;
-      option.textContent = brand;
-      brandSelect.appendChild(option);
-    });
-
-    brandSelect.addEventListener("change", function() {
-      const selectedBrand = this.value;
-      modelSelect.innerHTML = '<option value="">Выберите модель</option>';
-      
-      if (selectedBrand === "Другое") {
-        customBrandInput.style.display = "block";
-        customBrandInput.required = true;
-        
-        // Для "Другого" бренда показываем специальный список моделей
-        CAR_MODELS["Другое"]?.forEach(model => {
-          const option = document.createElement("option");
-          option.value = model;
-          option.textContent = model;
-          modelSelect.appendChild(option);
-        });
-      } else {
-        customBrandInput.style.display = "none";
-        customBrandInput.required = false;
-        customBrandInput.value = "";
-        
-        if (CAR_MODELS[selectedBrand]) {
-          CAR_MODELS[selectedBrand].forEach(model => {
-            const option = document.createElement("option");
-            option.value = model;
-            option.textContent = model;
-            modelSelect.appendChild(option);
-          });
-        }
-      }
-      
-      // Сбрасываем кастомную модель
-      customModelInput.style.display = "none";
-      customModelInput.required = false;
-      customModelInput.value = "";
-    });
-  }
-
-  if (modelSelect) {
-    modelSelect.addEventListener("change", function() {
-      if (this.value === "Другое" || this.value === "Другая модель") {
-        customModelInput.style.display = "block";
-        customModelInput.required = true;
-      } else {
-        customModelInput.style.display = "none";
-        customModelInput.required = false;
-        customModelInput.value = "";
-      }
     });
   }
 
@@ -1953,30 +1483,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
       }
 
-      // Обработка бренда и модели
-      const selectedBrand = f.get("brand");
-      if (selectedBrand === "Другое") {
-        currentCar.brand = "Другое";
-        currentCar.customBrand = f.get("customBrand");
-      } else {
-        currentCar.brand = selectedBrand;
-        currentCar.customBrand = "";
-      }
-
-      const selectedModel = f.get("model");
-      if (selectedModel === "Другое" || selectedModel === "Другая модель") {
-        currentCar.model = selectedModel;
-        currentCar.customModel = f.get("customModel");
-      } else {
-        currentCar.model = selectedModel;
-        currentCar.customModel = "";
-      }
-
-      // Основные поля
+      currentCar.brand = f.get("brand");
+      currentCar.model = f.get("model");
       currentCar.year = f.get("year");
       currentCar.mileage = f.get("mileage");
       currentCar.price = f.get("price");
-      currentCar.region = f.get("region");
       currentCar.status = f.get("status");
 
       currentCar.serviceOnTime = f.get("serviceOnTime") === "yes";
@@ -1991,23 +1502,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       currentCar.oilMileage = f.get("oilMileage");
       currentCar.dailyMileage = f.get("dailyMileage");
       currentCar.lastService = f.get("lastService");
-      
-      // Новые чекбоксы
-      currentCar.isPainted = f.get("isPainted") === "on";
-      currentCar.hasNewTyres = f.get("hasNewTyres") === "on";
-      currentCar.hasNewWheels = f.get("hasNewWheels") === "on";
-      currentCar.hasLPG = f.get("hasLPG") === "on";
-      currentCar.hasMethane = f.get("hasMethane") === "on";
-      currentCar.hasPPF = f.get("hasPPF") === "on";
-      currentCar.hasCeramic = f.get("hasCeramic") === "on";
-      currentCar.hasAudioSystem = f.get("hasAudioSystem") === "on";
-      currentCar.hasParkingSensors = f.get("hasParkingSensors") === "on";
-      currentCar.hasCamera = f.get("hasCamera") === "on";
-      currentCar.hasClimateControl = f.get("hasClimateControl") === "on";
-      currentCar.hasHeatedSeats = f.get("hasHeatedSeats") === "on";
-      currentCar.hasPanoramicRoof = f.get("hasPanoramicRoof") === "on";
-      currentCar.hasKeylessEntry = f.get("hasKeylessEntry") === "on";
-      currentCar.hasAutoParking = f.get("hasAutoParking") === "on";
 
       const btn = form.querySelector('button[type="submit"]');
       if (btn) {
