@@ -136,25 +136,6 @@
     .hint { font-size: 11px; color: var(--text-muted); }
     .primary-btn { width: 100%; margin-top: 4px; border-radius: 999px; border: none; padding: 9px 12px; font-size: 14px; font-weight: 600; cursor: pointer; background: radial-gradient(circle at 10% 0, #38bdf8, #1d4ed8); color: #e5f2ff; }
 
-    /* Checkbox styling */
-    .checkbox-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 8px;
-      margin-top: 8px;
-    }
-    .checkbox-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
-    }
-    .checkbox-item input[type="checkbox"] {
-      width: 16px;
-      height: 16px;
-      margin: 0;
-    }
-
     /* Lists */
     .garage-list, .list { display: flex; flex-direction: column; gap: 8px; }
     .garage-card, .rating-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 9px; border-radius: var(--radius-md); background: rgba(15, 23, 42, 0.92); border: 1px solid rgba(148, 163, 184, 0.6); }
@@ -227,12 +208,12 @@
           <div class="car-hero-top">
             <div>
               <div class="badge" data-i18n="your_car"></div>
-              <div class="car-main" id="car-title">Марка Модель Год</div>
+              <div class="car-main" id="car-title">Chevrolet Cobalt 2021</div>
               <div class="status-pill" id="car-status-pill"></div>
             </div>
             <div class="health">
               <span data-i18n="health"></span>
-              <span id="health-score">100.00</span>
+              <span id="health-score">82</span>
             </div>
           </div>
           <div class="card-body" id="car-stats"></div>
@@ -242,53 +223,8 @@
           <div class="card-header"><span data-i18n="update_title"></span></div>
           <div class="card-body">
             <form id="car-form">
-              <!-- Область -->
-              <div class="field">
-                <label data-i18n="field_region"></label>
-                <select name="region" id="field-region">
-                  <option value="Ташкент" data-i18n="region_tashkent">Ташкент</option>
-                  <option value="Ташкентская область" data-i18n="region_tashkent_oblast">Ташкентская область</option>
-                  <option value="Самарканд" data-i18n="region_samarkand">Самарканд</option>
-                  <option value="Бухара" data-i18n="region_bukhara">Бухара</option>
-                  <option value="Навои" data-i18n="region_navoi">Навои</option>
-                  <option value="Андижан" data-i18n="region_andijan">Андижан</option>
-                  <option value="Фергана" data-i18n="region_fergana">Фергана</option>
-                  <option value="Наманган" data-i18n="region_namangan">Наманган</option>
-                  <option value="Хорезм" data-i18n="region_khorezm">Хорезм</option>
-                  <option value="Каракалпакстан" data-i18n="region_karakalpakstan">Каракалпакстан</option>
-                  <option value="Сурхандарья" data-i18n="region_surkhandarya">Сурхандарья</option>
-                  <option value="Кашкадарья" data-i18n="region_kashkadarya">Кашкадарья</option>
-                  <option value="Джизак" data-i18n="region_jizzakh">Джизак</option>
-                  <option value="Сырдарья" data-i18n="region_syrdarya">Сырдарья</option>
-                  <option value="Другая" data-i18n="region_other">Другая</option>
-                </select>
-              </div>
-
-              <!-- Бренд -->
-              <div class="field">
-                <label data-i18n="field_brand"></label>
-                <select name="brand" id="car-brand-select" required>
-                  <option value="">Выберите бренд</option>
-                  <!-- Заполняется динамически -->
-                </select>
-                <input type="text" id="car-brand-custom" name="customBrand" 
-                       placeholder="Укажите марку" style="display: none; margin-top: 5px;"
-                       data-i18n-placeholder="field_custom_brand">
-              </div>
-
-              <!-- Модель -->
-              <div class="field">
-                <label data-i18n="field_model"></label>
-                <select name="model" id="car-model-select" required>
-                  <option value="">Выберите модель</option>
-                  <!-- Заполняется динамически -->
-                </select>
-                <input type="text" id="car-model-custom" name="customModel" 
-                       placeholder="Укажите модель" style="display: none; margin-top: 5px;"
-                       data-i18n-placeholder="field_custom_model">
-              </div>
-
-              <!-- Основные поля -->
+              <div class="field"><label data-i18n="field_brand"></label><input type="text" name="brand" required /></div>
+              <div class="field"><label data-i18n="field_model"></label><input type="text" name="model" required /></div>
               <div class="field"><label data-i18n="field_year"></label><input type="number" name="year" required /></div>
               <div class="field"><label data-i18n="field_mileage"></label><input type="number" name="mileage" required /></div>
               <div class="field"><label data-i18n="field_price"></label><input type="number" name="price" /></div>
@@ -316,25 +252,6 @@
                 <div class="hint" data-i18n="service_hint"></div>
               </div>
 
-              <!-- Состояние кузова -->
-              <div class="field"><label data-i18n="field_body_condition"></label>
-                <select name="bodyCondition">
-                  <option value="" data-i18n="opt_bodycond_none"></option>
-                  <option value="painted" data-i18n="opt_bodycond_painted"></option>
-                  <option value="original" data-i18n="opt_bodycond_original"></option>
-                  <option value="scratches" data-i18n="opt_bodycond_scratches"></option>
-                </select>
-              </div>
-
-              <!-- Крашенная машина -->
-              <div class="field">
-                <label class="checkbox-item">
-                  <input type="checkbox" name="isPainted" id="field-is-painted">
-                  <span data-i18n="field_is_painted"></span>
-                </label>
-              </div>
-
-              <!-- Технические характеристики -->
               <div class="field"><label data-i18n="field_engine_type"></label>
                 <select name="engineType">
                   <option value="" data-i18n="opt_engine_none"></option>
@@ -370,70 +287,15 @@
                 </select>
               </div>
 
-              <!-- Опции тюнинга -->
-              <div class="field">
-                <label data-i18n="field_tuning_options"></label>
-                <div class="checkbox-grid">
-                  <div class="checkbox-item">
-                    <input type="checkbox" name="hasNewTyres">
-                    <span data-i18n="tuning_new_tyres"></span>
-                  </div>
-                  <div class="checkbox-item">
-                    <input type="checkbox" name="hasNewWheels">
-                    <span data-i18n="tuning_new_wheels"></span>
-                  </div>
-                  <div class="checkbox-item">
-                    <input type="checkbox" name="hasLPG">
-                    <span data-i18n="tuning_lpg"></span>
-                  </div>
-                  <div class="checkbox-item">
-                    <input type="checkbox" name="hasMethane">
-                    <span data-i18n="tuning_methane"></span>
-                  </div>
-                  <div class="checkbox-item">
-                    <input type="checkbox" name="hasPPF">
-                    <span data-i18n="tuning_ppf"></span>
-                  </div>
-                  <div class="checkbox-item">
-                    <input type="checkbox" name="hasCeramic">
-                    <span data-i18n="tuning_ceramic"></span>
-                  </div>
-                  <div class="checkbox-item">
-                    <input type="checkbox" name="hasAudioSystem">
-                    <span data-i18n="tuning_audio"></span>
-                  </div>
-                  <div class="checkbox-item">
-                    <input type="checkbox" name="hasParkingSensors">
-                    <span data-i18n="tuning_parking_sensors"></span>
-                  </div>
-                  <div class="checkbox-item">
-                    <input type="checkbox" name="hasCamera">
-                    <span data-i18n="tuning_camera"></span>
-                  </div>
-                  <div class="checkbox-item">
-                    <input type="checkbox" name="hasClimateControl">
-                    <span data-i18n="tuning_climate"></span>
-                  </div>
-                  <div class="checkbox-item">
-                    <input type="checkbox" name="hasHeatedSeats">
-                    <span data-i18n="tuning_heated_seats"></span>
-                  </div>
-                  <div class="checkbox-item">
-                    <input type="checkbox" name="hasPanoramicRoof">
-                    <span data-i18n="tuning_panoramic"></span>
-                  </div>
-                  <div class="checkbox-item">
-                    <input type="checkbox" name="hasKeylessEntry">
-                    <span data-i18n="tuning_keyless"></span>
-                  </div>
-                  <div class="checkbox-item">
-                    <input type="checkbox" name="hasAutoParking">
-                    <span data-i18n="tuning_auto_parking"></span>
-                  </div>
-                </div>
+              <div class="field"><label data-i18n="field_body_condition"></label>
+                <select name="bodyCondition">
+                  <option value="" data-i18n="opt_bodycond_none"></option>
+                  <option value="painted" data-i18n="opt_bodycond_painted"></option>
+                  <option value="original" data-i18n="opt_bodycond_original"></option>
+                  <option value="scratches" data-i18n="opt_bodycond_scratches"></option>
+                </select>
               </div>
 
-              <!-- Остальные поля -->
               <div class="field"><label data-i18n="field_color"></label><input type="text" name="color" /></div>
               <div class="field"><label data-i18n="field_purchase_info"></label><input type="text" name="purchaseInfo" /></div>
               <div class="field"><label data-i18n="field_oil_mileage"></label><input type="number" name="oilMileage" /></div>
@@ -441,7 +303,6 @@
               <div class="field"><label data-i18n="field_last_service"></label><input type="text" name="lastService" /></div>
               <div class="field"><label data-i18n="field_tuning"></label><textarea name="tuning" rows="2"></textarea></div>
 
-              <!-- Фото -->
               <div class="field">
                 <label data-i18n="field_photo"></label>
                 <input type="file" id="car-photo-input" accept="image/*,video/*" multiple />
@@ -468,7 +329,6 @@
         <div class="rating-mode-switch">
           <button class="rating-mode-btn active" data-mode="owners" data-i18n="rating_mode_owners"></button>
           <button class="rating-mode-btn" data-mode="cars" data-i18n="rating_mode_cars"></button>
-          <button class="rating-mode-btn" data-mode="regions" data-i18n="rating_mode_regions"></button>
         </div>
         <div id="rating-list" class="list"></div>
       </section>
