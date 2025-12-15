@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -135,14 +136,6 @@
     .hint { font-size: 11px; color: var(--text-muted); }
     .primary-btn { width: 100%; margin-top: 4px; border-radius: 999px; border: none; padding: 9px 12px; font-size: 14px; font-weight: 600; cursor: pointer; background: radial-gradient(circle at 10% 0, #38bdf8, #1d4ed8); color: #e5f2ff; }
 
-    .input-hidden { display: none; margin-top: 5px; }
-
-    /* Checkbox Grid for Tuning */
-    .checkbox-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 4px; }
-    .checkbox-item { display: flex; align-items: center; gap: 6px; background: rgba(15,23,42,0.6); border-radius: 8px; padding: 6px 8px; border: 1px solid rgba(148,163,184,0.3); }
-    .checkbox-item input { margin: 0; width: auto; }
-    .checkbox-item label { font-size: 11px; cursor: pointer; flex: 1; }
-
     /* Lists */
     .garage-list, .list { display: flex; flex-direction: column; gap: 8px; }
     .garage-card, .rating-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 9px; border-radius: var(--radius-md); background: rgba(15, 23, 42, 0.92); border: 1px solid rgba(148, 163, 184, 0.6); }
@@ -156,6 +149,8 @@
     .garage-title, .rating-owner { font-weight: 600; } .garage-meta, .rating-car { color: var(--text-muted); font-size: 11px; }
     .garage-right, .rating-right { display: flex; flex-direction: column; align-items: flex-end; font-size: 11px; color: var(--text-muted); }
     .garage-health-value, .rating-health { font-size: 16px; font-weight: 700; color: var(--accent-good); }
+    .garage-pill { display: inline-flex; align-items: center; padding: 2px 7px; border-radius: 999px; border: 1px solid rgba(96, 165, 250, 0.8); color: #bfdbfe; font-size: 10px; margin-top: 2px; margin-right: 4px; }
+    .garage-pill-sale { border-color: rgba(250, 204, 21, 0.9); color: #fef3c7; }
     
     .rating-pos { width: 26px; height: 26px; border-radius: 999px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(148, 163, 184, 0.7); }
     .rating-pos.top-1 { background: radial-gradient(circle at 20% 0, #facc15, #f97316); border-color: rgba(250, 204, 21, 0.9); color: #1e293b; }
@@ -166,13 +161,17 @@
     .owner-detail-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); display: none; align-items: center; justify-content: center; z-index: 999; padding: 16px; }
     .owner-detail-card { width: 100%; max-width: 420px; background: rgba(15, 23, 42, 0.98); border-radius: var(--radius-lg); border: 1px solid rgba(148, 163, 184, 0.7); box-shadow: var(--shadow-soft); padding: 14px 14px 12px; }
     .owner-detail-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+    .owner-detail-title { font-size: 16px; font-weight: 600; }
+    .owner-detail-owner { font-size: 12px; color: var(--text-muted); }
+    .owner-detail-close { border: none; background: rgba(15, 23, 42, 0.9); border-radius: 999px; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); cursor: pointer; font-size: 16px; }
+    .owner-detail-stats { margin-top: 4px; border-radius: var(--radius-md); border: 1px dashed rgba(148, 163, 184, 0.4); padding: 6px 8px; background: rgba(15, 23, 42, 0.9); font-size: 12px; }
   </style>
 </head>
 <body>
   <div class="app">
     <header class="app-header">
       <div class="logo-title">
-        <div class="logo-circle"><img src="autoqiyos-logo.png" alt="AQ" onerror="this.style.display='none';this.parentElement.innerText='AQ'"></div>
+        <div class="logo-circle"><img src="autoqiyos-logo.png" alt="AutoQiyos" onerror="this.style.display='none';this.parentElement.innerText='AQ'"></div>
         <div>
           <div class="app-name">AutoQiyos</div>
           <div class="app-subtitle" data-i18n="subtitle"></div>
@@ -193,9 +192,12 @@
 
     <main class="screens">
       <section id="screen-home" class="screen active">
+        <h2 data-i18n="home_title"></h2>
+        <p class="muted" data-i18n="home_desc"></p>
+
         <div class="card car-hero">
           <div class="car-photo-frame">
-            <img id="car-photo-main" alt="Foto" />
+            <img id="car-photo-main" alt="Фото авто" />
             <video id="car-video-main" playsinline muted></video>
             <div class="car-photo-placeholder" id="car-photo-placeholder"><span data-i18n="car_photo_placeholder"></span></div>
             <button type="button" class="photo-nav prev" id="car-photo-prev">‹</button>
@@ -211,7 +213,7 @@
             </div>
             <div class="health">
               <span data-i18n="health"></span>
-              <span id="health-score">0.00</span>
+              <span id="health-score">82</span>
             </div>
           </div>
           <div class="card-body" id="car-stats"></div>
@@ -221,100 +223,15 @@
           <div class="card-header"><span data-i18n="update_title"></span></div>
           <div class="card-body">
             <form id="car-form">
-              <div class="field">
-                <label data-i18n="field_region">Регион</label>
-                <select name="region" required>
-                  <option value="" data-i18n="opt_none">—</option>
-                  <option value="tashkent_city">Toshkent shahri</option>
-                  <option value="tashkent_reg">Toshkent viloyati</option>
-                  <option value="andijan">Andijon</option>
-                  <option value="fergana">Fargʻona</option>
-                  <option value="namangan">Namangan</option>
-                  <option value="samarkand">Samarqand</option>
-                  <option value="bukhara">Buxoro</option>
-                  <option value="khorezm">Xorazm</option>
-                  <option value="jizzakh">Jizzax</option>
-                  <option value="navoi">Navoiy</option>
-                  <option value="kashkadarya">Qashqadaryo</option>
-                  <option value="surkhandarya">Surxondaryo</option>
-                  <option value="syrdarya">Sirdaryo</option>
-                  <option value="nukus">Qoraqalpogʻiston (Nukus)</option>
-                </select>
-              </div>
-
-              <div class="field">
-                <label data-i18n="field_brand">Марка</label>
-                <select name="brand_select" id="brand-select">
-                  <option value="" data-i18n="opt_none">—</option>
-                  <option value="Chevrolet">Chevrolet</option>
-                  <option value="Kia">Kia</option>
-                  <option value="Hyundai">Hyundai</option>
-                  <option value="BYD">BYD</option>
-                  <option value="Chery">Chery</option>
-                  <option value="Haval">Haval</option>
-                  <option value="Toyota">Toyota</option>
-                  <option value="Lada">Lada</option>
-                  <option value="Jetour">Jetour</option>
-                  <option value="Daewoo">Daewoo</option>
-                  <option value="other" data-i18n="opt_other">Другое (вписать)</option>
-                </select>
-                <input type="text" name="brand_custom" id="brand-custom" class="input-hidden" placeholder="Напишите марку..." />
-              </div>
-
-              <div class="field">
-                <label data-i18n="field_model">Модель</label>
-                <select name="model_select" id="model-select">
-                  <option value="" data-i18n="opt_none">—</option>
-                  <optgroup label="Chevrolet / Daewoo">
-                    <option value="Cobalt">Cobalt</option>
-                    <option value="Gentra">Gentra / Lacetti</option>
-                    <option value="Spark">Spark</option>
-                    <option value="Nexia 3">Nexia 3</option>
-                    <option value="Nexia 2">Nexia 2</option>
-                    <option value="Nexia 1">Nexia 1</option>
-                    <option value="Tracker">Tracker</option>
-                    <option value="Onix">Onix</option>
-                    <option value="Malibu">Malibu</option>
-                    <option value="Equinox">Equinox</option>
-                    <option value="Traverse">Traverse</option>
-                    <option value="Tahoe">Tahoe</option>
-                    <option value="Damas">Damas</option>
-                    <option value="Matiz">Matiz</option>
-                    <option value="Captiva">Captiva</option>
-                  </optgroup>
-                  <optgroup label="Kia">
-                    <option value="K5">K5</option>
-                    <option value="Seltos">Seltos</option>
-                    <option value="Sportage">Sportage</option>
-                    <option value="Sorento">Sorento</option>
-                    <option value="Carnival">Carnival</option>
-                    <option value="Sonet">Sonet</option>
-                  </optgroup>
-                  <optgroup label="Hyundai">
-                    <option value="Sonata">Sonata</option>
-                    <option value="Elantra">Elantra</option>
-                    <option value="Tucson">Tucson</option>
-                    <option value="Santa Fe">Santa Fe</option>
-                    <option value="Accent">Accent</option>
-                  </optgroup>
-                  <optgroup label="BYD">
-                    <option value="Song Plus">Song Plus</option>
-                    <option value="Chazor">Chazor (Destroyer 05)</option>
-                    <option value="Han">Han</option>
-                    <option value="Song Pro">Song Pro</option>
-                  </optgroup>
-                   <option value="other" data-i18n="opt_other">Другое (вписать)</option>
-                </select>
-                <input type="text" name="model_custom" id="model-custom" class="input-hidden" placeholder="Напишите модель..." />
-              </div>
-
+              <div class="field"><label data-i18n="field_brand"></label><input type="text" name="brand" required /></div>
+              <div class="field"><label data-i18n="field_model"></label><input type="text" name="model" required /></div>
               <div class="field"><label data-i18n="field_year"></label><input type="number" name="year" required /></div>
               <div class="field"><label data-i18n="field_mileage"></label><input type="number" name="mileage" required /></div>
               <div class="field"><label data-i18n="field_price"></label><input type="number" name="price" /></div>
               
               <div class="field"><label data-i18n="field_status"></label>
                 <select name="status" id="field-status">
-                  <option value="" data-i18n="opt_none"></option>
+                  <option value="" data-i18n="opt_status_none"></option>
                   <option value="follow" data-i18n="opt_status_follow"></option>
                   <option value="prepare_sell" data-i18n="opt_status_prepare_sell"></option>
                   <option value="sell" data-i18n="opt_status_sell"></option>
@@ -332,42 +249,59 @@
                   <option value="yes" data-i18n-opt-yes>Да</option>
                   <option value="no" data-i18n-opt-no>Нет</option>
                 </select>
+                <div class="hint" data-i18n="service_hint"></div>
               </div>
 
-              <div class="field"><label data-i18n="field_body_condition"></label>
-                <select name="bodyCondition">
-                  <option value="" data-i18n="opt_none"></option>
-                  <option value="original" data-i18n="opt_bodycond_original"></option>
-                  <option value="scratches" data-i18n="opt_bodycond_scratches"></option>
-                  <option value="painted" data-i18n="opt_bodycond_painted"></option>
+              <div class="field"><label data-i18n="field_engine_type"></label>
+                <select name="engineType">
+                  <option value="" data-i18n="opt_engine_none"></option>
+                  <option value="petrol" data-i18n="opt_engine_petrol"></option>
+                  <option value="diesel" data-i18n="opt_engine_diesel"></option>
+                  <option value="lpg" data-i18n="opt_engine_lpg"></option>
+                  <option value="cng" data-i18n="opt_engine_cng"></option>
+                  <option value="hybrid" data-i18n="opt_engine_hybrid"></option>
+                  <option value="electric" data-i18n="opt_engine_electric"></option>
                 </select>
               </div>
 
-              <div class="field">
-                <label data-i18n="field_tuning">Тюнинг и опции</label>
-                <div class="checkbox-grid">
-                  <div class="checkbox-item"><input type="checkbox" name="tune_tires" id="tune_tires"><label for="tune_tires" data-i18n="tune_tires">Новые шины</label></div>
-                  <div class="checkbox-item"><input type="checkbox" name="tune_rims" id="tune_rims"><label for="tune_rims" data-i18n="tune_rims">Диски</label></div>
-                  <div class="checkbox-item"><input type="checkbox" name="tune_gas" id="tune_gas"><label for="tune_gas" data-i18n="tune_gas">Газ (Пропан/Метан)</label></div>
-                  <div class="checkbox-item"><input type="checkbox" name="tune_ppf" id="tune_ppf"><label for="tune_ppf" data-i18n="tune_ppf">Бронепленка</label></div>
-                  <div class="checkbox-item"><input type="checkbox" name="tune_ceramic" id="tune_ceramic"><label for="tune_ceramic" data-i18n="tune_ceramic">Керамика</label></div>
-                  <div class="checkbox-item"><input type="checkbox" name="tune_audio" id="tune_audio"><label for="tune_audio" data-i18n="tune_audio">Аудио/Сабвуфер</label></div>
-                  <div class="checkbox-item"><input type="checkbox" name="tune_magicar" id="tune_magicar"><label for="tune_magicar" data-i18n="tune_magicar">Magicar/Starline</label></div>
-                  <div class="checkbox-item"><input type="checkbox" name="tune_tint" id="tune_tint"><label for="tune_tint" data-i18n="tune_tint">Тонировка</label></div>
-                </div>
-                <input type="text" name="tune_other" placeholder="Другое..." style="margin-top:5px;">
-              </div>
-
-              <div class="field"><label data-i18n="field_color"></label><input type="text" name="color" /></div>
               <div class="field"><label data-i18n="field_transmission"></label>
                 <select name="transmission">
-                  <option value="" data-i18n="opt_none"></option>
+                  <option value="" data-i18n="opt_trans_none"></option>
                   <option value="manual" data-i18n="opt_trans_manual"></option>
                   <option value="automatic" data-i18n="opt_trans_auto"></option>
                   <option value="robot" data-i18n="opt_trans_robot"></option>
                   <option value="cvt" data-i18n="opt_trans_cvt"></option>
                 </select>
               </div>
+
+              <div class="field"><label data-i18n="field_body_type"></label>
+                <select name="bodyType">
+                  <option value="" data-i18n="opt_bodytype_none"></option>
+                  <option value="sedan" data-i18n="opt_bodytype_sedan"></option>
+                  <option value="hatchback" data-i18n="opt_bodytype_hatch"></option>
+                  <option value="crossover" data-i18n="opt_bodytype_crossover"></option>
+                  <option value="suv" data-i18n="opt_bodytype_suv"></option>
+                  <option value="wagon" data-i18n="opt_bodytype_wagon"></option>
+                  <option value="minivan" data-i18n="opt_bodytype_minivan"></option>
+                  <option value="pickup" data-i18n="opt_bodytype_pickup"></option>
+                </select>
+              </div>
+
+              <div class="field"><label data-i18n="field_body_condition"></label>
+                <select name="bodyCondition">
+                  <option value="" data-i18n="opt_bodycond_none"></option>
+                  <option value="painted" data-i18n="opt_bodycond_painted"></option>
+                  <option value="original" data-i18n="opt_bodycond_original"></option>
+                  <option value="scratches" data-i18n="opt_bodycond_scratches"></option>
+                </select>
+              </div>
+
+              <div class="field"><label data-i18n="field_color"></label><input type="text" name="color" /></div>
+              <div class="field"><label data-i18n="field_purchase_info"></label><input type="text" name="purchaseInfo" /></div>
+              <div class="field"><label data-i18n="field_oil_mileage"></label><input type="number" name="oilMileage" /></div>
+              <div class="field"><label data-i18n="field_daily_mileage"></label><input type="number" name="dailyMileage" /></div>
+              <div class="field"><label data-i18n="field_last_service"></label><input type="text" name="lastService" /></div>
+              <div class="field"><label data-i18n="field_tuning"></label><textarea name="tuning" rows="2"></textarea></div>
 
               <div class="field">
                 <label data-i18n="field_photo"></label>
@@ -378,12 +312,14 @@
 
               <button type="submit" class="primary-btn" data-i18n="btn_save">Сохранить</button>
             </form>
+            <p class="muted small" data-i18n="save_hint"></p>
           </div>
         </div>
       </section>
 
       <section id="screen-garage" class="screen">
         <h2 data-i18n="garage_title"></h2>
+        <p class="muted" data-i18n="garage_desc"></p>
         <div id="garage-list" class="garage-list"></div>
       </section>
 
@@ -399,6 +335,11 @@
 
       <section id="screen-market" class="screen">
         <h2 data-i18n="market_title"></h2>
+        <p class="muted" data-i18n="market_desc"></p>
+        <div class="card">
+          <div class="card-header"><span data-i18n="market_demo_title"></span></div>
+          <div class="card-body"><p data-i18n="market_demo_body"></p></div>
+        </div>
         <div id="market-user-list"></div>
       </section>
     </main>
