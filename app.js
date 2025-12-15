@@ -1,1662 +1,446 @@
-'use strict';
-
-// ---------- 1. SUPABASE CONFIG ----------
-const SUPABASE_URL = "https://dlefczzippvfudcdtlxz.supabase.co";
-const SUPABASE_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRsZWZjenppcHB2ZnVkY2R0bHh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3OTY0OTMsImV4cCI6MjA3OTM3MjQ5M30.jSJYcF3o00yDx41EtbQUye8_tl3AzIaCkrPT9uZ22kY";
-
-const { createClient } = window.supabase;
-const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-const tg = window.Telegram ? window.Telegram.WebApp : null;
-
-if (tg) {
-  tg.ready();
-  tg.expand();
-}
-
-function showMsg(message) {
-  if (tg && tg.showPopup) tg.showPopup({ message });
-  else alert(message);
-}
-
-// ---------- 2. ГЛОБАЛЬНОЕ СОСТОЯНИЕ ----------
-let currentLang = localStorage.getItem("aq_lang") || "ru";
-let currentMediaIndex = 0;
-let globalRatingCars = [];
-let garage = [];
-let ratingMode = "owners";
-
-// максимум 3 фото на авто, до ~50 KB каждое
-const MAX_MEDIA = 3;
-const MAX_IMAGE_BYTES = 50 * 1024; // 50 KB
-
-let isViewingForeign = false;   // смотрим чужую машину?
-let viewForeignCar = null;      // данные чужой машины
-let viewForeignOwner = null;    // владелец чужой машины
-let lastScreenBeforeForeign = "home"; // с какого экрана зашли на чужую машину
-
-// ---------- 3. СПРАВОЧНИКИ ----------
-const REGION_LIST = [
-  { code: "", ru: "— не выбран —", uz: "— tanlanmagan —" },
-  { code: "tashkent_city", ru: "Ташкент (город)", uz: "Toshkent (shahar)" },
-  { code: "tashkent_region", ru: "Ташкентская область", uz: "Toshkent viloyati" },
-  { code: "andijan", ru: "Андижанская область", uz: "Andijon viloyati" },
-  { code: "fergana", ru: "Ферганская область", uz: "Farg‘ona viloyati" },
-  { code: "namangan", ru: "Наманганская область", uz: "Namangan viloyati" },
-  { code: "samarkand", ru: "Самаркандская область", uz: "Samarqand viloyati" },
-  { code: "bukhara", ru: "Бухарская область", uz: "Buxoro viloyati" },
-  { code: "khorezm", ru: "Хорезмская область", uz: "Xorazm viloyati" },
-  { code: "navoi", ru: "Навоийская область", uz: "Navoiy viloyati" },
-  { code: "kashkadarya", ru: "Кашкадарьинская область", uz: "Qashqadaryo viloyati" },
-  { code: "surkhandarya", ru: "Сурхандарьинская область", uz: "Surxondaryo viloyati" },
-  { code: "jizzakh", ru: "Джизакская область", uz: "Jizzax viloyati" },
-  { code: "syrdarya", ru: "Сырдарьинская область", uz: "Sirdaryo viloyati" },
-  { code: "karakalpakstan", ru: "Каракалпакстан (Нукус)", uz: "Qoraqalpog‘iston (Nukus)" }
-];
-
-// бренды → модели
-const BRAND_MODELS = {
-  chevrolet: ["Cobalt", "Spark", "Nexia 3", "Gentra", "Lacetti", "Onix", "Tracker", "Malibu", "Captiva", "Equinox"],
-  kia: ["Rio", "Cerato", "K5", "Sportage", "Seltos", "Sorento", "Carnival"],
-  hyundai: ["Accent", "Elantra", "Sonata", "Tucson", "Santa Fe", "Creta"],
-  byd: ["Song Plus", "Atto 3", "Han", "Dolphin", "Seal"],
-  chery: ["Tiggo 7 Pro", "Tiggo 8 Pro", "Arrizo 6", "Omoda C5"],
-  haval: ["Jolion", "H6", "Dargo", "F7"]
-};
-
-const BRAND_LIST = [
-  { code: "", label: "—" },
-  { code: "chevrolet", label: "Chevrolet" },
-  { code: "kia", label: "Kia" },
-  { code: "hyundai", label: "Hyundai" },
-  { code: "byd", label: "BYD" },
-  { code: "chery", label: "Chery" },
-  { code: "haval", label: "Haval" },
-  { code: "other", label: "Другое (ввести вручную)" }
-];
-
-const TUNING_OPTIONS = [
-  { code: "new_tires", ru: "Новые шины", uz: "Yangi shinalar" },
-  { code: "new_wheels", ru: "Новые диски", uz: "Yangi disklar" },
-  { code: "lpg", ru: "Пропан (LPG)", uz: "Propan (LPG)" },
-  { code: "cng", ru: "Метан (CNG)", uz: "Metan (CNG)" },
-  { code: "ppf", ru: "Бронеплёнка", uz: "Bron-pleonka" },
-  { code: "ceramic", ru: "Керамика", uz: "Keramika" },
-  { code: "audio", ru: "Усилители/сабвуфер", uz: "Audio (kuchaytirgich/sabvufer)" }
-];
-
-// ---------- 4. МОДЕЛЬ МАШИНЫ ----------
-const defaultCar = {
-  region: "",
-  brand: "",
-  model: "",
-  year: 0,
-  mileage: 0,
-  price: 0,
-  status: "follow",
-  serviceOnTime: true,
-  tuning: "",               // заметки
-  tuningOptions: [],        // чекбоксы
-  color: "",
-  bodyCondition: "",        // painted/original/scratches
-  bodyType: "",
-  purchaseInfo: "",
-  oilMileage: "",
-  dailyMileage: "",
-  lastService: "",
-  engineType: "",
-  transmission: "",
-  media: []
-};
-
-function parseJsonArray(v) {
-  if (Array.isArray(v)) return v;
-  if (typeof v === "string") {
-    try {
-      const p = JSON.parse(v);
-      if (Array.isArray(p)) return p;
-    } catch (e) {}
-  }
-  return [];
-}
-
-function parseMediaField(media) {
-  return parseJsonArray(media);
-}
-
-function normalizeCar(car) {
-  const merged = { ...defaultCar, ...car };
-  merged.media = parseMediaField(merged.media);
-  merged.tuningOptions = parseJsonArray(merged.tuningOptions);
-  return merged;
-}
-
-let currentCar = normalizeCar({});
-
-// ---------- 5. ТЕКСТЫ ----------
-const TEXTS = {
-  ru: {
-    subtitle: "Дневник и честный рейтинг твоего авто",
-    tab_home: "Моя машина",
-    tab_garage: "Мой гараж",
-    tab_rating: "Рейтинг",
-    tab_market: "Объявления",
-
-    home_title: "",
-    home_desc: "Записывай пробег, сервис, ремонты и цену.",
-    your_car: "Твоя машина",
-    health: "Рейтинг",
-    car_photo_placeholder: "Фото авто",
-
-    update_title: "Обновить данные",
-    field_region: "Регион",
-    field_brand: "Марка",
-    field_model: "Модель",
-    field_year: "Год",
-    field_mileage: "Пробег, км",
-    field_price: "Цена моего авто, $",
-    field_status: "Статус",
-    field_color: "Цвет",
-    field_body_type: "Тип кузова",
-    field_body_condition: "Кузов (краска)",
-    field_engine_type: "Тип двигателя",
-    field_transmission: "Коробка передач",
-    field_purchase_info: "Когда покупал",
-    field_oil_mileage: "Пробег при замене масла, км",
-    field_daily_mileage: "Дневной пробег, км",
-    field_last_service: "Последнее ТО",
-    field_service: "Обслуживание вовремя",
-    field_tuning: "Особенности / заметки",
-    field_tuning_opts: "Тюнинг (галочки)",
-    field_photo: "Фото автомобиля",
-
-    brand_choose: "Выберите бренд",
-    model_choose: "Выберите модель",
-    other_input_hint: "Введите вручную",
-
-    btn_save: "Сохранить",
-    save_hint: "Всё хранится в Supabase.",
-    service_hint: "Отметь, если масло и сервис проходишь вовремя.",
-    photo_hint: "Загрузи до 3 фото/видео (фото ~до 50 KB).",
-    label_yes: "Да",
-    label_no: "Нет",
-
-    opt_status_none: "— не выбран —",
-    opt_status_follow: "Слежу за машиной",
-    opt_status_prepare_sell: "Готовлюсь продать",
-    opt_status_sell: "Хочу продать",
-    opt_status_consider: "Рассматриваю предложения",
-    opt_status_want_buy: "Хочу купить",
-
-    status_cta_btn: "Перейти к объявлениям",
-    status_for_sale: "В продаже",
-
-    opt_trans_none: "— не указано —",
-    opt_trans_manual: "Механическая",
-    opt_trans_auto: "Автоматическая",
-    opt_trans_robot: "Роботизированная",
-    opt_trans_cvt: "Вариатор",
-
-    opt_bodycond_none: "— не указано —",
-    opt_bodycond_painted: "Крашенная",
-    opt_bodycond_original: "Родная краска",
-    opt_bodycond_scratches: "Есть царапины",
-
-    opt_bodytype_none: "— не указано —",
-    opt_bodytype_sedan: "Седан",
-    opt_bodytype_hatch: "Хэтчбек",
-    opt_bodytype_crossover: "Кроссовер",
-    opt_bodytype_suv: "SUV / внедорожник",
-    opt_bodytype_wagon: "Универсал",
-    opt_bodytype_minivan: "Минивэн",
-    opt_bodytype_pickup: "Пикап",
-
-    opt_engine_none: "— не указано —",
-    opt_engine_petrol: "Бензин",
-    opt_engine_diesel: "Дизель",
-    opt_engine_lpg: "Пропан / бензин",
-    opt_engine_cng: "Метан / бензин",
-    opt_engine_hybrid: "Гибрид",
-    opt_engine_electric: "Электро",
-
-    garage_title: "Мой гараж",
-    garage_desc: "Здесь собраны все твои машины.",
-    garage_primary: "Основная машина",
-    garage_health: "Рейтинг",
-    garage_free_note: "1 машина бесплатно.",
-    garage_premium_title: "Добавить ещё другие автомобили",
-    garage_premium_body: "Закрытая ячейка.",
-
-    rating_title: "Рейтинг",
-    rating_desc: "Честный рейтинг владельцев.",
-    rating_desc_owners: "Честный рейтинг владельцев.",
-    rating_desc_models: "Рейтинг моделей.",
-    rating_mode_owners: "Владельцы",
-    rating_mode_cars: "Модели",
-    rating_badge: "Топ–5 по модели",
-    rating_pos: "место",
-    rating_health: "рейтинг",
-    rating_empty: "Пока пусто.",
-    rating_local_notice: "Данные из Supabase.",
-
-    market_title: "Объявления AutoQiyos",
-    market_desc: "Честные объявления.",
-    market_demo_title: "Пример",
-    market_demo_body: "Chevrolet Cobalt. Оценка: адекватно."
-  },
-
-  uz: {
-    subtitle: "Mashinangiz uchun kundalik va halol reyting",
-    tab_home: "Mening mashinam",
-    tab_garage: "Mening garajim",
-    tab_rating: "Reyting",
-    tab_market: "E'lonlar",
-
-    home_title: "",
-    home_desc: "Yo‘l yurgan masofa, servis, taʼmir va narxni yozib boring.",
-    your_car: "Sizning mashinangiz",
-    health: "Reyting",
-    car_photo_placeholder: "Avto surati",
-
-    update_title: "Maʼlumotni yangilash",
-    field_region: "Hudud",
-    field_brand: "Brend",
-    field_model: "Model",
-    field_year: "Yil",
-    field_mileage: "Yurish, km",
-    field_price: "Mashinam narxi, $",
-    field_status: "Status",
-    field_color: "Rangi",
-    field_body_type: "Kuzov turi",
-    field_body_condition: "Kuzov (bo‘yoq)",
-    field_engine_type: "Dvigatel turi",
-    field_transmission: "Uzatmalar qutisi",
-    field_purchase_info: "Qachon olingan",
-    field_oil_mileage: "Yog' almashtirish, km",
-    field_daily_mileage: "Kunlik yurish, km",
-    field_last_service: "Oxirgi tex. xizmat",
-    field_service: "Texnik xizmat o‘z vaqtida",
-    field_tuning: "Izoh / eslatma",
-    field_tuning_opts: "Tuning (belgilar)",
-    field_photo: "Avtomobil surati",
-
-    brand_choose: "Brendni tanlang",
-    model_choose: "Modelni tanlang",
-    other_input_hint: "Qo‘lda kiriting",
-
-    btn_save: "Saqlash",
-    save_hint: "Supabase-da saqlanadi.",
-    service_hint: "Moy va texnik xizmatni vaqtida qilsangiz belgilang.",
-    photo_hint: "3 tagacha rasm/video (rasm ~50 KB gacha).",
-    label_yes: "Ha",
-    label_no: "Yo‘q",
-
-    opt_status_none: "— tanlanmagan —",
-    opt_status_follow: "Kuzataman",
-    opt_status_prepare_sell: "Sotishga tayyorlanyapman",
-    opt_status_sell: "Sotmoqchiman",
-    opt_status_consider: "Ko‘rib chiqaman",
-    opt_status_want_buy: "Sotib olmoqchiman",
-
-    status_cta_btn: "E'lonlarga",
-    status_for_sale: "Sotuvda",
-
-    opt_trans_none: "— ko‘rsatilmagan —",
-    opt_trans_manual: "Mexanik",
-    opt_trans_auto: "Avtomat",
-    opt_trans_robot: "Robot",
-    opt_trans_cvt: "Variator",
-
-    opt_bodycond_none: "— ko‘rsatilmagan —",
-    opt_bodycond_painted: "Bo‘yalgan",
-    opt_bodycond_original: "Toza (original)",
-    opt_bodycond_scratches: "Chizilgan",
-
-    opt_bodytype_none: "— ko‘rsatilmagan —",
-    opt_bodytype_sedan: "Sedan",
-    opt_bodytype_hatch: "Xetchbek",
-    opt_bodytype_crossover: "Krossover",
-    opt_bodytype_suv: "SUV",
-    opt_bodytype_wagon: "Universal",
-    opt_bodytype_minivan: "Miniven",
-    opt_bodytype_pickup: "Pikap",
-
-    opt_engine_none: "— ko‘rsatilmagan —",
-    opt_engine_petrol: "Benzin",
-    opt_engine_diesel: "Dizel",
-    opt_engine_lpg: "Propan",
-    opt_engine_cng: "Metan",
-    opt_engine_hybrid: "Gibrid",
-    opt_engine_electric: "Elektro",
-
-    garage_title: "Mening garajim",
-    garage_desc: "Barcha mashinalaringiz.",
-    garage_primary: "Asosiy",
-    garage_health: "Reyting",
-    garage_free_note: "1 ta bepul.",
-    garage_premium_title: "Yana qo‘shish",
-    garage_premium_body: "Yopiq uyacha.",
-
-    rating_title: "Reyting",
-    rating_desc: "Egalari reytingi.",
-    rating_desc_owners: "Avtomobil egalari reytingi.",
-    rating_desc_models: "Mashina modellarining reytingi.",
-    rating_mode_owners: "Egalari",
-    rating_mode_cars: "Modellar",
-    rating_badge: "Top–5",
-    rating_pos: "o‘rin",
-    rating_health: "reyting",
-    rating_empty: "Bo'sh.",
-    rating_local_notice: "Supabase maʼlumotlari.",
-
-    market_title: "E'lonlar",
-    market_desc: "Adolatli narxlar.",
-    market_demo_title: "Namuna",
-    market_demo_body: "Cobalt 2022. Narx: adekvat."
-  }
-};
-
-// ---------- 6. HELPERS ----------
-function getUser() {
-  if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) return tg.initDataUnsafe.user;
-  return { id: "test_user_999", first_name: "Browser", last_name: "", username: "test" };
-}
-
-function getFullName(u) {
-  const first = (u?.first_name || "").trim();
-  const last = (u?.last_name || "").trim();
-  return (first + " " + last).trim() || first || last || "";
-}
-
-function formatScore(v) {
-  const n = Number(v);
-  if (!isFinite(n)) return "0.00";
-  return n.toFixed(2);
-}
-
-function regionLabel(code) {
-  const row = REGION_LIST.find(r => r.code === code);
-  if (!row) return "";
-  return currentLang === "uz" ? row.uz : row.ru;
-}
-
-// ---------- 7. РЕЙТИНГ 100.00 (приоритет: пробег → год → краска → тюнинг) ----------
-function calcHealthScore(car) {
-  // Весы: пробег 60, год 25, кузов 10, тюнинг 5 = 100
-  const mileage = Math.max(0, Number(car.mileage) || 0);
-  const year = Math.max(1980, Number(car.year) || 2010);
-  const age = Math.max(0, new Date().getFullYear() - year);
-
-  // 1) Пробег: 0км => 60, 200000км+ => 0
-  const mileageMax = 200000;
-  const mileagePart = Math.max(0, 1 - Math.min(1, mileage / mileageMax));
-  const scoreMileage = 60 * mileagePart;
-
-  // 2) Год/возраст: 0 лет => 25, 20+ лет => 0
-  const ageMax = 20;
-  const agePart = Math.max(0, 1 - Math.min(1, age / ageMax));
-  const scoreYear = 25 * agePart;
-
-  // 3) Кузов (краска)
-  let scoreBody = 7; // если не указано
-  if (car.bodyCondition === "original") scoreBody = 10;
-  else if (car.bodyCondition === "painted") scoreBody = 6;
-  else if (car.bodyCondition === "scratches") scoreBody = 4;
-
-  // 4) Тюнинг: по 1 баллу за галочку, максимум 5
-  const opts = Array.isArray(car.tuningOptions) ? car.tuningOptions : [];
-  const scoreTuning = Math.min(5, opts.length);
-
-  const total = scoreMileage + scoreYear + scoreBody + scoreTuning;
-  return Math.max(0, Math.min(100, Math.round(total * 100) / 100)); // 2 знака
-}
-
-// базовый contact-info (оставляем на всякий)
-function getContactInfo(entry) {
-  const username = entry?.username;
-  const phone = entry?.phone || entry?.telegram_phone || entry?.phone_number || null;
-  const name = entry?.full_name;
-
-  if (username) return { label: "@" + username, url: `https://t.me/${username}` };
-  if (phone) return { label: phone, url: `tel:${phone}` };
-  if (name) return { label: name, url: "" };
-  return { label: "User", url: "" };
-}
-
-// что отображаем в UI: @username → телефон → имя → "User"
-function getDisplayNick(entry) {
-  if (!entry) return "User";
-  if (entry.username) return "@" + entry.username;
-
-  const phone = entry.phone || entry.telegram_phone || entry.phone_number;
-  if (phone) return phone;
-
-  if (entry.full_name) return entry.full_name;
-
-  const contact = getContactInfo(entry);
-  return contact.label || "User";
-}
-
-// Мэппинги
-function getTransmissionLabel(v, d) {
-  const m = { manual: d.opt_trans_manual, automatic: d.opt_trans_auto, robot: d.opt_trans_robot, cvt: d.opt_trans_cvt };
-  return m[v] || "";
-}
-function getBodyConditionLabel(v, d) {
-  const m = { painted: d.opt_bodycond_painted, original: d.opt_bodycond_original, scratches: d.opt_bodycond_scratches };
-  return m[v] || "";
-}
-function getBodyTypeLabel(v, d) {
-  const m = { sedan: d.opt_bodytype_sedan, hatchback: d.opt_bodytype_hatch, crossover: d.opt_bodytype_crossover, suv: d.opt_bodytype_suv, wagon: d.opt_bodytype_wagon, minivan: d.opt_bodytype_minivan, pickup: d.opt_bodytype_pickup };
-  return m[v] || "";
-}
-function getEngineTypeLabel(v, d) {
-  const m = { petrol: d.opt_engine_petrol, diesel: d.opt_engine_diesel, lpg: d.opt_engine_lpg, cng: d.opt_engine_cng, hybrid: d.opt_engine_hybrid, electric: d.opt_engine_electric };
-  return m[v] || "";
-}
-
-function applyTexts(lang) {
-  const dict = TEXTS[lang];
-  document.querySelectorAll("[data-i18n]").forEach((el) => {
-    const key = el.getAttribute("data-i18n");
-    if (dict[key] !== undefined) el.textContent = dict[key];
-  });
-  document.querySelectorAll("[data-i18n-opt-yes]").forEach((el) => (el.textContent = dict.label_yes));
-  document.querySelectorAll("[data-i18n-opt-no]").forEach((el) => (el.textContent = dict.label_no));
-
-  // перерисовать подписи у регионов/тюнинга
-  fillRegionSelect();
-  renderTuningCheckboxes();
-}
-
-function updateRatingDescription() {
-  const dict = TEXTS[currentLang];
-  const el = document.querySelector('[data-i18n="rating_desc"]');
-  if (!el) return;
-  el.textContent = (ratingMode === "owners")
-    ? (dict.rating_desc_owners || dict.rating_desc)
-    : (dict.rating_desc_models || dict.rating_desc);
-}
-
-function validateFormData(formData) {
-  const errors = [];
-  const nowYear = new Date().getFullYear();
-
-  const yearStr = formData.get("year");
-  const mileageStr = formData.get("mileage");
-  const oilStr = formData.get("oilMileage");
-  const dailyStr = formData.get("dailyMileage");
-
-  const year = Number(yearStr);
-  if (!yearStr || isNaN(year) || year < 1980 || year > nowYear + 1) {
-    errors.push(`Год выпуска должен быть от 1980 до ${nowYear + 1}.`);
-  }
-
-  const mileage = Number(mileageStr || 0);
-  if (mileage < 0 || mileage > 2000000) errors.push("Пробег указан некорректно (0–2 000 000 км).");
-
-  const oilMileage = Number(oilStr || 0);
-  if (oilStr && (isNaN(oilMileage) || oilMileage < 0 || oilMileage > 2000000)) {
-    errors.push("Пробег при замене масла указан некорректно.");
-  }
-
-  const daily = Number(dailyStr || 0);
-  if (dailyStr && (isNaN(daily) || daily < 0 || daily > 3000)) {
-    errors.push("Дневной пробег указан некорректно.");
-  }
-
-  return errors;
-}
-
-// активная машина для отображения
-function getActiveCar() {
-  if (isViewingForeign && viewForeignCar) return viewForeignCar;
-  return currentCar;
-}
-
-// путь для удаления файла из storage
-function getStoragePathFromUrl(url) {
-  if (!url) return null;
-  const marker = "/car-photos/";
-  const idx = url.indexOf(marker);
-  if (idx === -1) return null;
-
-  let path = url.substring(idx + marker.length);
-  const qIdx = path.indexOf("?");
-  if (qIdx !== -1) path = path.substring(0, qIdx);
-  return path;
-}
-
-// ---------- 8. SELECTS (регион/бренд/модель/тюнинг) ----------
-function fillRegionSelect() {
-  const sel = document.getElementById("field-region");
-  if (!sel) return;
-
-  const langKey = currentLang === "uz" ? "uz" : "ru";
-  sel.innerHTML = REGION_LIST
-    .map(r => `<option value="${r.code}">${r[langKey]}</option>`)
-    .join("");
-}
-
-function fillBrandSelect() {
-  const sel = document.getElementById("field-brand-select");
-  if (!sel) return;
-
-  sel.innerHTML = BRAND_LIST
-    .map(b => `<option value="${b.code}">${b.label}</option>`)
-    .join("");
-}
-
-function fillModelSelect(brandCode) {
-  const sel = document.getElementById("field-model-select");
-  if (!sel) return;
-
-  const dict = TEXTS[currentLang];
-  const models = BRAND_MODELS[brandCode] || [];
-  const base = `<option value="">${dict.model_choose}</option>`;
-  const items = models.map(m => `<option value="${m}">${m}</option>`).join("");
-  const other = `<option value="other">Другое (ввести вручную)</option>`;
-  sel.innerHTML = base + items + other;
-}
-
-function setBrandModelUIFromCar(car) {
-  const brandSel = document.getElementById("field-brand-select");
-  const modelSel = document.getElementById("field-model-select");
-  const brandOther = document.getElementById("field-brand-other");
-  const modelOther = document.getElementById("field-model-other");
-
-  if (!brandSel || !modelSel || !brandOther || !modelOther) return;
-
-  // BRAND: если не в списке — other
-  const brandCode = Object.values(BRAND_LIST).some(b => b.code && b.code !== "other" && b.label.toLowerCase() === String(car.brand || "").toLowerCase())
-    ? BRAND_LIST.find(b => b.code !== "other" && b.label.toLowerCase() === String(car.brand || "").toLowerCase())?.code
-    : (Object.keys(BRAND_MODELS).includes(String(car.brand || "").toLowerCase()) ? String(car.brand || "").toLowerCase() : null);
-
-  // если car.brand уже "Chevrolet" и т.п.
-  let resolvedBrand = null;
-  if (brandCode) resolvedBrand = brandCode;
-  else {
-    // попробуем по label
-    const hit = BRAND_LIST.find(b => b.code && b.code !== "other" && b.label.toLowerCase() === String(car.brand || "").toLowerCase());
-    if (hit) resolvedBrand = hit.code;
-  }
-
-  if (resolvedBrand) {
-    brandSel.value = resolvedBrand;
-    brandOther.style.display = "none";
-    brandOther.value = "";
-  } else if (car.brand && String(car.brand).trim()) {
-    brandSel.value = "other";
-    brandOther.style.display = "block";
-    brandOther.value = car.brand;
-  } else {
-    brandSel.value = "";
-    brandOther.style.display = "none";
-    brandOther.value = "";
-  }
-
-  const brandForModels = (brandSel.value && brandSel.value !== "other") ? brandSel.value : "";
-  fillModelSelect(brandForModels);
-
-  // MODEL: если не в списке — other
-  const list = BRAND_MODELS[brandForModels] || [];
-  if (car.model && list.includes(car.model)) {
-    modelSel.value = car.model;
-    modelOther.style.display = "none";
-    modelOther.value = "";
-  } else if (car.model && String(car.model).trim()) {
-    modelSel.value = "other";
-    modelOther.style.display = "block";
-    modelOther.value = car.model;
-  } else {
-    modelSel.value = "";
-    modelOther.style.display = "none";
-    modelOther.value = "";
-  }
-}
-
-function renderTuningCheckboxes() {
-  const wrap = document.getElementById("tuning-checkboxes");
-  if (!wrap) return;
-
-  const langKey = currentLang === "uz" ? "uz" : "ru";
-
-  wrap.innerHTML = TUNING_OPTIONS.map(opt => {
-    const id = `tun_${opt.code}`;
-    const label = opt[langKey];
-    return `
-      <label class="chk">
-        <input type="checkbox" name="tuningOptions" value="${opt.code}" id="${id}">
-        <span>${label}</span>
-      </label>
-    `;
-  }).join("");
-
-  // выставим галочки из текущей машины
-  const car = getActiveCar();
-  const set = new Set(Array.isArray(car.tuningOptions) ? car.tuningOptions : []);
-  wrap.querySelectorAll('input[type="checkbox"][name="tuningOptions"]').forEach(cb => {
-    cb.checked = set.has(cb.value);
-  });
-}
-
-// ---------- 9. СЖАТИЕ / ЗАГРУЗКА ----------
-function compressImage(file) {
-  return new Promise((resolve) => {
-    if (file.type && file.type.startsWith("video")) {
-      resolve(file);
-      return;
-    }
-    if (!file.type || !file.type.startsWith("image")) {
-      resolve(file);
-      return;
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>AutoQiyos — MiniApp</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <style>
+    :root {
+      --primary: #1b6cf0;
+      --primary-soft: rgba(27, 108, 240, 0.12);
+      --bg: #050b18;
+      --bg-card: rgba(15, 23, 42, 0.98);
+      --bg-card-soft: rgba(15, 23, 42, 0.8);
+      --border-subtle: rgba(148, 163, 184, 0.35);
+      --text-main: #f9fafb;
+      --text-muted: #9ca3af;
+      --accent-good: #10b981;
+      --accent-bad: #f97373;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --shadow-soft: 0 18px 45px rgba(15, 23, 42, 0.9);
     }
 
-    const reader = new FileReader();
+    * { box-sizing: border-box; }
 
-    reader.onerror = () => {
-      console.warn("FileReader error, uploading original file");
-      resolve(file);
-    };
-
-    reader.onload = (event) => {
-      const img = new Image();
-
-      img.onerror = () => {
-        console.warn("Image decode error, uploading original file");
-        resolve(file);
-      };
-
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        const maxWidth = 800;
-        let width = img.width;
-        let height = img.height;
-
-        if (width > maxWidth) {
-          height = Math.round((height * maxWidth) / width);
-          width = maxWidth;
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, width, height);
-
-        let quality = 0.8;
-
-        function attemptEncode() {
-          canvas.toBlob(
-            (blob) => {
-              if (!blob) {
-                console.warn("toBlob null, uploading original file");
-                resolve(file);
-                return;
-              }
-
-              // стараемся <= 50KB, но если не вышло даже с quality <= 0.3 — отправляем как есть
-              if (blob.size <= MAX_IMAGE_BYTES || quality <= 0.3) {
-                resolve(blob);
-              } else {
-                quality -= 0.1;
-                attemptEncode();
-              }
-            },
-            "image/jpeg",
-            quality
-          );
-        }
-
-        attemptEncode();
-      };
-
-      img.src = event.target.result;
-    };
-
-    reader.readAsDataURL(file);
-  });
-}
-
-async function uploadFile(file) {
-  const user = getUser();
-  const timestamp = Date.now();
-  const isVideo = file.type && file.type.startsWith("video");
-  const ext = isVideo ? "mp4" : "jpg";
-  const fileName = `${user.id}/${timestamp}.${ext}`; // ПУТЬ В БАКЕТЕ
-
-  const body = isVideo ? file : await compressImage(file);
-
-  const { error } = await sb.storage
-    .from("car-photos")
-    .upload(fileName, body, { upsert: false });
-
-  if (error) {
-    console.error("Upload Err", error);
-    return null;
-  }
-
-  const { data: urlData } = sb.storage.from("car-photos").getPublicUrl(fileName);
-  return {
-    type: isVideo ? "video" : "image",
-    data: urlData.publicUrl,
-    path: fileName
-  };
-}
-
-// ---------- 10. SUPABASE DB ----------
-async function syncUserCarFromSupabase() {
-  const user = getUser();
-  const { data, error } = await sb
-    .from("cars")
-    .select("*")
-    .eq("telegram_id", String(user.id))
-    .single();
-
-  if (error) {
-    console.log("No user car yet / error:", error.message);
-    renderCar();
-    return;
-  }
-
-  if (data) {
-    currentCar = normalizeCar({
-      region: data.region || "",
-      brand: data.brand,
-      model: data.model,
-      year: data.year,
-      mileage: data.mileage,
-      price: data.price,
-      status: data.status,
-      serviceOnTime: data.service_on_time,
-      tuning: data.tuning,
-      tuningOptions: data.tuning_options,
-      color: data.color,
-      bodyType: data.body_type,
-      bodyCondition: data.body_condition,
-      engineType: data.engine_type,
-      transmission: data.transmission,
-      purchaseInfo: data.purchase_info,
-      oilMileage: data.oil_mileage,
-      dailyMileage: data.daily_mileage,
-      lastService: data.last_service,
-      media: data.media
-    });
-    currentCar.isPrimary = true;
-    renderCar();
-  }
-}
-
-async function saveUserCarToSupabase() {
-  const user = getUser();
-
-  const payload = {
-    telegram_id: String(user.id),
-    username: user.username,
-    full_name: getFullName(user),
-
-    region: currentCar.region || "",
-
-    brand: currentCar.brand,
-    model: currentCar.model,
-
-    year: Number(currentCar.year),
-    mileage: Number(currentCar.mileage),
-    price: Number(currentCar.price),
-    status: currentCar.status,
-    service_on_time: currentCar.serviceOnTime,
-
-    tuning: currentCar.tuning,
-    tuning_options: currentCar.tuningOptions || [],
-
-    color: currentCar.color,
-    body_type: currentCar.bodyType,
-    body_condition: currentCar.bodyCondition,
-    engine_type: currentCar.engineType,
-    transmission: currentCar.transmission,
-
-    purchase_info: currentCar.purchaseInfo,
-    oil_mileage: currentCar.oilMileage ? Number(currentCar.oilMileage) : null,
-    daily_mileage: currentCar.dailyMileage ? Number(currentCar.dailyMileage) : null,
-    last_service: currentCar.lastService,
-
-    media: currentCar.media,
-    health: calcHealthScore(currentCar),
-    updated_at: new Date().toISOString()
-  };
-
-  const { error } = await sb.from("cars").upsert(payload);
-  if (error) console.error("Upsert error", error);
-
-  await loadGlobalRating();
-}
-
-async function loadGlobalRating() {
-  const { data, error } = await sb.from("cars").select("*").limit(200);
-
-  if (error) {
-    console.error("loadGlobalRating error", error);
-    return;
-  }
-
-  if (data) {
-    globalRatingCars = data.map((row) => {
-      const car = normalizeCar({
-        region: row.region || "",
-        brand: row.brand,
-        model: row.model,
-        year: row.year,
-        mileage: row.mileage,
-        price: row.price,
-        status: row.status,
-        serviceOnTime: row.service_on_time,
-        tuning: row.tuning,
-        tuningOptions: row.tuning_options,
-        color: row.color,
-        bodyType: row.body_type,
-        bodyCondition: row.body_condition,
-        engineType: row.engine_type,
-        transmission: row.transmission,
-        purchaseInfo: row.purchase_info,
-        oilMileage: row.oil_mileage,
-        dailyMileage: row.daily_mileage,
-        lastService: row.last_service,
-        media: row.media
-      });
-
-      const health = (row.health !== null && row.health !== undefined)
-        ? Number(row.health)
-        : calcHealthScore(car);
-
-      return {
-        telegram_id: row.telegram_id,
-        username: row.username,
-        full_name: row.full_name,
-        region: row.region || "",
-        phone: row.phone || row.telegram_phone || row.phone_number || null,
-        health: isFinite(health) ? health : 0,
-        car
-      };
-    });
-
-    globalRatingCars.sort((a, b) => Number(b.health) - Number(a.health));
-    renderRating();
-    renderMarket();
-  }
-}
-
-// ---------- 11. ОТРИСОВКА ----------
-function renderCarMedia() {
-  const car = getActiveCar();
-  const img = document.getElementById("car-photo-main");
-  const video = document.getElementById("car-video-main");
-  const placeholder = document.getElementById("car-photo-placeholder");
-  const prevBtn = document.getElementById("car-photo-prev");
-  const nextBtn = document.getElementById("car-photo-next");
-  const counter = document.getElementById("car-photo-counter");
-  const delBtn = document.getElementById("car-photo-delete");
-  const media = car.media;
-
-  if (!media || !media.length) {
-    if (img) img.style.display = "none";
-    if (video) video.style.display = "none";
-    if (placeholder) placeholder.style.display = "flex";
-    if (prevBtn) prevBtn.style.display = "none";
-    if (nextBtn) nextBtn.style.display = "none";
-    if (counter) counter.style.display = "none";
-    if (delBtn) delBtn.style.display = "none";
-    return;
-  }
-
-  if (currentMediaIndex >= media.length) currentMediaIndex = 0;
-  if (currentMediaIndex < 0) currentMediaIndex = media.length - 1;
-  const item = media[currentMediaIndex];
-
-  if (placeholder) placeholder.style.display = "none";
-  if (counter) {
-    counter.style.display = "block";
-    counter.textContent = `${currentMediaIndex + 1}/${media.length}`;
-  }
-  if (prevBtn) prevBtn.style.display = media.length > 1 ? "flex" : "none";
-  if (nextBtn) nextBtn.style.display = media.length > 1 ? "flex" : "none";
-  if (delBtn) delBtn.style.display = isViewingForeign ? "none" : "flex";
-
-  if (item.type === "video") {
-    if (img) img.style.display = "none";
-    if (video) {
-      video.src = item.data;
-      video.style.display = "block";
+    html, body {
+      margin: 0; padding: 0;
+      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #020617 0%, #020617 35%, #020617 70%, #020617 100%);
+      color: var(--text-main);
     }
-  } else {
-    if (video) video.style.display = "none";
-    if (img) {
-      img.src = item.data;
-      img.style.display = "block";
+
+    body { min-height: 100vh; }
+
+    .app { max-width: 640px; margin: 0 auto; padding: 10px 12px 18px; }
+
+    .muted { color: var(--text-muted); }
+    .small { font-size: 12px; }
+
+    /* Шапка */
+    .app-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 12px; border-radius: 999px;
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.92));
+      box-shadow: 0 16px 40px rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      margin-bottom: 12px;
     }
-  }
-}
 
-function buildStatsRows(car, dict) {
-  const rows = [];
-
-  rows.push({ label: dict.field_region, value: car.region ? regionLabel(car.region) : "-" });
-  rows.push({ label: dict.field_brand, value: car.brand ? car.brand : "-" });
-  rows.push({ label: dict.field_model, value: car.model ? car.model : "-" });
-
-  rows.push({ label: dict.field_price, value: car.price ? `${car.price}$` : "-" });
-  rows.push({ label: dict.field_mileage, value: car.mileage ? `${car.mileage} km` : "-" });
-  rows.push({ label: dict.field_year, value: car.year ? `${car.year}` : "-" });
-
-  if (car.bodyCondition) {
-    rows.push({ label: dict.field_body_condition, value: getBodyConditionLabel(car.bodyCondition, dict) });
-  }
-
-  if (car.transmission) rows.push({ label: dict.field_transmission, value: getTransmissionLabel(car.transmission, dict) });
-  if (car.engineType) rows.push({ label: dict.field_engine_type, value: getEngineTypeLabel(car.engineType, dict) });
-  if (car.bodyType) rows.push({ label: dict.field_body_type, value: getBodyTypeLabel(car.bodyType, dict) });
-  if (car.color) rows.push({ label: dict.field_color, value: car.color });
-
-  const opts = Array.isArray(car.tuningOptions) ? car.tuningOptions : [];
-  if (opts.length) {
-    const langKey = currentLang === "uz" ? "uz" : "ru";
-    const labels = opts
-      .map(code => TUNING_OPTIONS.find(o => o.code === code))
-      .filter(Boolean)
-      .map(o => o[langKey]);
-    rows.push({ label: dict.field_tuning_opts, value: labels.join(", ") });
-  }
-
-  if (car.tuning && car.tuning.trim()) rows.push({ label: dict.field_tuning, value: car.tuning });
-
-  return rows;
-}
-
-function renderCar() {
-  const dict = TEXTS[currentLang];
-  const car = getActiveCar();
-
-  const titleEl = document.getElementById("car-title");
-  const healthEl = document.getElementById("health-score");
-  const pill = document.getElementById("car-status-pill");
-  const statsEl = document.getElementById("car-stats");
-
-  if (titleEl) {
-    const main = `${car.brand || ""} ${car.model || ""} ${car.year || ""}`.trim();
-    titleEl.textContent = main || "—";
-  }
-
-  if (healthEl) {
-    healthEl.textContent = formatScore(calcHealthScore(car));
-  }
-
-  if (pill) {
-    if (car.status === "sell") {
-      pill.style.display = "inline-flex";
-      pill.textContent = dict.status_for_sale;
-    } else {
-      pill.style.display = "none";
+    .logo-title { display: flex; align-items: center; gap: 10px; }
+    .logo-circle {
+      width: 40px; height: 40px; border-radius: 50%; background: #020617;
+      border: 2px solid rgba(148, 163, 184, 0.8); display: flex; align-items: center;
+      justify-content: center; overflow: hidden; box-shadow: 0 16px 40px rgba(15, 23, 42, 0.9);
+      flex-shrink: 0;
     }
-  }
+    .logo-circle img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .app-name { font-size: 18px; font-weight: 700; letter-spacing: 0.04em; }
+    .app-subtitle { font-size: 11px; color: var(--text-muted); }
 
-  if (statsEl) {
-    const rows = buildStatsRows(car, dict);
-    statsEl.innerHTML = rows
-      .map((r) => `<div class="stat-row"><span>${r.label}</span><span>${r.value}</span></div>`)
-      .join("");
-  }
+    /* Языки */
+    .lang-switch { display: inline-flex; padding: 3px; border-radius: 999px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(148, 163, 184, 0.4); }
+    .lang-btn { border: none; background: transparent; color: var(--text-muted); font-size: 11px; padding: 4px 9px; border-radius: 999px; cursor: pointer; }
+    .lang-btn.active { background: linear-gradient(135deg, rgba(37, 99, 235, 0.95), rgba(59, 130, 246, 0.95)); color: #e5f2ff; }
 
-  // баннер "чужая машина"
-  const screenHome = document.getElementById("screen-home");
-  let banner = document.getElementById("foreign-banner");
-  if (!banner && screenHome) {
-    banner = document.createElement("div");
-    banner.id = "foreign-banner";
-    banner.style.marginBottom = "6px";
-    banner.style.padding = "6px 10px";
-    banner.style.borderRadius = "999px";
-    banner.style.border = "1px solid rgba(148,163,184,0.6)";
-    banner.style.background = "rgba(15,23,42,0.9)";
-    banner.style.fontSize = "12px";
-    banner.style.display = "none";
-    banner.style.alignItems = "center";
-    banner.style.gap = "8px";
-    banner.style.justifyContent = "space-between";
-    banner.style.color = "#e5e7eb";
-    banner.style.boxSizing = "border-box";
-    screenHome.insertBefore(banner, screenHome.firstChild.nextSibling);
-  }
-
-  const form = document.getElementById("car-form");
-  const formCard = form ? form.closest(".card") : null;
-
-  if (isViewingForeign && viewForeignOwner) {
-    if (banner) {
-      const label = getDisplayNick(viewForeignOwner);
-      banner.style.display = "flex";
-      banner.innerHTML = `
-        <div style="flex:1; min-width:0;">
-          <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-            Машина пользователя ${label}
-          </div>
-        </div>
-        <button type="button" id="foreign-back-btn"
-          style="margin-left:8px;border:none;border-radius:999px;padding:4px 10px;font-size:11px;cursor:pointer;background:rgba(15,23,42,0.9);color:#e5e7eb;">
-          Назад
-        </button>
-      `;
-      const backBtn = document.getElementById("foreign-back-btn");
-      if (backBtn) backBtn.onclick = (e) => { e.stopPropagation(); exitForeignView(); };
+    /* Tabs */
+    .tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+    .tab-btn {
+      flex: 1; border-radius: 999px; border: 1px solid rgba(148, 163, 184, 0.4);
+      background: rgba(15, 23, 42, 0.94); color: var(--text-muted); font-size: 13px;
+      padding: 8px 4px; cursor: pointer;
     }
-    if (formCard) formCard.style.display = "none";
-  } else {
-    if (banner) { banner.style.display = "none"; banner.innerHTML = ""; }
-    if (formCard) formCard.style.display = "";
-  }
+    .tab-btn.active { background: radial-gradient(circle at 20% 0, #38bdf8, #1d4ed8); color: #e5f2ff; border-color: rgba(96, 165, 250, 0.9); }
 
-  // заполнение формы только для своей машины
-  if (!isViewingForeign && form) {
-    fillRegionSelect();
-    fillBrandSelect();
-    setBrandModelUIFromCar(currentCar);
+    /* Screens */
+    .screens { display: block; }
+    .screen { display: none; position: relative; padding-top: 4px; }
+    .screen.active { display: block; }
 
-    form.region.value = currentCar.region || "";
-    form.year.value = currentCar.year || "";
-    form.mileage.value = currentCar.mileage || "";
-    form.price.value = currentCar.price || "";
-    form.status.value = currentCar.status || "";
-    form.serviceOnTime.value = currentCar.serviceOnTime ? "yes" : "no";
+    /* Cards */
+    .card {
+      background: radial-gradient(circle at top left, rgba(30, 64, 175, 0.5), rgba(15, 23, 42, 0.96));
+      border-radius: var(--radius-lg); border: 1px solid var(--border-subtle);
+      padding: 10px 12px 12px; margin-bottom: 10px; box-shadow: var(--shadow-soft);
+      position: relative; overflow: hidden;
+    }
+    .card-header { margin-bottom: 8px; }
+    .card-body { font-size: 13px; }
 
-    form.transmission.value = currentCar.transmission || "";
-    form.engineType.value = currentCar.engineType || "";
-    form.bodyType.value = currentCar.bodyType || "";
-    form.bodyCondition.value = currentCar.bodyCondition || "";
+    /* Car Hero */
+    .car-hero::before {
+      content: ""; position: absolute; inset: -30%;
+      background: radial-gradient(circle at 0% 120%, rgba(15, 23, 42, 0.0), rgba(15, 23, 42, 0.9)),
+                  radial-gradient(circle at 90% -10%, rgba(56, 189, 248, 0.35), rgba(15, 23, 42, 0.98) 55%);
+      opacity: 0.9; pointer-events: none; z-index: -1;
+    }
+    .car-photo-frame {
+      position: relative; width: 86%; max-width: 360px; margin: 0 auto 10px;
+      border-radius: 18px; overflow: hidden; border: 1px solid rgba(148, 163, 184, 0.7);
+      background: radial-gradient(circle at 0% 0%, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.8)),
+                  linear-gradient(135deg, rgba(30, 64, 175, 0.7), rgba(15, 23, 42, 0.9));
+      height: 0; padding-bottom: 75%;
+    }
+    .car-photo-frame img, .car-photo-frame video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: none; }
+    .car-photo-placeholder {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted);
+      background: radial-gradient(circle at 50% 0%, rgba(148, 163, 184, 0.2), rgba(15, 23, 42, 0.95));
+    }
 
-    form.color.value = currentCar.color || "";
-    form.tuning.value = currentCar.tuning || "";
-    form.purchaseInfo.value = currentCar.purchaseInfo || "";
-    form.oilMileage.value = currentCar.oilMileage || "";
-    form.dailyMileage.value = currentCar.dailyMileage || "";
-    form.lastService.value = currentCar.lastService || "";
+    .photo-nav {
+      position: absolute; top: 50%; transform: translateY(-50%);
+      width: 22px; height: 28px; border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      background: rgba(15, 23, 42, 0.8); color: #e5e7eb; font-size: 15px;
+      display: none; align-items: center; justify-content: center; cursor: pointer; padding: 0;
+    }
+    .photo-nav.prev { left: 6px; } .photo-nav.next { right: 6px; }
+    .car-photo-counter {
+      position: absolute; right: 6px; bottom: 4px; font-size: 10px; padding: 2px 6px; border-radius: 999px;
+      background: rgba(15, 23, 42, 0.85); color: var(--text-muted);
+      border: 1px solid rgba(148, 163, 184, 0.7); display: none;
+    }
 
-    renderTuningCheckboxes();
-  }
+    .car-hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; padding: 2px 7px; border-radius: 999px; background: rgba(15, 23, 42, 0.9); color: var(--text-muted); border: 1px solid rgba(148, 163, 184, 0.35); }
+    .car-main { margin-top: 3px; font-size: 16px; font-weight: 600; }
+    .status-pill {
+      display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px;
+      border: 1px solid rgba(250, 204, 21, 0.9);
+      font-size: 10px; color: #fef9c3; background: radial-gradient(circle at 20% 0, #facc15, #f97316);
+      margin-top: 4px; display: none;
+    }
+    .health { display: flex; flex-direction: column; align-items: flex-end; font-size: 11px; color: var(--text-muted); }
+    .health span:last-child { font-size: 20px; font-weight: 700; color: var(--accent-good); }
 
-  // гараж — только своя машина
-  garage = [currentCar];
+    /* Stats */
+    #car-stats { border-radius: var(--radius-md); background: rgba(15, 23, 42, 0.85); border: 1px dashed rgba(148, 163, 184, 0.4); padding: 6px 8px; margin-top: 8px; }
+    .stat-row { display: flex; justify-content: space-between; font-size: 12px; padding: 2px 0; gap: 10px; }
+    .stat-row span:first-child { color: var(--text-muted); }
+    .stat-row span:last-child { text-align: right; }
 
-  renderCarMedia();
-  renderGarage();
-  renderMarket();
-}
+    /* Form */
+    .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+    .field label { font-size: 12px; }
+    input, select, textarea {
+      border-radius: 10px; border: 1px solid rgba(148, 163, 184, 0.6);
+      background: rgba(15, 23, 42, 0.9); color: var(--text-main);
+      padding: 7px 9px; font-size: 13px; outline: none;
+    }
+    input:focus, select:focus, textarea:focus { border-color: rgba(96, 165, 250, 0.95); box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.4); }
+    textarea { resize: vertical; }
+    .hint { font-size: 11px; color: var(--text-muted); }
+    .primary-btn {
+      width: 100%; margin-top: 4px; border-radius: 999px; border: none;
+      padding: 9px 12px; font-size: 14px; font-weight: 600; cursor: pointer;
+      background: radial-gradient(circle at 10% 0, #38bdf8, #1d4ed8); color: #e5f2ff;
+    }
 
-function renderGarage() {
-  const list = document.getElementById("garage-list");
-  if (!list) return;
+    /* чекбоксы тюнинга */
+    .chk-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      padding: 8px;
+      border-radius: 12px;
+      border: 1px dashed rgba(148, 163, 184, 0.4);
+      background: rgba(15, 23, 42, 0.85);
+    }
+    .chk {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #e5e7eb;
+      cursor: pointer;
+      user-select: none;
+    }
+    .chk input { width: 16px; height: 16px; padding: 0; margin: 0; }
 
-  const dict = TEXTS[currentLang];
+    /* Lists */
+    .garage-list, .list { display: flex; flex-direction: column; gap: 8px; }
+    .garage-card, .rating-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 9px; border-radius: var(--radius-md);
+      background: rgba(15, 23, 42, 0.92); border: 1px solid rgba(148, 163, 184, 0.6);
+    }
+    .garage-card.primary { border-color: rgba(96, 165, 250, 0.9); box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.5); }
+    .garage-card.locked { border-style: dashed; opacity: 0.9; background: rgba(15, 23, 42, 0.7); }
+    .garage-left, .rating-left { display: flex; align-items: center; gap: 8px; }
+    .garage-thumb {
+      width: 56px; height: 36px; border-radius: 10px; overflow: hidden;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      background: radial-gradient(circle at 0% 0%, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.8)),
+                  linear-gradient(135deg, rgba(30, 64, 175, 0.7), rgba(15, 23, 42, 0.9));
+      flex-shrink: 0;
+    }
+    .garage-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .garage-thumb-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: var(--text-muted); }
+    .garage-main, .rating-main { display: flex; flex-direction: column; gap: 2px; font-size: 12px; }
+    .garage-title, .rating-owner { font-weight: 600; }
+    .garage-meta, .rating-car { color: var(--text-muted); font-size: 11px; }
+    .garage-right, .rating-right { display: flex; flex-direction: column; align-items: flex-end; font-size: 11px; color: var(--text-muted); }
+    .garage-health-value, .rating-health { font-size: 16px; font-weight: 700; color: var(--accent-good); }
 
-  const cards = garage.map((car) => {
-    const m = car.media && car.media[0];
-    const thumbHtml = m
-      ? `<img src="${m.data}" alt="">`
-      : `<div class="garage-thumb-placeholder">AQ</div>`;
+    .rating-pos {
+      width: 26px; height: 26px; border-radius: 999px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 600; background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.7);
+    }
+    .rating-pos.top-1 { background: radial-gradient(circle at 20% 0, #facc15, #f97316); border-color: rgba(250, 204, 21, 0.9); color: #1e293b; }
 
-    return `
-      <div class="garage-card primary">
-        <div class="garage-left">
-          <div class="garage-thumb">${thumbHtml}</div>
-          <div class="garage-main">
-            <div class="garage-title">${car.brand || "-"} ${car.model || ""}</div>
-            <div class="garage-meta">${car.year || ""}${car.region ? " • " + regionLabel(car.region) : ""}</div>
-          </div>
-        </div>
-        <div class="garage-right">
-          <div class="garage-health-value">${formatScore(calcHealthScore(car))}</div>
+    .rating-mode-switch { display: inline-flex; padding: 3px; border-radius: 999px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(148, 163, 184, 0.4); margin: 0 2px 8px; }
+    .rating-mode-btn { border: none; background: transparent; color: var(--text-muted); font-size: 11px; padding: 4px 9px; border-radius: 999px; cursor: pointer; }
+    .rating-mode-btn.active { background: radial-gradient(circle at 20% 0, #38bdf8, #1d4ed8); color: #e5f2ff; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="app-header">
+      <div class="logo-title">
+        <div class="logo-circle"><img src="autoqiyos-logo.png" alt="AutoQiyos" onerror="this.style.display='none';this.parentElement.innerText='AQ'"></div>
+        <div>
+          <div class="app-name">AutoQiyos</div>
+          <div class="app-subtitle" data-i18n="subtitle"></div>
         </div>
       </div>
-    `;
-  });
-
-  const locked = `
-    <div class="garage-card locked">
-      <div class="garage-main">
-        <div class="garage-title">🔒 ${dict.garage_premium_title}</div>
+      <div class="lang-switch">
+        <button class="lang-btn active" data-lang="ru">RU</button>
+        <button class="lang-btn" data-lang="uz">OʻZ</button>
       </div>
-    </div>
-  `;
+    </header>
 
-  list.innerHTML = cards.join("") + locked;
-}
+    <nav class="tabs">
+      <button class="tab-btn active" data-screen="home" data-i18n="tab_home"></button>
+      <button class="tab-btn" data-screen="garage" data-i18n="tab_garage"></button>
+      <button class="tab-btn" data-screen="rating" data-i18n="tab_rating"></button>
+      <button class="tab-btn" data-screen="market" data-i18n="tab_market"></button>
+    </nav>
 
-function buildModelLabel(brand, model) {
-  const b = (brand || "").trim();
-  const m = (model || "").trim();
-  if (!b && !m) return "Model";
-  if (!b) return m;
-  if (!m) return b;
+    <main class="screens">
+      <section id="screen-home" class="screen active">
+        <h2 data-i18n="home_title"></h2>
+        <p class="muted" data-i18n="home_desc"></p>
 
-  const bLower = b.toLowerCase();
-  const mLower = m.toLowerCase();
+        <div class="card car-hero">
+          <div class="car-photo-frame">
+            <img id="car-photo-main" alt="Фото авто" />
+            <video id="car-video-main" playsinline muted></video>
+            <div class="car-photo-placeholder" id="car-photo-placeholder"><span data-i18n="car_photo_placeholder"></span></div>
+            <button type="button" class="photo-nav prev" id="car-photo-prev">‹</button>
+            <button type="button" class="photo-nav next" id="car-photo-next">›</button>
+            <div class="car-photo-counter" id="car-photo-counter"></div>
+          </div>
 
-  if (bLower === mLower) return m;
-  if (bLower.includes(mLower)) return b;
-  if (mLower.includes(bLower)) return m;
+          <div class="car-hero-top">
+            <div>
+              <div class="badge" data-i18n="your_car"></div>
+              <div class="car-main" id="car-title">—</div>
+              <div class="status-pill" id="car-status-pill"></div>
+            </div>
+            <div class="health">
+              <span data-i18n="health"></span>
+              <span id="health-score">0.00</span>
+            </div>
+          </div>
+          <div class="card-body" id="car-stats"></div>
+        </div>
 
-  return `${b} ${m}`;
-}
+        <div class="card">
+          <div class="card-header"><span data-i18n="update_title"></span></div>
+          <div class="card-body">
+            <form id="car-form">
 
-function renderRating() {
-  const list = document.getElementById("rating-list");
-  if (!list) return;
-
-  const dict = TEXTS[currentLang];
-
-  if (!globalRatingCars.length) {
-    list.innerHTML = dict.rating_empty;
-    return;
-  }
-
-  if (ratingMode === "owners") {
-    list.innerHTML = globalRatingCars
-      .map((c, i) => {
-        const label = getDisplayNick(c);
-        const regionTxt = c.region ? regionLabel(c.region) : "";
-        return `
-          <div class="rating-item" data-telegram-id="${c.telegram_id}">
-            <div class="rating-left">
-              <div class="rating-pos ${i === 0 ? "top-1" : ""}">${i + 1}</div>
-              <div class="rating-main">
-                <div class="rating-owner" style="font-size:12px;">${label}</div>
-                <div class="rating-car" style="font-size:11px;">
-                  ${c.car.brand || ""} ${c.car.model || ""}${regionTxt ? " • " + regionTxt : ""}
-                </div>
+              <div class="field">
+                <label data-i18n="field_region"></label>
+                <select name="region" id="field-region"></select>
               </div>
-            </div>
-            <div class="rating-right">
-              <span class="rating-health">${formatScore(c.health)}</span>
-            </div>
-          </div>
-        `;
-      })
-      .join("");
-  } else {
-    const agg = {};
-    globalRatingCars.forEach((c) => {
-      const b = (c.car.brand || "").trim();
-      const m = (c.car.model || "").trim();
-      const key = `${b}|${m}`;
-      if (!agg[key]) {
-        agg[key] = { brand: b, model: m, count: 0, healthSum: 0 };
-      }
-      agg[key].count += 1;
-      agg[key].healthSum += Number(c.health);
-    });
 
-    const models = Object.values(agg).map((m) => ({
-      brand: m.brand,
-      model: m.model,
-      label: buildModelLabel(m.brand, m.model),
-      count: m.count,
-      health: m.count ? (m.healthSum / m.count) : 0
-    }));
+              <!-- БРЕНД -->
+              <div class="field">
+                <label data-i18n="field_brand"></label>
+                <select name="brandSelect" id="field-brand-select"></select>
+                <input type="text" name="brandOther" id="field-brand-other" style="display:none;" placeholder="Введите бренд" />
+                <div class="hint" data-i18n="other_input_hint"></div>
+              </div>
 
-    models.sort((a, b) => b.health - a.health);
+              <!-- МОДЕЛЬ -->
+              <div class="field">
+                <label data-i18n="field_model"></label>
+                <select name="modelSelect" id="field-model-select"></select>
+                <input type="text" name="modelOther" id="field-model-other" style="display:none;" placeholder="Введите модель" />
+                <div class="hint" data-i18n="other_input_hint"></div>
+              </div>
 
-    list.innerHTML = models
-      .map((m, i) => `
-        <div class="rating-item">
-          <div class="rating-left">
-            <div class="rating-pos ${i === 0 ? "top-1" : ""}">${i + 1}</div>
-            <div class="rating-main">
-              <div class="rating-owner" style="font-size:12px;">${m.label}</div>
-              <div class="rating-car" style="font-size:11px;">×${m.count}</div>
-            </div>
-          </div>
-          <div class="rating-right">
-            <span class="rating-health">${formatScore(m.health)}</span>
+              <div class="field"><label data-i18n="field_year"></label><input type="number" name="year" required /></div>
+              <div class="field"><label data-i18n="field_mileage"></label><input type="number" name="mileage" required /></div>
+              <div class="field"><label data-i18n="field_price"></label><input type="number" name="price" /></div>
+
+              <div class="field"><label data-i18n="field_status"></label>
+                <select name="status" id="field-status">
+                  <option value="" data-i18n="opt_status_none"></option>
+                  <option value="follow" data-i18n="opt_status_follow"></option>
+                  <option value="prepare_sell" data-i18n="opt_status_prepare_sell"></option>
+                  <option value="sell" data-i18n="opt_status_sell"></option>
+                  <option value="consider_offers" data-i18n="opt_status_consider"></option>
+                  <option value="want_buy" data-i18n="opt_status_want_buy"></option>
+                </select>
+              </div>
+
+              <div class="field" id="status-cta-wrap" style="display:none;">
+                <button type="button" class="primary-btn" id="status-cta-btn" data-i18n="status_cta_btn"></button>
+              </div>
+
+              <div class="field"><label data-i18n="field_service"></label>
+                <select name="serviceOnTime" id="field-service">
+                  <option value="yes" data-i18n-opt-yes>Да</option>
+                  <option value="no" data-i18n-opt-no>Нет</option>
+                </select>
+                <div class="hint" data-i18n="service_hint"></div>
+              </div>
+
+              <div class="field"><label data-i18n="field_engine_type"></label>
+                <select name="engineType">
+                  <option value="" data-i18n="opt_engine_none"></option>
+                  <option value="petrol" data-i18n="opt_engine_petrol"></option>
+                  <option value="diesel" data-i18n="opt_engine_diesel"></option>
+                  <option value="lpg" data-i18n="opt_engine_lpg"></option>
+                  <option value="cng" data-i18n="opt_engine_cng"></option>
+                  <option value="hybrid" data-i18n="opt_engine_hybrid"></option>
+                  <option value="electric" data-i18n="opt_engine_electric"></option>
+                </select>
+              </div>
+
+              <div class="field"><label data-i18n="field_transmission"></label>
+                <select name="transmission">
+                  <option value="" data-i18n="opt_trans_none"></option>
+                  <option value="manual" data-i18n="opt_trans_manual"></option>
+                  <option value="automatic" data-i18n="opt_trans_auto"></option>
+                  <option value="robot" data-i18n="opt_trans_robot"></option>
+                  <option value="cvt" data-i18n="opt_trans_cvt"></option>
+                </select>
+              </div>
+
+              <div class="field"><label data-i18n="field_body_type"></label>
+                <select name="bodyType">
+                  <option value="" data-i18n="opt_bodytype_none"></option>
+                  <option value="sedan" data-i18n="opt_bodytype_sedan"></option>
+                  <option value="hatchback" data-i18n="opt_bodytype_hatch"></option>
+                  <option value="crossover" data-i18n="opt_bodytype_crossover"></option>
+                  <option value="suv" data-i18n="opt_bodytype_suv"></option>
+                  <option value="wagon" data-i18n="opt_bodytype_wagon"></option>
+                  <option value="minivan" data-i18n="opt_bodytype_minivan"></option>
+                  <option value="pickup" data-i18n="opt_bodytype_pickup"></option>
+                </select>
+              </div>
+
+              <div class="field"><label data-i18n="field_body_condition"></label>
+                <select name="bodyCondition">
+                  <option value="" data-i18n="opt_bodycond_none"></option>
+                  <option value="painted" data-i18n="opt_bodycond_painted"></option>
+                  <option value="original" data-i18n="opt_bodycond_original"></option>
+                  <option value="scratches" data-i18n="opt_bodycond_scratches"></option>
+                </select>
+              </div>
+
+              <div class="field"><label data-i18n="field_color"></label><input type="text" name="color" /></div>
+              <div class="field"><label data-i18n="field_purchase_info"></label><input type="text" name="purchaseInfo" /></div>
+              <div class="field"><label data-i18n="field_oil_mileage"></label><input type="number" name="oilMileage" /></div>
+              <div class="field"><label data-i18n="field_daily_mileage"></label><input type="number" name="dailyMileage" /></div>
+              <div class="field"><label data-i18n="field_last_service"></label><input type="text" name="lastService" /></div>
+
+              <div class="field">
+                <label data-i18n="field_tuning_opts"></label>
+                <div id="tuning-checkboxes" class="chk-grid"></div>
+              </div>
+
+              <div class="field"><label data-i18n="field_tuning"></label><textarea name="tuning" rows="2"></textarea></div>
+
+              <div class="field">
+                <label data-i18n="field_photo"></label>
+                <input type="file" id="car-photo-input" accept="image/*,video/*" multiple />
+                <div class="hint" data-i18n="photo_hint"></div>
+                <div id="upload-status" style="color:#eab308; font-size:11px; margin-top:5px;"></div>
+              </div>
+
+              <button type="submit" class="primary-btn" data-i18n="btn_save">Сохранить</button>
+            </form>
+
+            <p class="muted small" data-i18n="save_hint"></p>
           </div>
         </div>
-      `)
-      .join("");
-  }
+      </section>
 
-  updateRatingDescription();
-}
+      <section id="screen-garage" class="screen">
+        <h2 data-i18n="garage_title"></h2>
+        <p class="muted" data-i18n="garage_desc"></p>
+        <div id="garage-list" class="garage-list"></div>
+      </section>
 
-function renderMarket() {
-  const list = document.getElementById("market-user-list");
-  if (!list) return;
+      <section id="screen-rating" class="screen">
+        <h2 data-i18n="rating_title"></h2>
+        <p class="muted" data-i18n="rating_desc"></p>
 
-  const dict = TEXTS[currentLang];
-  if (!globalRatingCars.length) {
-    list.innerHTML = "";
-    return;
-  }
-
-  const sellers = globalRatingCars.filter(
-    (c) => c.car.status === "sell" || c.car.status === "prepare_sell"
-  );
-
-  if (!sellers.length) {
-    list.innerHTML = "";
-    return;
-  }
-
-  list.innerHTML = sellers
-    .map((c) => {
-      const label = getDisplayNick(c);
-      const regionTxt = c.region ? regionLabel(c.region) : "";
-
-      return `
-        <div class="card market-item" data-telegram-id="${c.telegram_id}">
-          <div class="card-header" style="padding:6px 8px;">
-            <span style="font-size:13px;">🚗 ${c.car.brand || ""} ${c.car.model || ""}</span>
-          </div>
-          <div class="card-body" style="font-size:12px; line-height:1.3; padding:8px 9px;">
-            <p style="margin:0 0 2px;"><strong>${c.car.price ? c.car.price + "$" : ""}</strong></p>
-            <p style="margin:0 0 2px;">${dict.rating_health}: ${formatScore(c.health)}</p>
-            ${regionTxt ? `<p style="margin:0 0 2px;">${dict.field_region}: ${regionTxt}</p>` : ""}
-            ${c.car.mileage ? `<p style="margin:0 0 2px;">${dict.field_mileage}: ${c.car.mileage} km</p>` : ""}
-            ${c.car.year ? `<p style="margin:0 0 2px;">${dict.field_year}: ${c.car.year}</p>` : ""}
-            ${c.car.color ? `<p style="margin:0 0 2px;">${dict.field_color}: ${c.car.color}</p>` : ""}
-            <p style="margin:4px 0 0;"><span>${label}</span></p>
-          </div>
+        <!-- фильтр по региону -->
+        <div class="field" style="margin:0 2px 8px;">
+          <label data-i18n="rating_filter_region">Фильтр по региону</label>
+          <select id="rating-region-filter"></select>
         </div>
-      `;
-    })
-    .join("");
-}
 
-// ---------- 12. ПЕРЕХОД НА "СТРАНИЦУ" ДРУГОГО ПОЛЬЗОВАТЕЛЯ ----------
-function openUserMainById(telegramId) {
-  const entry = globalRatingCars.find((c) => String(c.telegram_id) === String(telegramId));
-  if (!entry) return;
-
-  const activeScreenEl = document.querySelector(".screen.active");
-  if (activeScreenEl && activeScreenEl.id && activeScreenEl.id.startsWith("screen-")) {
-    lastScreenBeforeForeign = activeScreenEl.id.replace("screen-", "");
-  } else {
-    lastScreenBeforeForeign = "home";
-  }
-
-  const me = getUser();
-  if (String(entry.telegram_id) === String(me.id)) {
-    isViewingForeign = false;
-    viewForeignCar = null;
-    viewForeignOwner = null;
-  } else {
-    isViewingForeign = true;
-    viewForeignCar = normalizeCar(entry.car);
-    viewForeignOwner = entry;
-    currentMediaIndex = 0;
-  }
-
-  const homeTab = document.querySelector('.tab-btn[data-screen="home"]');
-  if (homeTab) homeTab.click();
-  else {
-    document.querySelectorAll(".tab-btn").forEach((btn) => btn.classList.remove("active"));
-    document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
-    const homeScreen = document.getElementById("screen-home");
-    if (homeScreen) homeScreen.classList.add("active");
-  }
-
-  renderCar();
-}
-
-function exitForeignView() {
-  isViewingForeign = false;
-  viewForeignCar = null;
-  viewForeignOwner = null;
-  currentMediaIndex = 0;
-
-  const targetScreen = lastScreenBeforeForeign || "home";
-  const targetTab = document.querySelector(`.tab-btn[data-screen="${targetScreen}"]`);
-
-  if (targetTab) targetTab.click();
-  else {
-    const homeTab = document.querySelector('.tab-btn[data-screen="home"]');
-    if (homeTab) homeTab.click();
-  }
-
-  renderCar();
-}
-
-// ---------- 13. DOMContentLoaded ----------
-document.addEventListener("DOMContentLoaded", async () => {
-  if (tg) tg.ready();
-
-  // init selects
-  fillRegionSelect();
-  fillBrandSelect();
-  fillModelSelect("");
-
-  applyTexts(currentLang);
-  updateRatingDescription();
-  renderCar(); // дефолт до Supabase
-
-  // Кнопка удаления фото поверх frame
-  const photoFrame = document.querySelector(".car-photo-frame");
-  if (photoFrame && !document.getElementById("car-photo-delete")) {
-    const delBtn = document.createElement("button");
-    delBtn.id = "car-photo-delete";
-    delBtn.type = "button";
-    delBtn.textContent = "✕";
-    delBtn.style.position = "absolute";
-    delBtn.style.top = "6px";
-    delBtn.style.right = "6px";
-    delBtn.style.width = "24px";
-    delBtn.style.height = "24px";
-    delBtn.style.borderRadius = "999px";
-    delBtn.style.border = "1px solid rgba(148,163,184,0.7)";
-    delBtn.style.background = "rgba(15,23,42,0.9)";
-    delBtn.style.color = "#e5e7eb";
-    delBtn.style.fontSize = "14px";
-    delBtn.style.display = "none";
-    delBtn.style.alignItems = "center";
-    delBtn.style.justifyContent = "center";
-    delBtn.style.cursor = "pointer";
-    delBtn.style.padding = "0";
-    delBtn.style.zIndex = "5";
-    photoFrame.appendChild(delBtn);
-
-    delBtn.addEventListener("click", async (e) => {
-      e.stopPropagation();
-
-      if (isViewingForeign) {
-        showMsg("Нельзя удалять фото чужой машины.");
-        return;
-      }
-
-      const media = currentCar.media;
-      if (!media || !media.length) return;
-
-      const ok = typeof confirm === "function" ? confirm("Удалить это фото/видео?") : true;
-      if (!ok) return;
-
-      const item = media[currentMediaIndex];
-
-      let path = item && item.path ? item.path : null;
-      if (!path && item && item.data) path = getStoragePathFromUrl(item.data);
-
-      if (path) {
-        try {
-          const { error } = await sb.storage.from("car-photos").remove([path]);
-          if (error) console.warn("Ошибка при удалении из storage:", error.message);
-        } catch (err) {
-          console.warn("Storage remove exception:", err);
-        }
-      }
-
-      media.splice(currentMediaIndex, 1);
-      if (currentMediaIndex >= media.length) currentMediaIndex = media.length - 1;
-      if (currentMediaIndex < 0) currentMediaIndex = 0;
-
-      await saveUserCarToSupabase();
-      renderCarMedia();
-    });
-  }
-
-  await syncUserCarFromSupabase();
-  await loadGlobalRating();
-
-  // Tabs
-  document.querySelectorAll(".tab-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const screen = btn.getAttribute("data-screen");
-      document.querySelectorAll(".tab-btn").forEach((el) => el.classList.remove("active"));
-      document.querySelectorAll(".screen").forEach((el) => el.classList.remove("active"));
-
-      btn.classList.add("active");
-      const screenEl = document.getElementById(`screen-${screen}`);
-      if (screenEl) screenEl.classList.add("active");
-
-      if (screen === "rating") loadGlobalRating();
-    });
-  });
-
-  // Lang switch
-  document.querySelectorAll(".lang-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      currentLang = btn.getAttribute("data-lang");
-      localStorage.setItem("aq_lang", currentLang);
-
-      document.querySelectorAll(".lang-btn").forEach((el) =>
-        el.classList.toggle("active", el.getAttribute("data-lang") === currentLang)
-      );
-
-      applyTexts(currentLang);
-      updateRatingDescription();
-      renderCar();
-      renderRating();
-      renderMarket();
-      renderGarage();
-    });
-  });
-
-  // Rating mode switch
-  document.querySelectorAll(".rating-mode-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      ratingMode = btn.getAttribute("data-mode") || "owners";
-
-      document.querySelectorAll(".rating-mode-btn").forEach((el) =>
-        el.classList.toggle("active", el.getAttribute("data-mode") === ratingMode)
-      );
-
-      renderRating();
-    });
-  });
-
-  // Photo Nav
-  const prev = document.getElementById("car-photo-prev");
-  const next = document.getElementById("car-photo-next");
-  if (prev) prev.onclick = () => { currentMediaIndex--; renderCarMedia(); };
-  if (next) next.onclick = () => { currentMediaIndex++; renderCarMedia(); };
-
-  // Upload
-  const photoInput = document.getElementById("car-photo-input");
-  if (photoInput) {
-    photoInput.addEventListener("change", async (e) => {
-      const files = Array.from(e.target.files);
-      if (!files.length) return;
-
-      if (isViewingForeign) {
-        showMsg("Нельзя загружать фото для чужой машины.");
-        photoInput.value = "";
-        return;
-      }
-
-      const hint =
-        photoInput.parentNode.querySelector(".hint") ||
-        document.getElementById("upload-status");
-
-      if (currentCar.media.length >= MAX_MEDIA) {
-        const msg = `Можно загрузить максимум ${MAX_MEDIA} фото/видео.`;
-        if (hint) hint.innerText = msg;
-        showMsg(msg);
-        photoInput.value = "";
-        return;
-      }
-
-      if (hint) hint.innerText = "Сжатие и загрузка... ⏳";
-
-      let success = 0;
-      let fail = 0;
-
-      try {
-        for (const f of files) {
-          if (currentCar.media.length >= MAX_MEDIA) break;
-          const res = await uploadFile(f);
-          if (res) {
-            currentCar.media.push(res);
-            success++;
-          } else {
-            fail++;
-          }
-        }
-        await saveUserCarToSupabase();
-        if (hint) hint.innerText = (fail === 0) ? "Готово! ✅" : `Готово: ${success}, ошибок: ${fail}`;
-        renderCar();
-      } catch (err) {
-        console.error(err);
-        if (hint) hint.innerText = "Ошибка при загрузке";
-        showMsg("Ошибка при загрузке фото/видео.");
-      } finally {
-        photoInput.value = "";
-      }
-    });
-  }
-
-  // Status CTA
-  const statusSelect = document.getElementById("field-status");
-  const statusCtaWrap = document.getElementById("status-cta-wrap");
-  const statusCtaBtn = document.getElementById("status-cta-btn");
-
-  function updateStatusCta() {
-    if (!statusSelect || !statusCtaWrap) return;
-    const v = statusSelect.value;
-    if (v === "sell" || v === "prepare_sell" || v === "consider_offers") statusCtaWrap.style.display = "block";
-    else statusCtaWrap.style.display = "none";
-  }
-
-  if (statusSelect) {
-    statusSelect.addEventListener("change", updateStatusCta);
-    updateStatusCta();
-  }
-
-  if (statusCtaBtn) {
-    statusCtaBtn.addEventListener("click", () => {
-      const marketTab = document.querySelector('.tab-btn[data-screen="market"]');
-      if (marketTab) marketTab.click();
-    });
-  }
-
-  // Brand/Model dynamic
-  const brandSel = document.getElementById("field-brand-select");
-  const modelSel = document.getElementById("field-model-select");
-  const brandOther = document.getElementById("field-brand-other");
-  const modelOther = document.getElementById("field-model-other");
-
-  if (brandSel) {
-    brandSel.addEventListener("change", () => {
-      if (brandSel.value === "other") {
-        brandOther.style.display = "block";
-        fillModelSelect("");
-      } else {
-        brandOther.style.display = "none";
-        brandOther.value = "";
-        fillModelSelect(brandSel.value);
-      }
-      // сброс модели
-      modelOther.style.display = "none";
-      modelOther.value = "";
-      modelSel.value = "";
-    });
-  }
-
-  if (modelSel) {
-    modelSel.addEventListener("change", () => {
-      if (modelSel.value === "other") modelOther.style.display = "block";
-      else {
-        modelOther.style.display = "none";
-        modelOther.value = "";
-      }
-    });
-  }
-
-  // Save Form
-  const form = document.getElementById("car-form");
-  if (form) {
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-
-      if (isViewingForeign) {
-        showMsg("Нельзя редактировать чужую машину.");
-        return;
-      }
-
-      const f = new FormData(form);
-      const validationErrors = validateFormData(f);
-      if (validationErrors.length) {
-        showMsg(validationErrors.join("\n"));
-        return;
-      }
-
-      // region
-      currentCar.region = f.get("region") || "";
-
-      // brand/model
-      const bSel = f.get("brandSelect");
-      const mSel = f.get("modelSelect");
-      const bOther = (f.get("brandOther") || "").trim();
-      const mOther = (f.get("modelOther") || "").trim();
-
-      if (bSel === "other") currentCar.brand = bOther || "";
-      else {
-        const item = BRAND_LIST.find(x => x.code === bSel);
-        currentCar.brand = item ? item.label : (bSel || "");
-      }
-
-      if (mSel === "other") currentCar.model = mOther || "";
-      else currentCar.model = mSel || "";
-
-      // base fields
-      currentCar.year = f.get("year");
-      currentCar.mileage = f.get("mileage");
-      currentCar.price = f.get("price");
-      currentCar.status = f.get("status");
-
-      currentCar.serviceOnTime = f.get("serviceOnTime") === "yes";
-      currentCar.transmission = f.get("transmission");
-      currentCar.engineType = f.get("engineType");
-      currentCar.bodyType = f.get("bodyType");
-      currentCar.bodyCondition = f.get("bodyCondition");
-
-      currentCar.color = f.get("color");
-      currentCar.tuning = f.get("tuning");
-      currentCar.purchaseInfo = f.get("purchaseInfo");
-      currentCar.oilMileage = f.get("oilMileage");
-      currentCar.dailyMileage = f.get("dailyMileage");
-      currentCar.lastService = f.get("lastService");
-
-      // tuningOptions чекбоксы
-      const opts = [];
-      document.querySelectorAll('input[type="checkbox"][name="tuningOptions"]:checked').forEach(cb => {
-        opts.push(cb.value);
-      });
-      currentCar.tuningOptions = opts;
-
-      const btn = form.querySelector('button[type="submit"]');
-      if (btn) { btn.textContent = "..."; btn.disabled = true; }
-
-      await saveUserCarToSupabase();
-
-      if (btn) { btn.textContent = TEXTS[currentLang].btn_save; btn.disabled = false; }
-
-      showMsg("Сохранено!");
-      renderCar();
-    });
-  }
-
-  // Rating click → открываем "страницу" пользователя
-  const ratingList = document.getElementById("rating-list");
-  if (ratingList) {
-    ratingList.addEventListener("click", (e) => {
-      const item = e.target.closest(".rating-item");
-      if (!item) return;
-      const tgId = item.getAttribute("data-telegram-id");
-      if (!tgId) return;
-      openUserMainById(tgId);
-    });
-  }
-
-  // Market click → тоже открываем "страницу"
-  const marketList = document.getElementById("market-user-list");
-  if (marketList) {
-    marketList.addEventListener("click", (e) => {
-      const item = e.target.closest(".market-item");
-      if (!item) return;
-      const tgId = item.getAttribute("data-telegram-id");
-      if (!tgId) return;
-      openUserMainById(tgId);
-    });
-  }
-});
+        <div class="rating-mode-switch">
+          <button class="rating-mode-btn active" data-mode="owners" data-i18n="rating_mode_owners"></button>
+          <button class="rating-mode-btn" data-mode="cars" data-i18n="rating_mode_cars"></button>
+          <button class="rating-mode-btn" data-mode="regions" data-i18n="rating_mode_regions">Регионы</button>
+        </div>
+
+        <div id="rating-list" class="list"></div>
+      </section>
+
+      <section id="screen-market" class="screen">
+        <h2 data-i18n="market_title"></h2>
+        <p class="muted" data-i18n="market_desc"></p>
+        <div class="card">
+          <div class="card-header"><span data-i18n="market_demo_title"></span></div>
+          <div class="card-body"><p data-i18n="market_demo_body"></p></div>
+        </div>
+        <div id="market-user-list"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
