@@ -45,9 +45,6 @@
 
     .app { max-width: 640px; margin: 0 auto; padding: 10px 12px 18px; }
 
-    .muted { color: var(--text-muted); }
-    .small { font-size: 12px; }
-
     /* Шапка */
     .app-header {
       display: flex; align-items: center; justify-content: space-between;
@@ -221,7 +218,6 @@
       border: 1px solid rgba(148, 163, 184, 0.7);
     }
     .rating-pos.top-1 { background: radial-gradient(circle at 20% 0, #facc15, #f97316); border-color: rgba(250, 204, 21, 0.9); color: #1e293b; }
-
     .rating-mode-switch { display: inline-flex; padding: 3px; border-radius: 999px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(148, 163, 184, 0.4); margin: 0 2px 8px; }
     .rating-mode-btn { border: none; background: transparent; color: var(--text-muted); font-size: 11px; padding: 4px 9px; border-radius: 999px; cursor: pointer; }
     .rating-mode-btn.active { background: radial-gradient(circle at 20% 0, #38bdf8, #1d4ed8); color: #e5f2ff; }
@@ -413,19 +409,10 @@
       <section id="screen-rating" class="screen">
         <h2 data-i18n="rating_title"></h2>
         <p class="muted" data-i18n="rating_desc"></p>
-
-        <!-- фильтр по региону -->
-        <div class="field" style="margin:0 2px 8px;">
-          <label data-i18n="rating_filter_region">Фильтр по региону</label>
-          <select id="rating-region-filter"></select>
-        </div>
-
         <div class="rating-mode-switch">
           <button class="rating-mode-btn active" data-mode="owners" data-i18n="rating_mode_owners"></button>
           <button class="rating-mode-btn" data-mode="cars" data-i18n="rating_mode_cars"></button>
-          <button class="rating-mode-btn" data-mode="regions" data-i18n="rating_mode_regions">Регионы</button>
         </div>
-
         <div id="rating-list" class="list"></div>
       </section>
 
