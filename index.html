@@ -6,7 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -99,72 +98,129 @@
     /* Car Hero */
     .car-hero::before {
       content: ""; position: absolute; inset: -30%;
-      background: radial-gradient(circle at 0% 120%, rgba(15, 23, 42, 0.0), rgba(15, 23, 42, 0.9)), radial-gradient(circle at 90% -10%, rgba(56, 189, 248, 0.35), rgba(15, 23, 42, 0.98) 55%);
+      background: radial-gradient(circle at 0% 120%, rgba(15, 23, 42, 0.0), rgba(15, 23, 42, 0.9)),
+                  radial-gradient(circle at 90% -10%, rgba(56, 189, 248, 0.35), rgba(15, 23, 42, 0.98) 55%);
       opacity: 0.9; pointer-events: none; z-index: -1;
     }
     .car-photo-frame {
       position: relative; width: 86%; max-width: 360px; margin: 0 auto 10px;
       border-radius: 18px; overflow: hidden; border: 1px solid rgba(148, 163, 184, 0.7);
-      background: radial-gradient(circle at 0% 0%, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.8)), linear-gradient(135deg, rgba(30, 64, 175, 0.7), rgba(15, 23, 42, 0.9));
+      background: radial-gradient(circle at 0% 0%, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.8)),
+                  linear-gradient(135deg, rgba(30, 64, 175, 0.7), rgba(15, 23, 42, 0.9));
       height: 0; padding-bottom: 75%;
     }
     .car-photo-frame img, .car-photo-frame video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: none; }
-    .car-photo-placeholder { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); background: radial-gradient(circle at 50% 0%, rgba(148, 163, 184, 0.2), rgba(15, 23, 42, 0.95)); }
-    
-    .photo-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 22px; height: 28px; border-radius: 999px; border: 1px solid rgba(148, 163, 184, 0.7); background: rgba(15, 23, 42, 0.8); color: #e5e7eb; font-size: 15px; display: none; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
+    .car-photo-placeholder {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted);
+      background: radial-gradient(circle at 50% 0%, rgba(148, 163, 184, 0.2), rgba(15, 23, 42, 0.95));
+    }
+
+    .photo-nav {
+      position: absolute; top: 50%; transform: translateY(-50%);
+      width: 22px; height: 28px; border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      background: rgba(15, 23, 42, 0.8); color: #e5e7eb; font-size: 15px;
+      display: none; align-items: center; justify-content: center; cursor: pointer; padding: 0;
+    }
     .photo-nav.prev { left: 6px; } .photo-nav.next { right: 6px; }
-    .car-photo-counter { position: absolute; right: 6px; bottom: 4px; font-size: 10px; padding: 2px 6px; border-radius: 999px; background: rgba(15, 23, 42, 0.85); color: var(--text-muted); border: 1px solid rgba(148, 163, 184, 0.7); display: none; }
+    .car-photo-counter {
+      position: absolute; right: 6px; bottom: 4px; font-size: 10px; padding: 2px 6px; border-radius: 999px;
+      background: rgba(15, 23, 42, 0.85); color: var(--text-muted);
+      border: 1px solid rgba(148, 163, 184, 0.7); display: none;
+    }
 
     .car-hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
     .badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; padding: 2px 7px; border-radius: 999px; background: rgba(15, 23, 42, 0.9); color: var(--text-muted); border: 1px solid rgba(148, 163, 184, 0.35); }
     .car-main { margin-top: 3px; font-size: 16px; font-weight: 600; }
-    .status-pill { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px; border: 1px solid rgba(250, 204, 21, 0.9); font-size: 10px; color: #fef9c3; background: radial-gradient(circle at 20% 0, #facc15, #f97316); margin-top: 4px; display: none; }
+    .status-pill {
+      display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px;
+      border: 1px solid rgba(250, 204, 21, 0.9);
+      font-size: 10px; color: #fef9c3; background: radial-gradient(circle at 20% 0, #facc15, #f97316);
+      margin-top: 4px; display: none;
+    }
     .health { display: flex; flex-direction: column; align-items: flex-end; font-size: 11px; color: var(--text-muted); }
     .health span:last-child { font-size: 20px; font-weight: 700; color: var(--accent-good); }
 
     /* Stats */
     #car-stats { border-radius: var(--radius-md); background: rgba(15, 23, 42, 0.85); border: 1px dashed rgba(148, 163, 184, 0.4); padding: 6px 8px; margin-top: 8px; }
-    .stat-row { display: flex; justify-content: space-between; font-size: 12px; padding: 2px 0; }
+    .stat-row { display: flex; justify-content: space-between; font-size: 12px; padding: 2px 0; gap: 10px; }
     .stat-row span:first-child { color: var(--text-muted); }
+    .stat-row span:last-child { text-align: right; }
 
     /* Form */
     .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
     .field label { font-size: 12px; }
-    input, select, textarea { border-radius: 10px; border: 1px solid rgba(148, 163, 184, 0.6); background: rgba(15, 23, 42, 0.9); color: var(--text-main); padding: 7px 9px; font-size: 13px; outline: none; }
+    input, select, textarea {
+      border-radius: 10px; border: 1px solid rgba(148, 163, 184, 0.6);
+      background: rgba(15, 23, 42, 0.9); color: var(--text-main);
+      padding: 7px 9px; font-size: 13px; outline: none;
+    }
     input:focus, select:focus, textarea:focus { border-color: rgba(96, 165, 250, 0.95); box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.4); }
     textarea { resize: vertical; }
     .hint { font-size: 11px; color: var(--text-muted); }
-    .primary-btn { width: 100%; margin-top: 4px; border-radius: 999px; border: none; padding: 9px 12px; font-size: 14px; font-weight: 600; cursor: pointer; background: radial-gradient(circle at 10% 0, #38bdf8, #1d4ed8); color: #e5f2ff; }
+    .primary-btn {
+      width: 100%; margin-top: 4px; border-radius: 999px; border: none;
+      padding: 9px 12px; font-size: 14px; font-weight: 600; cursor: pointer;
+      background: radial-gradient(circle at 10% 0, #38bdf8, #1d4ed8); color: #e5f2ff;
+    }
+
+    /* чекбоксы тюнинга */
+    .chk-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      padding: 8px;
+      border-radius: 12px;
+      border: 1px dashed rgba(148, 163, 184, 0.4);
+      background: rgba(15, 23, 42, 0.85);
+    }
+    .chk {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #e5e7eb;
+      cursor: pointer;
+      user-select: none;
+    }
+    .chk input { width: 16px; height: 16px; padding: 0; margin: 0; }
 
     /* Lists */
     .garage-list, .list { display: flex; flex-direction: column; gap: 8px; }
-    .garage-card, .rating-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 9px; border-radius: var(--radius-md); background: rgba(15, 23, 42, 0.92); border: 1px solid rgba(148, 163, 184, 0.6); }
+    .garage-card, .rating-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 9px; border-radius: var(--radius-md);
+      background: rgba(15, 23, 42, 0.92); border: 1px solid rgba(148, 163, 184, 0.6);
+    }
     .garage-card.primary { border-color: rgba(96, 165, 250, 0.9); box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.5); }
     .garage-card.locked { border-style: dashed; opacity: 0.9; background: rgba(15, 23, 42, 0.7); }
     .garage-left, .rating-left { display: flex; align-items: center; gap: 8px; }
-    .garage-thumb { width: 56px; height: 36px; border-radius: 10px; overflow: hidden; border: 1px solid rgba(148, 163, 184, 0.7); background: radial-gradient(circle at 0% 0%, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.8)), linear-gradient(135deg, rgba(30, 64, 175, 0.7), rgba(15, 23, 42, 0.9)); flex-shrink: 0; }
+    .garage-thumb {
+      width: 56px; height: 36px; border-radius: 10px; overflow: hidden;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      background: radial-gradient(circle at 0% 0%, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.8)),
+                  linear-gradient(135deg, rgba(30, 64, 175, 0.7), rgba(15, 23, 42, 0.9));
+      flex-shrink: 0;
+    }
     .garage-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .garage-thumb-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: var(--text-muted); }
     .garage-main, .rating-main { display: flex; flex-direction: column; gap: 2px; font-size: 12px; }
-    .garage-title, .rating-owner { font-weight: 600; } .garage-meta, .rating-car { color: var(--text-muted); font-size: 11px; }
+    .garage-title, .rating-owner { font-weight: 600; }
+    .garage-meta, .rating-car { color: var(--text-muted); font-size: 11px; }
     .garage-right, .rating-right { display: flex; flex-direction: column; align-items: flex-end; font-size: 11px; color: var(--text-muted); }
     .garage-health-value, .rating-health { font-size: 16px; font-weight: 700; color: var(--accent-good); }
-    .garage-pill { display: inline-flex; align-items: center; padding: 2px 7px; border-radius: 999px; border: 1px solid rgba(96, 165, 250, 0.8); color: #bfdbfe; font-size: 10px; margin-top: 2px; margin-right: 4px; }
-    .garage-pill-sale { border-color: rgba(250, 204, 21, 0.9); color: #fef3c7; }
-    
-    .rating-pos { width: 26px; height: 26px; border-radius: 999px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(148, 163, 184, 0.7); }
+
+    .rating-pos {
+      width: 26px; height: 26px; border-radius: 999px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 600; background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.7);
+    }
     .rating-pos.top-1 { background: radial-gradient(circle at 20% 0, #facc15, #f97316); border-color: rgba(250, 204, 21, 0.9); color: #1e293b; }
     .rating-mode-switch { display: inline-flex; padding: 3px; border-radius: 999px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(148, 163, 184, 0.4); margin: 0 2px 8px; }
     .rating-mode-btn { border: none; background: transparent; color: var(--text-muted); font-size: 11px; padding: 4px 9px; border-radius: 999px; cursor: pointer; }
     .rating-mode-btn.active { background: radial-gradient(circle at 20% 0, #38bdf8, #1d4ed8); color: #e5f2ff; }
-
-    .owner-detail-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); display: none; align-items: center; justify-content: center; z-index: 999; padding: 16px; }
-    .owner-detail-card { width: 100%; max-width: 420px; background: rgba(15, 23, 42, 0.98); border-radius: var(--radius-lg); border: 1px solid rgba(148, 163, 184, 0.7); box-shadow: var(--shadow-soft); padding: 14px 14px 12px; }
-    .owner-detail-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
-    .owner-detail-title { font-size: 16px; font-weight: 600; }
-    .owner-detail-owner { font-size: 12px; color: var(--text-muted); }
-    .owner-detail-close { border: none; background: rgba(15, 23, 42, 0.9); border-radius: 999px; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); cursor: pointer; font-size: 16px; }
-    .owner-detail-stats { margin-top: 4px; border-radius: var(--radius-md); border: 1px dashed rgba(148, 163, 184, 0.4); padding: 6px 8px; background: rgba(15, 23, 42, 0.9); font-size: 12px; }
   </style>
 </head>
 <body>
@@ -208,12 +264,12 @@
           <div class="car-hero-top">
             <div>
               <div class="badge" data-i18n="your_car"></div>
-              <div class="car-main" id="car-title">Chevrolet Cobalt 2021</div>
+              <div class="car-main" id="car-title">—</div>
               <div class="status-pill" id="car-status-pill"></div>
             </div>
             <div class="health">
               <span data-i18n="health"></span>
-              <span id="health-score">82</span>
+              <span id="health-score">0.00</span>
             </div>
           </div>
           <div class="card-body" id="car-stats"></div>
@@ -223,12 +279,32 @@
           <div class="card-header"><span data-i18n="update_title"></span></div>
           <div class="card-body">
             <form id="car-form">
-              <div class="field"><label data-i18n="field_brand"></label><input type="text" name="brand" required /></div>
-              <div class="field"><label data-i18n="field_model"></label><input type="text" name="model" required /></div>
+
+              <div class="field">
+                <label data-i18n="field_region"></label>
+                <select name="region" id="field-region"></select>
+              </div>
+
+              <!-- БРЕНД -->
+              <div class="field">
+                <label data-i18n="field_brand"></label>
+                <select name="brandSelect" id="field-brand-select"></select>
+                <input type="text" name="brandOther" id="field-brand-other" style="display:none;" placeholder="Введите бренд" />
+                <div class="hint" data-i18n="other_input_hint"></div>
+              </div>
+
+              <!-- МОДЕЛЬ -->
+              <div class="field">
+                <label data-i18n="field_model"></label>
+                <select name="modelSelect" id="field-model-select"></select>
+                <input type="text" name="modelOther" id="field-model-other" style="display:none;" placeholder="Введите модель" />
+                <div class="hint" data-i18n="other_input_hint"></div>
+              </div>
+
               <div class="field"><label data-i18n="field_year"></label><input type="number" name="year" required /></div>
               <div class="field"><label data-i18n="field_mileage"></label><input type="number" name="mileage" required /></div>
               <div class="field"><label data-i18n="field_price"></label><input type="number" name="price" /></div>
-              
+
               <div class="field"><label data-i18n="field_status"></label>
                 <select name="status" id="field-status">
                   <option value="" data-i18n="opt_status_none"></option>
@@ -301,6 +377,12 @@
               <div class="field"><label data-i18n="field_oil_mileage"></label><input type="number" name="oilMileage" /></div>
               <div class="field"><label data-i18n="field_daily_mileage"></label><input type="number" name="dailyMileage" /></div>
               <div class="field"><label data-i18n="field_last_service"></label><input type="text" name="lastService" /></div>
+
+              <div class="field">
+                <label data-i18n="field_tuning_opts"></label>
+                <div id="tuning-checkboxes" class="chk-grid"></div>
+              </div>
+
               <div class="field"><label data-i18n="field_tuning"></label><textarea name="tuning" rows="2"></textarea></div>
 
               <div class="field">
@@ -312,6 +394,7 @@
 
               <button type="submit" class="primary-btn" data-i18n="btn_save">Сохранить</button>
             </form>
+
             <p class="muted small" data-i18n="save_hint"></p>
           </div>
         </div>
@@ -343,16 +426,6 @@
         <div id="market-user-list"></div>
       </section>
     </main>
-  </div>
-
-  <div id="owner-detail" class="owner-detail-backdrop">
-    <div class="owner-detail-card">
-      <div class="owner-detail-header">
-        <div><div id="owner-detail-title"></div><div id="owner-detail-owner"></div></div>
-        <button id="owner-detail-close">×</button>
-      </div>
-      <div id="owner-detail-stats" class="owner-detail-stats"></div>
-    </div>
   </div>
 
   <script src="app.js"></script>
