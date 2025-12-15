@@ -47,7 +47,7 @@ const defaultCar = {
   lastService: "",
   engineType: "",
   transmission: "",
-  tuningOptions: [],
+  tuning: "", // ТЕПЕРЬ ЭТО СТРОКА, А НЕ МАССИВ
   media: []
 };
 
@@ -93,6 +93,30 @@ const POPULAR_BRANDS = [
   "audi", "volkswagen", "ford", "nissan", "byd", "chery", "haval"
 ];
 
+// Маппинг опций тюнинга для отображения
+const TUNING_OPTIONS = {
+  ru: {
+    new_tires: "Новые шины",
+    new_disks: "Новые диски",
+    lpg: "Установлен пропан",
+    methane: "Установлен метан",
+    armor_film: "Бронепленка",
+    ceramics: "Керамика",
+    amplifier: "Усилитель",
+    subwoofer: "Сабвуфер"
+  },
+  uz: {
+    new_tires: "Yangi shinalar",
+    new_disks: "Yangi disklar",
+    lpg: "Propan o'rnatilgan",
+    methane: "Metan o'rnatilgan",
+    armor_film: "Broneplyonka",
+    ceramics: "Keramika",
+    amplifier: "Kuchaytirgich",
+    subwoofer: "Subvufer"
+  }
+};
+
 function parseMediaField(media) {
   if (Array.isArray(media)) return media;
   if (typeof media === "string") {
@@ -104,25 +128,19 @@ function parseMediaField(media) {
   return [];
 }
 
-function parseTuningOptions(tuning) {
-  if (Array.isArray(tuning)) return tuning;
-  if (typeof tuning === "string") {
-    try {
-      const parsed = JSON.parse(tuning);
-      if (Array.isArray(parsed)) return parsed;
-      return [];
-    } catch (e) {
-      // Старый формат: строка с разделителями
-      return tuning.split(',').map(s => s.trim()).filter(s => s);
-    }
-  }
-  return [];
-}
-
 function normalizeCar(car) {
   const merged = { ...defaultCar, ...car };
   merged.media = parseMediaField(merged.media);
-  merged.tuningOptions = parseTuningOptions(merged.tuningOptions || merged.tuning || []);
+  
+  // Обработка тюнинга: если это массив, конвертируем в строку
+  if (Array.isArray(merged.tuning)) {
+    // Конвертируем массив в строку с русскими названиями по умолчанию
+    const tuningOptions = merged.tuning.map(opt => {
+      return TUNING_OPTIONS.ru[opt] || opt;
+    });
+    merged.tuning = tuningOptions.join(", ");
+  }
+  
   return merged;
 }
 
@@ -461,10 +479,11 @@ function calcHealthScore(car) {
   
   // 4. Опции тюнинга (10 баллов максимум)
   let tuningScore = 0;
-  const tuningOptions = car.tuningOptions || [];
-  if (tuningOptions.length > 0) {
-    // Каждая опция +1 балл, максимум 10
-    tuningScore = Math.min(tuningOptions.length, 10);
+  const tuningText = car.tuning || "";
+  // Подсчитываем количество опций тюнинга по запятым
+  if (tuningText.trim()) {
+    const options = tuningText.split(',').filter(opt => opt.trim() !== '');
+    tuningScore = Math.min(options.length, 10);
   }
   
   score += tuningScore;
@@ -769,7 +788,7 @@ async function syncUserCarFromSupabase() {
       oilMileage: data.oil_mileage,
       dailyMileage: data.daily_mileage,
       lastService: data.last_service,
-      tuningOptions: data.tuning_options || data.tuning || [],
+      tuning: data.tuning || "", // Теперь это строка
       media: data.media
     });
     currentCar.isPrimary = true;
@@ -784,7 +803,7 @@ async function saveUserCarToSupabase() {
     telegram_id: String(user.id),
     username: user.username,
     full_name: user.first_name,
-    region: currentCar.region,
+    region: currentCar.region, // Регион теперь сохраняется
     brand: currentCar.brand,
     model: currentCar.model,
     year: Number(currentCar.year),
@@ -801,11 +820,13 @@ async function saveUserCarToSupabase() {
     oil_mileage: currentCar.oilMileage,
     daily_mileage: currentCar.dailyMileage,
     last_service: currentCar.lastService,
-    tuning_options: currentCar.tuningOptions,
+    tuning: currentCar.tuning || "", // Сохраняем как строку
     media: currentCar.media,
     health: calcHealthScore(currentCar).score,
     updated_at: new Date().toISOString()
   };
+
+  console.log("Saving to Supabase:", payload); // Для отладки
 
   const { error } = await sb.from("cars").upsert(payload);
   if (error) {
@@ -843,7 +864,7 @@ async function loadGlobalRating() {
         oilMileage: row.oil_mileage,
         dailyMileage: row.daily_mileage,
         lastService: row.last_service,
-        tuningOptions: row.tuning_options || row.tuning || [],
+        tuning: row.tuning || "", // Теперь строка
         media: row.media
       });
       
@@ -977,6 +998,14 @@ function buildStatsRows(car, dict) {
     rows.push({
       label: dict.field_color,
       value: car.color
+    });
+  }
+  
+  // Добавляем опции тюнинга в статистику
+  if (car.tuning && car.tuning.trim()) {
+    rows.push({
+      label: dict.field_tuning_options,
+      value: car.tuning
     });
   }
 
@@ -1198,10 +1227,23 @@ function renderCar() {
     form.dailyMileage.value = currentCar.dailyMileage || "";
     form.lastService.value = currentCar.lastService || "";
     
-    // Опции тюнинга
-    const tuningOptions = currentCar.tuningOptions || [];
+    // Опции тюнинга - восстанавливаем чекбоксы из строки
+    const tuningText = currentCar.tuning || "";
+    const tuningOptions = tuningText.split(',').map(opt => opt.trim()).filter(opt => opt);
+    
+    // Создаем обратный маппинг для поиска ключа по значению
+    const reverseTuningMap = {};
+    Object.entries(TUNING_OPTIONS.ru).forEach(([key, value]) => {
+      reverseTuningMap[value] = key;
+    });
+    
     document.querySelectorAll('input[name="tuning_options"]').forEach(checkbox => {
-      checkbox.checked = tuningOptions.includes(checkbox.value);
+      // Проверяем, есть ли значение чекбокса в строке тюнинга
+      const isChecked = tuningOptions.some(opt => {
+        // Сравниваем либо по ключу, либо по локализованному значению
+        return opt === checkbox.value || opt === TUNING_OPTIONS.ru[checkbox.value];
+      });
+      checkbox.checked = isChecked;
     });
   }
 
@@ -1424,6 +1466,7 @@ function renderMarket() {
       const label = getDisplayNick(c);
       const contactHtml = `<span>${label}</span>`;
       const regionText = c.region ? getRegionName(c.region, currentLang) : "";
+      const tuningText = c.car.tuning ? `<p style="margin:0 0 2px;font-size:11px;color:var(--text-muted);">Опции: ${c.car.tuning}</p>` : "";
 
       return `
     <div class="card market-item" data-telegram-id="${c.telegram_id}">
@@ -1444,6 +1487,7 @@ function renderMarket() {
             ? `<p style="margin:0 0 2px;">${dict.field_color}: ${c.car.color}</p>`
             : ""
         }
+        ${tuningText}
         <p style="margin:4px 0 0;">${contactHtml}</p>
       </div>
     </div>
@@ -1826,9 +1870,18 @@ document.addEventListener("DOMContentLoaded", async () => {
         model = f.get("customModel") || "";
       }
       
-      // Опции тюнинга
+      // Опции тюнинга - собираем выбранные опции и конвертируем в текст
       const tuningOptions = Array.from(f.getAll("tuning_options"));
+      let tuningText = "";
+      if (tuningOptions.length > 0) {
+        // Конвертируем ключи в читаемые названия на текущем языке
+        const tuningNames = tuningOptions.map(opt => {
+          return TUNING_OPTIONS[currentLang][opt] || TUNING_OPTIONS.ru[opt] || opt;
+        });
+        tuningText = tuningNames.join(", ");
+      }
 
+      // Обновляем currentCar
       currentCar.region = f.get("region");
       currentCar.brand = brand;
       currentCar.model = model;
@@ -1846,7 +1899,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       currentCar.oilMileage = f.get("oilMileage");
       currentCar.dailyMileage = f.get("dailyMileage");
       currentCar.lastService = f.get("lastService");
-      currentCar.tuningOptions = tuningOptions;
+      currentCar.tuning = tuningText; // Сохраняем как строку
 
       const btn = form.querySelector('button[type="submit"]');
       if (btn) {
