@@ -6,7 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -27,6 +26,7 @@
       --text-main: #f9fafb;
       --text-muted: #9ca3af;
       --accent-good: #10b981;
+      --accent-average: #f59e0b;
       --accent-bad: #f97373;
       --radius-lg: 20px;
       --radius-md: 14px;
@@ -136,6 +136,11 @@
     .hint { font-size: 11px; color: var(--text-muted); }
     .primary-btn { width: 100%; margin-top: 4px; border-radius: 999px; border: none; padding: 9px 12px; font-size: 14px; font-weight: 600; cursor: pointer; background: radial-gradient(circle at 10% 0, #38bdf8, #1d4ed8); color: #e5f2ff; }
 
+    /* Checkbox groups */
+    .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+    .checkbox-item { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+    .checkbox-item input[type="checkbox"] { width: 14px; height: 14px; }
+
     /* Lists */
     .garage-list, .list { display: flex; flex-direction: column; gap: 8px; }
     .garage-card, .rating-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 9px; border-radius: var(--radius-md); background: rgba(15, 23, 42, 0.92); border: 1px solid rgba(148, 163, 184, 0.6); }
@@ -165,6 +170,44 @@
     .owner-detail-owner { font-size: 12px; color: var(--text-muted); }
     .owner-detail-close { border: none; background: rgba(15, 23, 42, 0.9); border-radius: 999px; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); cursor: pointer; font-size: 16px; }
     .owner-detail-stats { margin-top: 4px; border-radius: var(--radius-md); border: 1px dashed rgba(148, 163, 184, 0.4); padding: 6px 8px; background: rgba(15, 23, 42, 0.9); font-size: 12px; }
+    
+    /* Новые стили для региона и оценки */
+    .region-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    
+    .score-breakdown {
+      margin-top: 8px;
+      font-size: 11px;
+    }
+    .score-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 2px;
+    }
+    .score-item .label {
+      color: var(--text-muted);
+    }
+    .score-item .value {
+      font-weight: 500;
+    }
+    .score-item .positive {
+      color: var(--accent-good);
+    }
+    .score-item .negative {
+      color: var(--accent-bad);
+    }
+    .score-item .neutral {
+      color: var(--accent-average);
+    }
   </style>
 </head>
 <body>
@@ -210,12 +253,16 @@
               <div class="badge" data-i18n="your_car"></div>
               <div class="car-main" id="car-title">Chevrolet Cobalt 2021</div>
               <div class="status-pill" id="car-status-pill"></div>
+              <div class="region-badge" id="car-region-badge"></div>
             </div>
             <div class="health">
               <span data-i18n="health"></span>
-              <span id="health-score">82</span>
+              <span id="health-score">82.50</span>
             </div>
           </div>
+          
+          <div class="score-breakdown" id="score-breakdown"></div>
+          
           <div class="card-body" id="car-stats"></div>
         </div>
 
@@ -223,11 +270,107 @@
           <div class="card-header"><span data-i18n="update_title"></span></div>
           <div class="card-body">
             <form id="car-form">
-              <div class="field"><label data-i18n="field_brand"></label><input type="text" name="brand" required /></div>
-              <div class="field"><label data-i18n="field_model"></label><input type="text" name="model" required /></div>
-              <div class="field"><label data-i18n="field_year"></label><input type="number" name="year" required /></div>
-              <div class="field"><label data-i18n="field_mileage"></label><input type="number" name="mileage" required /></div>
-              <div class="field"><label data-i18n="field_price"></label><input type="number" name="price" /></div>
+              <!-- Регион -->
+              <div class="field">
+                <label data-i18n="field_region"></label>
+                <select name="region" id="field-region" required>
+                  <option value="" data-i18n="opt_region_none"></option>
+                  <option value="tashkent">Ташкент</option>
+                  <option value="tashkent_city">Ташкент (город)</option>
+                  <option value="andijan">Андижан</option>
+                  <option value="fergana">Фергана</option>
+                  <option value="namangan">Наманган</option>
+                  <option value="samarkand">Самарканд</option>
+                  <option value="bukhara">Бухара</option>
+                  <option value="navoi">Навои</option>
+                  <option value="jizzakh">Джизак</option>
+                  <option value="kashkadarya">Кашкадарья</option>
+                  <option value="surkhandarya">Сурхандарья</option>
+                  <option value="khorezm">Хорезм</option>
+                  <option value="karakalpakstan">Каракалпакстан</option>
+                  <option value="other">Другой регион</option>
+                </select>
+              </div>
+
+              <!-- Бренд -->
+              <div class="field">
+                <label data-i18n="field_brand"></label>
+                <select name="brand" id="field-brand" required>
+                  <option value="" data-i18n="opt_brand_none"></option>
+                  <option value="chevrolet">Chevrolet</option>
+                  <option value="kia">Kia</option>
+                  <option value="hyundai">Hyundai</option>
+                  <option value="toyota">Toyota</option>
+                  <option value="bmw">BMW</option>
+                  <option value="mercedes">Mercedes-Benz</option>
+                  <option value="audi">Audi</option>
+                  <option value="volkswagen">Volkswagen</option>
+                  <option value="ford">Ford</option>
+                  <option value="nissan">Nissan</option>
+                  <option value="byd">BYD</option>
+                  <option value="chery">Chery</option>
+                  <option value="haval">Haval</option>
+                  <option value="other">Другая марка</option>
+                </select>
+                <div class="hint" data-i18n="brand_hint"></div>
+              </div>
+
+              <div class="field" id="custom-brand-field" style="display:none;">
+                <label data-i18n="field_custom_brand"></label>
+                <input type="text" name="customBrand" id="field-custom-brand" />
+              </div>
+
+              <!-- Модель -->
+              <div class="field">
+                <label data-i18n="field_model"></label>
+                <select name="model" id="field-model" required>
+                  <option value="" data-i18n="opt_model_none"></option>
+                  <!-- Chevrolet -->
+                  <option value="cobalt" data-brand="chevrolet">Cobalt</option>
+                  <option value="spark" data-brand="chevrolet">Spark</option>
+                  <option value="nexia" data-brand="chevrolet">Nexia</option>
+                  <option value="malibu" data-brand="chevrolet">Malibu</option>
+                  <option value="tracker" data-brand="chevrolet">Tracker</option>
+                  <option value="onix" data-brand="chevrolet">Onix</option>
+                  <option value="gentra" data-brand="chevrolet">Gentra</option>
+                  <!-- Kia -->
+                  <option value="cerato" data-brand="kia">Cerato</option>
+                  <option value="k5" data-brand="kia">K5</option>
+                  <option value="sorento" data-brand="kia">Sorento</option>
+                  <option value="sportage" data-brand="kia">Sportage</option>
+                  <option value="rio" data-brand="kia">Rio</option>
+                  <!-- Hyundai -->
+                  <option value="sonata" data-brand="hyundai">Sonata</option>
+                  <option value="elantra" data-brand="hyundai">Elantra</option>
+                  <option value="tucson" data-brand="hyundai">Tucson</option>
+                  <option value="santa_fe" data-brand="hyundai">Santa Fe</option>
+                  <!-- Toyota -->
+                  <option value="camry" data-brand="toyota">Camry</option>
+                  <option value="corolla" data-brand="toyota">Corolla</option>
+                  <option value="rav4" data-brand="toyota">RAV4</option>
+                  <!-- BYD -->
+                  <option value="song_plus" data-brand="byd">Song Plus</option>
+                  <option value="han" data-brand="byd">Han</option>
+                  <option value="tang" data-brand="byd">Tang</option>
+                  <!-- Chery -->
+                  <option value="tiggo7" data-brand="chery">Tiggo 7</option>
+                  <option value="tiggo8" data-brand="chery">Tiggo 8</option>
+                  <!-- Haval -->
+                  <option value="jolion" data-brand="haval">Jolion</option>
+                  <option value="h6" data-brand="haval">H6</option>
+                  <!-- Другие -->
+                  <option value="other" data-brand="other">Другая модель</option>
+                </select>
+              </div>
+
+              <div class="field" id="custom-model-field" style="display:none;">
+                <label data-i18n="field_custom_model"></label>
+                <input type="text" name="customModel" id="field-custom-model" />
+              </div>
+
+              <div class="field"><label data-i18n="field_year"></label><input type="number" name="year" required min="1980" max="2025" /></div>
+              <div class="field"><label data-i18n="field_mileage"></label><input type="number" name="mileage" required min="0" /></div>
+              <div class="field"><label data-i18n="field_price"></label><input type="number" name="price" min="0" /></div>
               
               <div class="field"><label data-i18n="field_status"></label>
                 <select name="status" id="field-status">
@@ -296,12 +439,51 @@
                 </select>
               </div>
 
+              <!-- Тюнинг - чекбоксы -->
+              <div class="field">
+                <label data-i18n="field_tuning_options"></label>
+                <div class="checkbox-group">
+                  <div class="checkbox-item">
+                    <input type="checkbox" name="tuning_options" value="new_tires" id="tuning-new-tires">
+                    <label for="tuning-new-tires" data-i18n="opt_tuning_tires"></label>
+                  </div>
+                  <div class="checkbox-item">
+                    <input type="checkbox" name="tuning_options" value="new_disks" id="tuning-new-disks">
+                    <label for="tuning-new-disks" data-i18n="opt_tuning_disks"></label>
+                  </div>
+                  <div class="checkbox-item">
+                    <input type="checkbox" name="tuning_options" value="lpg" id="tuning-lpg">
+                    <label for="tuning-lpg" data-i18n="opt_tuning_lpg"></label>
+                  </div>
+                  <div class="checkbox-item">
+                    <input type="checkbox" name="tuning_options" value="methane" id="tuning-methane">
+                    <label for="tuning-methane" data-i18n="opt_tuning_methane"></label>
+                  </div>
+                  <div class="checkbox-item">
+                    <input type="checkbox" name="tuning_options" value="armor_film" id="tuning-armor">
+                    <label for="tuning-armor" data-i18n="opt_tuning_armor"></label>
+                  </div>
+                  <div class="checkbox-item">
+                    <input type="checkbox" name="tuning_options" value="ceramics" id="tuning-ceramics">
+                    <label for="tuning-ceramics" data-i18n="opt_tuning_ceramics"></label>
+                  </div>
+                  <div class="checkbox-item">
+                    <input type="checkbox" name="tuning_options" value="amplifier" id="tuning-amplifier">
+                    <label for="tuning-amplifier" data-i18n="opt_tuning_amplifier"></label>
+                  </div>
+                  <div class="checkbox-item">
+                    <input type="checkbox" name="tuning_options" value="subwoofer" id="tuning-subwoofer">
+                    <label for="tuning-subwoofer" data-i18n="opt_tuning_subwoofer"></label>
+                  </div>
+                </div>
+                <div class="hint" data-i18n="tuning_hint"></div>
+              </div>
+
               <div class="field"><label data-i18n="field_color"></label><input type="text" name="color" /></div>
               <div class="field"><label data-i18n="field_purchase_info"></label><input type="text" name="purchaseInfo" /></div>
               <div class="field"><label data-i18n="field_oil_mileage"></label><input type="number" name="oilMileage" /></div>
               <div class="field"><label data-i18n="field_daily_mileage"></label><input type="number" name="dailyMileage" /></div>
               <div class="field"><label data-i18n="field_last_service"></label><input type="text" name="lastService" /></div>
-              <div class="field"><label data-i18n="field_tuning"></label><textarea name="tuning" rows="2"></textarea></div>
 
               <div class="field">
                 <label data-i18n="field_photo"></label>
@@ -310,7 +492,7 @@
                 <div id="upload-status" style="color:#eab308; font-size:11px; margin-top:5px;"></div>
               </div>
 
-              <button type="submit" class="primary-btn" data-i18n="btn_save">Сохранить</button>
+              <button type="submit" class="primary-btn" data-i18n="btn_save"></button>
             </form>
             <p class="muted small" data-i18n="save_hint"></p>
           </div>
@@ -326,10 +508,13 @@
       <section id="screen-rating" class="screen">
         <h2 data-i18n="rating_title"></h2>
         <p class="muted" data-i18n="rating_desc"></p>
+        
         <div class="rating-mode-switch">
           <button class="rating-mode-btn active" data-mode="owners" data-i18n="rating_mode_owners"></button>
           <button class="rating-mode-btn" data-mode="cars" data-i18n="rating_mode_cars"></button>
+          <button class="rating-mode-btn" data-mode="regions" data-i18n="rating_mode_regions"></button>
         </div>
+        
         <div id="rating-list" class="list"></div>
       </section>
 
