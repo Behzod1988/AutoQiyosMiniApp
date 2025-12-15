@@ -45,9 +45,6 @@
 
     .app { max-width: 640px; margin: 0 auto; padding: 10px 12px 18px; }
 
-    .muted { color: var(--text-muted); font-size: 12px; margin: 6px 0 10px; }
-    .small { font-size: 11px; }
-
     /* Шапка */
     .app-header {
       display: flex; align-items: center; justify-content: space-between;
@@ -221,6 +218,9 @@
       border: 1px solid rgba(148, 163, 184, 0.7);
     }
     .rating-pos.top-1 { background: radial-gradient(circle at 20% 0, #facc15, #f97316); border-color: rgba(250, 204, 21, 0.9); color: #1e293b; }
+    .rating-mode-switch { display: inline-flex; padding: 3px; border-radius: 999px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(148, 163, 184, 0.4); margin: 0 2px 8px; }
+    .rating-mode-btn { border: none; background: transparent; color: var(--text-muted); font-size: 11px; padding: 4px 9px; border-radius: 999px; cursor: pointer; }
+    .rating-mode-btn.active { background: radial-gradient(circle at 20% 0, #38bdf8, #1d4ed8); color: #e5f2ff; }
   </style>
 </head>
 <body>
@@ -409,31 +409,10 @@
       <section id="screen-rating" class="screen">
         <h2 data-i18n="rating_title"></h2>
         <p class="muted" data-i18n="rating_desc"></p>
-
-        <!-- ✅ ФИЛЬТРЫ РЕЙТИНГА -->
-        <div class="card">
-          <div class="card-header"><span data-i18n="rating_filters_title"></span></div>
-          <div class="card-body">
-            <div class="field">
-              <label data-i18n="filter_region"></label>
-              <select id="rating-filter-region"></select>
-            </div>
-
-            <div class="field">
-              <label data-i18n="filter_brand"></label>
-              <select id="rating-filter-brand"></select>
-            </div>
-
-            <div class="field">
-              <label data-i18n="filter_model"></label>
-              <input type="text" id="rating-filter-model" />
-              <div class="hint" data-i18n="filter_model_hint"></div>
-            </div>
-
-            <button type="button" class="primary-btn" id="rating-filter-reset" data-i18n="filter_reset"></button>
-          </div>
+        <div class="rating-mode-switch">
+          <button class="rating-mode-btn active" data-mode="owners" data-i18n="rating_mode_owners"></button>
+          <button class="rating-mode-btn" data-mode="cars" data-i18n="rating_mode_cars"></button>
         </div>
-
         <div id="rating-list" class="list"></div>
       </section>
 
