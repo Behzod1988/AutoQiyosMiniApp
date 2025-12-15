@@ -6,11 +6,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
 
   <style>
     :root {
@@ -154,16 +158,6 @@
     .rating-mode-btn { border: none; background: transparent; color: var(--text-muted); font-size: 11px; padding: 4px 9px; border-radius: 999px; cursor: pointer; }
     .rating-mode-btn.active { background: radial-gradient(circle at 20% 0, #38bdf8, #1d4ed8); color: #e5f2ff; }
 
-    /* Checkboxes */
-    .checkbox-group { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 4px; }
-    .checkbox-item { display: flex; align-items: center; gap: 6px; font-size: 12px; }
-    .checkbox-item input[type="checkbox"] { width: 16px; height: 16px; border-radius: 4px; }
-
-    /* Регион и бренд специфичные стили */
-    .region-group, .brand-group { display: flex; gap: 8px; }
-    .region-group select, .brand-group select { flex: 1; }
-    .region-group input, .brand-group input { flex: 1; }
-    
     .owner-detail-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); display: none; align-items: center; justify-content: center; z-index: 999; padding: 16px; }
     .owner-detail-card { width: 100%; max-width: 420px; background: rgba(15, 23, 42, 0.98); border-radius: var(--radius-lg); border: 1px solid rgba(148, 163, 184, 0.7); box-shadow: var(--shadow-soft); padding: 14px 14px 12px; }
     .owner-detail-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
@@ -171,12 +165,6 @@
     .owner-detail-owner { font-size: 12px; color: var(--text-muted); }
     .owner-detail-close { border: none; background: rgba(15, 23, 42, 0.9); border-radius: 999px; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); cursor: pointer; font-size: 16px; }
     .owner-detail-stats { margin-top: 4px; border-radius: var(--radius-md); border: 1px dashed rgba(148, 163, 184, 0.4); padding: 6px 8px; background: rgba(15, 23, 42, 0.9); font-size: 12px; }
-
-    /* Медиа запрос для мобильных */
-    @media (max-width: 480px) {
-      .checkbox-group { grid-template-columns: 1fr; }
-      .region-group, .brand-group { flex-direction: column; }
-    }
   </style>
 </head>
 <body>
@@ -225,7 +213,7 @@
             </div>
             <div class="health">
               <span data-i18n="health"></span>
-              <span id="health-score">82.00</span>
+              <span id="health-score">82</span>
             </div>
           </div>
           <div class="card-body" id="car-stats"></div>
@@ -235,69 +223,8 @@
           <div class="card-header"><span data-i18n="update_title"></span></div>
           <div class="card-body">
             <form id="car-form">
-              <!-- Регион -->
-              <div class="field">
-                <label data-i18n="field_region"></label>
-                <div class="region-group">
-                  <select name="region" id="field-region">
-                    <option value="" data-i18n="opt_region_none"></option>
-                    <option value="tashkent" data-i18n="opt_region_tashkent"></option>
-                    <option value="andijan" data-i18n="opt_region_andijan"></option>
-                    <option value="fergana" data-i18n="opt_region_fergana"></option>
-                    <option value="namangan" data-i18n="opt_region_namangan"></option>
-                    <option value="samarkand" data-i18n="opt_region_samarkand"></option>
-                    <option value="bukhara" data-i18n="opt_region_bukhara"></option>
-                    <option value="khorezm" data-i18n="opt_region_khorezm"></option>
-                    <option value="surkhandarya" data-i18n="opt_region_surkhandarya"></option>
-                    <option value="kashkadarya" data-i18n="opt_region_kashkadarya"></option>
-                    <option value="jizzakh" data-i18n="opt_region_jizzakh"></option>
-                    <option value="sirdarya" data-i18n="opt_region_sirdarya"></option>
-                    <option value="navoi" data-i18n="opt_region_navoi"></option>
-                    <option value="karakalpakstan" data-i18n="opt_region_karakalpakstan"></option>
-                    <option value="other" data-i18n="opt_region_other"></option>
-                  </select>
-                  <input type="text" id="field-region-other" name="region_other" placeholder="" style="display:none;" />
-                </div>
-              </div>
-
-              <!-- Бренд с выбором -->
-              <div class="field">
-                <label data-i18n="field_brand"></label>
-                <div class="brand-group">
-                  <select name="brand_select" id="field-brand-select">
-                    <option value="" data-i18n="opt_brand_none"></option>
-                    <option value="chevrolet" data-i18n="opt_brand_chevrolet"></option>
-                    <option value="kia" data-i18n="opt_brand_kia"></option>
-                    <option value="hyundai" data-i18n="opt_brand_hyundai"></option>
-                    <option value="byd" data-i18n="opt_brand_byd"></option>
-                    <option value="chery" data-i18n="opt_brand_chery"></option>
-                    <option value="haval" data-i18n="opt_brand_haval"></option>
-                    <option value="volkswagen" data-i18n="opt_brand_volkswagen"></option>
-                    <option value="toyota" data-i18n="opt_brand_toyota"></option>
-                    <option value="nissan" data-i18n="opt_brand_nissan"></option>
-                    <option value="lexus" data-i18n="opt_brand_lexus"></option>
-                    <option value="mercedes" data-i18n="opt_brand_mercedes"></option>
-                    <option value="bmw" data-i18n="opt_brand_bmw"></option>
-                    <option value="audi" data-i18n="opt_brand_audi"></option>
-                    <option value="ford" data-i18n="opt_brand_ford"></option>
-                    <option value="reno" data-i18n="opt_brand_reno"></option>
-                    <option value="other" data-i18n="opt_brand_other"></option>
-                  </select>
-                  <input type="text" id="field-brand-custom" name="brand_custom" placeholder="" style="display:none;" />
-                </div>
-              </div>
-
-              <!-- Модель с выбором -->
-              <div class="field">
-                <label data-i18n="field_model"></label>
-                <div class="brand-group">
-                  <select name="model_select" id="field-model-select" style="display:none;">
-                    <option value="" data-i18n="opt_model_none"></option>
-                  </select>
-                  <input type="text" id="field-model-custom" name="model_custom" placeholder="" />
-                </div>
-              </div>
-
+              <div class="field"><label data-i18n="field_brand"></label><input type="text" name="brand" required /></div>
+              <div class="field"><label data-i18n="field_model"></label><input type="text" name="model" required /></div>
               <div class="field"><label data-i18n="field_year"></label><input type="number" name="year" required /></div>
               <div class="field"><label data-i18n="field_mileage"></label><input type="number" name="mileage" required /></div>
               <div class="field"><label data-i18n="field_price"></label><input type="number" name="price" /></div>
@@ -369,51 +296,12 @@
                 </select>
               </div>
 
-              <!-- Чекбоксы для тюнинга -->
-              <div class="field">
-                <label data-i18n="field_tuning_options"></label>
-                <div class="checkbox-group" id="tuning-checkboxes">
-                  <div class="checkbox-item">
-                    <input type="checkbox" name="tuning_new_tires" value="new_tires">
-                    <label data-i18n="opt_tuning_new_tires"></label>
-                  </div>
-                  <div class="checkbox-item">
-                    <input type="checkbox" name="tuning_new_wheels" value="new_wheels">
-                    <label data-i18n="opt_tuning_new_wheels"></label>
-                  </div>
-                  <div class="checkbox-item">
-                    <input type="checkbox" name="tuning_lpg" value="lpg">
-                    <label data-i18n="opt_tuning_lpg"></label>
-                  </div>
-                  <div class="checkbox-item">
-                    <input type="checkbox" name="tuning_cng" value="cng">
-                    <label data-i18n="opt_tuning_cng"></label>
-                  </div>
-                  <div class="checkbox-item">
-                    <input type="checkbox" name="tuning_armor_film" value="armor_film">
-                    <label data-i18n="opt_tuning_armor_film"></label>
-                  </div>
-                  <div class="checkbox-item">
-                    <input type="checkbox" name="tuning_ceramic" value="ceramic">
-                    <label data-i18n="opt_tuning_ceramic"></label>
-                  </div>
-                  <div class="checkbox-item">
-                    <input type="checkbox" name="tuning_amplifier" value="amplifier">
-                    <label data-i18n="opt_tuning_amplifier"></label>
-                  </div>
-                  <div class="checkbox-item">
-                    <input type="checkbox" name="tuning_other" value="other">
-                    <label data-i18n="opt_tuning_other"></label>
-                  </div>
-                </div>
-              </div>
-
               <div class="field"><label data-i18n="field_color"></label><input type="text" name="color" /></div>
               <div class="field"><label data-i18n="field_purchase_info"></label><input type="text" name="purchaseInfo" /></div>
               <div class="field"><label data-i18n="field_oil_mileage"></label><input type="number" name="oilMileage" /></div>
               <div class="field"><label data-i18n="field_daily_mileage"></label><input type="number" name="dailyMileage" /></div>
               <div class="field"><label data-i18n="field_last_service"></label><input type="text" name="lastService" /></div>
-              <div class="field"><label data-i18n="field_tuning_text"></label><textarea name="tuning" rows="2"></textarea></div>
+              <div class="field"><label data-i18n="field_tuning"></label><textarea name="tuning" rows="2"></textarea></div>
 
               <div class="field">
                 <label data-i18n="field_photo"></label>
@@ -441,7 +329,6 @@
         <div class="rating-mode-switch">
           <button class="rating-mode-btn active" data-mode="owners" data-i18n="rating_mode_owners"></button>
           <button class="rating-mode-btn" data-mode="cars" data-i18n="rating_mode_cars"></button>
-          <button class="rating-mode-btn" data-mode="regions" data-i18n="rating_mode_regions"></button>
         </div>
         <div id="rating-list" class="list"></div>
       </section>
