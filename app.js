@@ -190,7 +190,7 @@ const TEXTS = {
     other_input_hint: "Введите вручную",
 
     btn_save: "Сохранить",
-    save_hint: "Всё хранится в Supabase.",
+    save_hint: "Сохранено",
     service_hint: "Отметь, если масло и сервис проходишь вовремя.",
     photo_hint: "Загрузи до 3 фото/видео (фото ~до 50 KB).",
     label_yes: "Да",
@@ -247,8 +247,8 @@ const TEXTS = {
     rating_filter_region_all: "Все регионы",
     rating_filter_model_all: "Все модели",
 
-    market_title: "Объявления AutoQiyos",
-    market_desc: "Честные объявления.",
+    market_title: "Объявления",
+    market_desc: "Честные цены",
     market_demo_title: "Пример",
     market_demo_body: "Chevrolet Cobalt. Оценка: адекватно."
   },
@@ -293,7 +293,7 @@ const TEXTS = {
     other_input_hint: "Qo‘lda kiriting",
 
     btn_save: "Saqlash",
-    save_hint: "Supabase-da saqlanadi.",
+    save_hint: "Saqlandi.",
     service_hint: "Moy va texnik xizmatni vaqtida qilsangiz belgilang.",
     photo_hint: "3 tagacha rasm/video (rasm ~50 KB gacha).",
     label_yes: "Ha",
@@ -1652,3 +1652,4 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 });
+
