@@ -45,7 +45,6 @@
 
     .app { max-width: 640px; margin: 0 auto; padding: 10px 12px 18px; }
 
-    /* Шапка */
     .app-header {
       display: flex; align-items: center; justify-content: space-between;
       padding: 10px 12px; border-radius: 999px;
@@ -66,12 +65,10 @@
     .app-name { font-size: 18px; font-weight: 700; letter-spacing: 0.04em; }
     .app-subtitle { font-size: 11px; color: var(--text-muted); }
 
-    /* Языки */
     .lang-switch { display: inline-flex; padding: 3px; border-radius: 999px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(148, 163, 184, 0.4); }
     .lang-btn { border: none; background: transparent; color: var(--text-muted); font-size: 11px; padding: 4px 9px; border-radius: 999px; cursor: pointer; }
     .lang-btn.active { background: linear-gradient(135deg, rgba(37, 99, 235, 0.95), rgba(59, 130, 246, 0.95)); color: #e5f2ff; }
 
-    /* Tabs */
     .tabs { display: flex; gap: 6px; margin-bottom: 10px; }
     .tab-btn {
       flex: 1; border-radius: 999px; border: 1px solid rgba(148, 163, 184, 0.4);
@@ -80,12 +77,10 @@
     }
     .tab-btn.active { background: radial-gradient(circle at 20% 0, #38bdf8, #1d4ed8); color: #e5f2ff; border-color: rgba(96, 165, 250, 0.9); }
 
-    /* Screens */
     .screens { display: block; }
     .screen { display: none; position: relative; padding-top: 4px; }
     .screen.active { display: block; }
 
-    /* Cards */
     .card {
       background: radial-gradient(circle at top left, rgba(30, 64, 175, 0.5), rgba(15, 23, 42, 0.96));
       border-radius: var(--radius-lg); border: 1px solid var(--border-subtle);
@@ -95,18 +90,17 @@
     .card-header { margin-bottom: 8px; }
     .card-body { font-size: 13px; }
 
-    /* Car Hero */
     .car-hero::before {
       content: ""; position: absolute; inset: -30%;
       background: radial-gradient(circle at 0% 120%, rgba(15, 23, 42, 0.0), rgba(15, 23, 42, 0.9)),
-                  radial-gradient(circle at 90% -10%, rgba(56, 189, 248, 0.35), rgba(15, 23, 42, 0.98) 55%);
+                radial-gradient(circle at 90% -10%, rgba(56, 189, 248, 0.35), rgba(15, 23, 42, 0.98) 55%);
       opacity: 0.9; pointer-events: none; z-index: -1;
     }
     .car-photo-frame {
       position: relative; width: 86%; max-width: 360px; margin: 0 auto 10px;
       border-radius: 18px; overflow: hidden; border: 1px solid rgba(148, 163, 184, 0.7);
       background: radial-gradient(circle at 0% 0%, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.8)),
-                  linear-gradient(135deg, rgba(30, 64, 175, 0.7), rgba(15, 23, 42, 0.9));
+                linear-gradient(135deg, rgba(30, 64, 175, 0.7), rgba(15, 23, 42, 0.9));
       height: 0; padding-bottom: 75%;
     }
     .car-photo-frame img, .car-photo-frame video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: none; }
@@ -142,13 +136,11 @@
     .health { display: flex; flex-direction: column; align-items: flex-end; font-size: 11px; color: var(--text-muted); }
     .health span:last-child { font-size: 20px; font-weight: 700; color: var(--accent-good); }
 
-    /* Stats */
     #car-stats { border-radius: var(--radius-md); background: rgba(15, 23, 42, 0.85); border: 1px dashed rgba(148, 163, 184, 0.4); padding: 6px 8px; margin-top: 8px; }
     .stat-row { display: flex; justify-content: space-between; font-size: 12px; padding: 2px 0; gap: 10px; }
     .stat-row span:first-child { color: var(--text-muted); }
     .stat-row span:last-child { text-align: right; }
 
-    /* Form */
     .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
     .field label { font-size: 12px; }
     input, select, textarea {
@@ -165,7 +157,6 @@
       background: radial-gradient(circle at 10% 0, #38bdf8, #1d4ed8); color: #e5f2ff;
     }
 
-    /* чекбоксы тюнинга */
     .chk-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -186,7 +177,6 @@
     }
     .chk input { width: 16px; height: 16px; padding: 0; margin: 0; }
 
-    /* Lists */
     .garage-list, .list { display: flex; flex-direction: column; gap: 8px; }
     .garage-card, .rating-item {
       display: flex; justify-content: space-between; align-items: center;
@@ -200,7 +190,7 @@
       width: 56px; height: 36px; border-radius: 10px; overflow: hidden;
       border: 1px solid rgba(148, 163, 184, 0.7);
       background: radial-gradient(circle at 0% 0%, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.8)),
-                  linear-gradient(135deg, rgba(30, 64, 175, 0.7), rgba(15, 23, 42, 0.9));
+                linear-gradient(135deg, rgba(30, 64, 175, 0.7), rgba(15, 23, 42, 0.9));
       flex-shrink: 0;
     }
     .garage-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -218,9 +208,23 @@
       border: 1px solid rgba(148, 163, 184, 0.7);
     }
     .rating-pos.top-1 { background: radial-gradient(circle at 20% 0, #facc15, #f97316); border-color: rgba(250, 204, 21, 0.9); color: #1e293b; }
-    .rating-mode-switch { display: inline-flex; padding: 3px; border-radius: 999px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(148, 163, 184, 0.4); margin: 0 2px 8px; }
-    .rating-mode-btn { border: none; background: transparent; color: var(--text-muted); font-size: 11px; padding: 4px 9px; border-radius: 999px; cursor: pointer; }
-    .rating-mode-btn.active { background: radial-gradient(circle at 20% 0, #38bdf8, #1d4ed8); color: #e5f2ff; }
+
+    /* ✅ Фильтры рейтинга (вместо вкладки "Модели") */
+    .rating-filters {
+      display: flex;
+      gap: 6px;
+      margin: 0 2px 8px;
+    }
+    .rating-filters select {
+      flex: 1;
+      border-radius: 999px;
+      font-size: 12px;
+      padding: 7px 10px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      background: rgba(15, 23, 42, 0.92);
+      color: var(--text-main);
+      outline: none;
+    }
   </style>
 </head>
 <body>
@@ -285,7 +289,6 @@
                 <select name="region" id="field-region"></select>
               </div>
 
-              <!-- БРЕНД -->
               <div class="field">
                 <label data-i18n="field_brand"></label>
                 <select name="brandSelect" id="field-brand-select"></select>
@@ -293,7 +296,6 @@
                 <div class="hint" data-i18n="other_input_hint"></div>
               </div>
 
-              <!-- МОДЕЛЬ -->
               <div class="field">
                 <label data-i18n="field_model"></label>
                 <select name="modelSelect" id="field-model-select"></select>
@@ -309,10 +311,7 @@
                 <select name="status" id="field-status">
                   <option value="" data-i18n="opt_status_none"></option>
                   <option value="follow" data-i18n="opt_status_follow"></option>
-                  <option value="prepare_sell" data-i18n="opt_status_prepare_sell"></option>
                   <option value="sell" data-i18n="opt_status_sell"></option>
-                  <option value="consider_offers" data-i18n="opt_status_consider"></option>
-                  <option value="want_buy" data-i18n="opt_status_want_buy"></option>
                 </select>
               </div>
 
@@ -409,10 +408,13 @@
       <section id="screen-rating" class="screen">
         <h2 data-i18n="rating_title"></h2>
         <p class="muted" data-i18n="rating_desc"></p>
-        <div class="rating-mode-switch">
-          <button class="rating-mode-btn active" data-mode="owners" data-i18n="rating_mode_owners"></button>
-          <button class="rating-mode-btn" data-mode="cars" data-i18n="rating_mode_cars"></button>
+
+        <!-- ✅ вместо вкладки "Модели" -->
+        <div class="rating-filters">
+          <select id="rating-filter-region"></select>
+          <select id="rating-filter-model"></select>
         </div>
+
         <div id="rating-list" class="list"></div>
       </section>
 
